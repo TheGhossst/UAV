@@ -4,33 +4,64 @@ import numpy as np
 
 from src.config import DEFAULT
 from src.evaluator import evaluate
-from src.repair import complete_solution, nearest_association, process_consistent_processing
+from src.repair import (
+    complete_solution,
+    link_bandwidth_cap,
+    nearest_association,
+    process_consistent_processing,
+)
 from src.scenario import generate_scenario
 from src.solvers.sca import _allocate_bandwidth, _eval_fixed, solve_sca
 
 
-def test_bandwidth_residual_goes_to_best_link():
+def test_bandwidth_residual_fills_best_links_up_to_the_cap():
     s = generate_scenario(100, DEFAULT)
+    cfg = s.cfg
     xy = np.array([[100.0, 100.0], [400.0, 200.0], [250.0, 400.0]])
     a = nearest_association(s.iot_xy, xy)
     b = _allocate_bandwidth(s, xy, a)
-    assert np.isclose(b.sum(), s.cfg.b_sys)
+    assert np.isclose(b.sum(), cfg.b_sys)
     assert np.all(b[a < 0.5] == 0.0)
 
     from src.comm import link_metrics
 
-    se = link_metrics(s.iot_xy, xy, np.ones_like(b), s.cfg)["rates"]
-    need = np.zeros_like(b)
+    cap = link_bandwidth_cap(cfg, cfg.b_sys)
+    assert np.all(b <= cap + 1e-6)
+
+    se = link_metrics(s.iot_xy, xy, np.ones_like(b), cfg)["rates"]
     mask = a > 0.5
-    need[mask] = s.cfg.r_min / np.maximum(se[mask], 1e-12)
-    leftover = s.cfg.b_sys - float(need[mask].sum())
-    if leftover >= 0:
-        extra = b - need
-        extra[~mask] = 0.0
-        # All residual on a single (highest-SE) associated link.
-        assert np.count_nonzero(extra > 1e-9) == 1
-        best = np.unravel_index(np.argmax(np.where(mask, se, -np.inf)), se.shape)
-        assert extra[best] > leftover - 1e-6
+    need = np.zeros_like(b)
+    need[mask] = cfg.r_min / np.maximum(se[mask], 1e-12)
+    leftover = cfg.b_sys - float(need[mask].sum())
+    assert leftover >= 0
+    # Residual is poured into the highest-SE links first, each up to the cap, so
+    # in descending-SE order the allocation is cap... cap, one partial, floors.
+    order = np.argsort(-se[mask])
+    b_a, need_a = b[mask][order], need[mask][order]
+    filled = b_a >= cap - 1e-6
+    at_floor = b_a <= need_a + 1e-6
+    n_partial = int(np.sum(~filled & ~at_floor))
+    assert n_partial <= 1
+    assert np.all(np.diff(filled.astype(int)) <= 0)  # capped links form a prefix
+    assert np.all(np.diff(at_floor.astype(int)) >= 0)  # floored links form a suffix
+
+
+def test_bandwidth_cap_is_the_only_thing_stopping_a_single_link_vertex():
+    cfg = replace(DEFAULT, max_bw_share=None)
+    s = generate_scenario(100, cfg)
+    xy = np.array([[100.0, 100.0], [400.0, 200.0], [250.0, 400.0]])
+    a = nearest_association(s.iot_xy, xy)
+    b = _allocate_bandwidth(s, xy, a)
+    from src.comm import link_metrics
+
+    se = link_metrics(s.iot_xy, xy, np.ones_like(b), cfg)["rates"]
+    mask = a > 0.5
+    need = np.zeros_like(b)
+    need[mask] = cfg.r_min / np.maximum(se[mask], 1e-12)
+    extra = np.where(mask, b - need, 0.0)
+    assert np.count_nonzero(extra > 1e-6) == 1
+    best = np.unravel_index(np.argmax(np.where(mask, se, -np.inf)), se.shape)
+    assert extra[best] > 0.0
 
 
 def test_infeasible_floors_keep_positive_associated_bandwidth():

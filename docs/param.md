@@ -509,6 +509,13 @@ The exact seed values are **not specified by the paper**.
 
 ## 14. Suggested `config.py`
 
+> **Note.** This is the literal Table II extraction and is what
+> `--radio-profile table2` runs. It is *not* the shipped default: `B_SYS =
+> 20_000` with `NOISE_POWER = SIGMA ** 2` bounds the sum rate of this channel at
+> ~0.13 Mbps, which cannot produce the Mbps-scale Figs. 6-10. `src/config.py`
+> defaults to the `calibrated` profile instead; see `docs/calibration.md` for the
+> three knobs that differ and why.
+
 ```python
 # Scenario
 AREA_X = 500.0
@@ -562,7 +569,11 @@ TASK_CYCLES = None
 Before claiming reproduction, verify:
 
 - [ ] Table II parameters are entered exactly.
-- [ ] `sigma = 0.01` is kept separate from `noise_power = sigma**2`.
+- [ ] `sigma = 0.01` is kept separate from `noise_power`.
+- [ ] The radio profile in use is named next to any absolute rate, because the
+      literal Table II reading bounds the system at ~0.13 Mbps and the published
+      Mbps figures are not a literal evaluation of Eq. (6) under it
+      (`docs/calibration.md`).
 - [ ] IoT coordinates are generated inside `500 × 500 m²`.
 - [ ] UAV height is fixed at `100 m`.
 - [ ] Distance equation is implemented exactly.

@@ -3,6 +3,10 @@
 Values marked experimental are NOT in the paper and must not be reported as
 Table II constants. TASK_SIZE_BYTES and TASK_CYCLES default to None; solvers
 that need AoDT/CPU use EXPERIMENTAL_* only when explicitly enabled.
+
+Radio settings come from a named profile (see RADIO_PROFILES). "table2" is the
+literal Table II reading; "calibrated" is the default and is what reproduces
+the Mbps-scale figures. See docs/calibration.md.
 """
 
 from __future__ import annotations
@@ -26,7 +30,6 @@ UAV_MIN_DISTANCE = 10.0
 
 # --- Communication (Table II) ---
 R_MIN = 10_000.0  # bit/s
-B_SYS = 20_000.0  # Hz
 F_C = 1e6  # Hz
 C_LIGHT = 3e8  # m/s
 
@@ -35,12 +38,69 @@ ETA_NLOS = 21.0
 
 P_I = 0.2  # W
 
-SIGMA = 0.01  # Table II label
-NOISE_POWER = SIGMA ** 2  # Eq. (6) uses sigma^2
+SIGMA = 0.01  # Table II label: "noise power sigma = 10 x 10^-3 W"
 
 ENV_A = 9.61
 ENV_B = 0.16
 LOS_ANGLE_UNIT: Literal["rad", "deg"] = "deg"
+
+# --- Radio profiles ---
+# Table II read literally (B_sys = 20 kHz, sigma^2 = 1e-4) puts the Shannon
+# bound of this channel at ~0.13 Mbps, so Eq. (6) cannot reach the Mbps-scale
+# sum rates plotted in Figs. 6-10 no matter how well the solvers do, and every
+# link sits so far into the high-SNR regime that moving a UAV barely changes
+# log2(1 + SNR) -- which is why all methods bunch together under that reading.
+#
+# The "calibrated" profile changes three things and nothing else:
+#   * noise_power = sigma, i.e. Table II's "noise power 10 x 10^-3 W" is used
+#     directly as the sigma^2 of Eq. (6) instead of being squared. This is the
+#     literal reading of the table label and it puts the links in the low-SNR
+#     regime, where rate is roughly proportional to d^-2 and placement matters.
+#   * b_sys is fitted (one free scale knob) so the J sweep spans the published
+#     3-9 Mbps range. Sum rate is exactly linear in b_sys, so this only sets the
+#     y-axis scale; it cannot change any ranking.
+#   * max_bw_share caps how much of a pool one link may take, see
+#     repair.link_bandwidth_cap.
+# Constraint (27) stays system-wide as written in the paper; bandwidth_scope =
+# "per_uav" is available for the alternative reading where each UAV owns a band.
+#
+# Neither profile is bit-exact with the paper; "table2" is kept so the literal
+# reading stays runnable and reportable.
+
+
+@dataclass(frozen=True)
+class RadioProfile:
+    name: str
+    b_sys: float  # Hz, per bandwidth pool (see bandwidth_scope)
+    noise_power: float  # W, the sigma^2 of Eq. (6)
+    bandwidth_scope: Literal["system", "per_uav"]
+    max_bw_share: Optional[float]  # per-link cap as a fraction of its pool
+
+
+RADIO_PROFILES: dict[str, RadioProfile] = {
+    "table2": RadioProfile(
+        name="table2",
+        b_sys=20_000.0,
+        noise_power=SIGMA**2,
+        bandwidth_scope="system",
+        max_bw_share=None,
+    ),
+    "calibrated": RadioProfile(
+        name="calibrated",
+        b_sys=8.8e6,
+        noise_power=SIGMA,
+        bandwidth_scope="system",
+        max_bw_share=0.25,
+    ),
+}
+
+RADIO_PROFILE = "calibrated"
+_PROFILE = RADIO_PROFILES[RADIO_PROFILE]
+
+B_SYS = _PROFILE.b_sys
+NOISE_POWER = _PROFILE.noise_power
+BANDWIDTH_SCOPE = _PROFILE.bandwidth_scope
+MAX_BW_SHARE = _PROFILE.max_bw_share
 
 # --- Computing (Table II) ---
 LAMBDA_I = 2.0  # tasks/s
@@ -97,7 +157,16 @@ TD3_HIDDEN = 256
 TD3_WARMUP = 500
 TD3_TOTAL_STEPS = 7000
 TD3_POS_SCALE = 10.0  # Alg. 2: Δx, Δy × 10
-TD3_R_MAX = 2e5  # bit/s; match observed sum-rate scale so reward is not dominated by penalties only
+# bit/s. Not in the paper. Sized so sum_rate/R_MAX is the same order as the
+# TD3_W_* penalty weights; at 1e7 the rate term is ~0.5 against penalties of 5
+# to 50 and the critic cannot resolve it.
+TD3_R_MAX = 1e6
+TD3_EPISODE_LEN = 50  # steps before the env is re-initialised during training
+# Association/processing logits are offsets on top of -d/area_x, so a zero
+# action means "nearest UAV". Learning a 3*I*J logit block from scratch inside
+# TD3_TOTAL_STEPS does not work: the policy collapses onto associations that
+# violate R_min and never recovers.
+TD3_ASSOC_ACTION_SCALE = 0.25
 TD3_W_AODT = 10.0
 TD3_W_DIST = 5.0
 TD3_W_VIOL = 5.0
@@ -117,6 +186,8 @@ class SimConfig:
     uav_min_distance: float = UAV_MIN_DISTANCE
     r_min: float = R_MIN
     b_sys: float = B_SYS
+    bandwidth_scope: Literal["system", "per_uav"] = BANDWIDTH_SCOPE
+    max_bw_share: Optional[float] = MAX_BW_SHARE
     f_c: float = F_C
     c_light: float = C_LIGHT
     eta_los: float = ETA_LOS
@@ -148,6 +219,21 @@ class SimConfig:
             else self.task_cycles,
         )
 
+    def with_radio_profile(self, name: str) -> "SimConfig":
+        """Swap the radio profile (see RADIO_PROFILES)."""
+        try:
+            p = RADIO_PROFILES[name]
+        except KeyError:
+            raise ValueError(f"unknown radio profile {name!r}; have {sorted(RADIO_PROFILES)}") from None
+        return replace(
+            self,
+            b_sys=p.b_sys,
+            noise_power=p.noise_power,
+            bandwidth_scope=p.bandwidth_scope,
+            max_bw_share=p.max_bw_share,
+        )
+
 
 DEFAULT = SimConfig()
 DEFAULT_COMPUTE = DEFAULT.with_compute()
+TABLE_II = DEFAULT.with_radio_profile("table2")

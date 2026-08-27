@@ -9,6 +9,7 @@ import numpy as np
 from src.aodt import average_aodt
 from src.comm import link_metrics
 from src.compute import cpu_unstable, offered_load, service_rate
+from src.repair import bandwidth_pools, link_bandwidth_cap
 from src.scenario import Scenario
 
 
@@ -16,6 +17,7 @@ from src.scenario import Scenario
 class EvalResult:
     sum_rate: float
     rates: np.ndarray
+    assoc_rates: np.ndarray
     aodt: np.ndarray
     rho: np.ndarray
     qos_violations: int
@@ -29,7 +31,21 @@ class EvalResult:
     feasible: bool
     min_assoc_rate: float
     compute_available: bool
+    r_min: float
     extras: dict = field(default_factory=dict)
+
+    @property
+    def qos_shortfall(self) -> float:
+        """Sum of per-IoT rate deficits relative to R_min, in units of R_min.
+
+        A count of violations is flat once a UAV is far enough away, which
+        leaves a search with no gradient back toward feasibility; this is the
+        continuous version of the same quantity.
+        """
+        if self.assoc_rates.size == 0:
+            return 0.0
+        deficit = 1.0 - self.assoc_rates / max(self.r_min, 1e-12)
+        return float(np.sum(np.clip(deficit, 0.0, None)))
 
     @property
     def violation_count(self) -> int:
@@ -92,11 +108,14 @@ def evaluate(
             cons_viol += 1
 
     qos_viol = int(np.sum(assoc_rates < cfg.r_min - 1e-9))
-    bw_used = float(bandwidth.sum())
-    bw_excess = max(0.0, bw_used - cfg.b_sys)
+    # (27) per bandwidth pool, plus the per-link cap
+    bw_excess = 0.0
+    for mask, pool in bandwidth_pools(a_hard, cfg):
+        cap = link_bandwidth_cap(cfg, pool)
+        bw_excess += max(0.0, float(bandwidth[mask].sum()) - pool)
+        bw_excess += float(np.sum(np.maximum(bandwidth[mask] - cap, 0.0)))
     # bandwidth only if associated (26)
-    bw_orphan = float(np.sum(bandwidth * (a_hard < 0.5)))
-    bw_excess += bw_orphan
+    bw_excess += float(np.sum(bandwidth * (a_hard < 0.5)))
 
     sep_viol = 0
     for p in range(j):
@@ -136,6 +155,7 @@ def evaluate(
     return EvalResult(
         sum_rate=sum_rate,
         rates=rates,
+        assoc_rates=assoc_rates,
         aodt=aodt,
         rho=rho,
         qos_violations=qos_viol,
@@ -149,6 +169,7 @@ def evaluate(
         feasible=feasible,
         min_assoc_rate=min_assoc_rate,
         compute_available=compute_available,
+        r_min=cfg.r_min,
         extras={"p_los": metrics["p_los"], "distance": metrics["distance"], "l_avg": metrics["l_avg"]},
     )
 

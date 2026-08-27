@@ -11,7 +11,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.config import (
+    B_SYS,
     TD3_ACTOR_LR,
+    TD3_ASSOC_ACTION_SCALE,
+    TD3_EPISODE_LEN,
     TD3_BATCH_SIZE,
     TD3_BUFFER_SIZE,
     TD3_CRITIC_LR,
@@ -30,6 +33,7 @@ from src.config import (
     TD3_W_VIOL,
     TD3_WARMUP,
 )
+from src.comm import link_metrics
 from src.evaluator import EvalResult, evaluate
 from src.repair import complete_solution, clip_positions, enforce_separation
 from src.scenario import Scenario
@@ -107,7 +111,13 @@ class UAVAoDTEnv:
         self.rng = np.random.default_rng(seed)
         self.uav_xy = np.zeros((self.j, 2))
         self.last_result: EvalResult | None = None
-        self.state_dim = 2 * self.j + 2 * self.i + self.cfg.num_processes + 1 + self.j + self.i
+        # State (32) includes the channel. Without the per-link spectral
+        # efficiency the actor would have to infer link quality from raw
+        # coordinates before it could allocate bandwidth sensibly, which it does
+        # not manage inside TD3_TOTAL_STEPS.
+        self.state_dim = (
+            2 * self.j + 2 * self.i + self.cfg.num_processes + 1 + self.j + self.i + self.i * self.j
+        )
         # Δx,Δy, assoc logits, proc logits, bandwidth raw
         self.action_dim = 2 * self.j + 3 * self.i * self.j
 
@@ -122,36 +132,52 @@ class UAVAoDTEnv:
         self.last_result = evaluate(self.scenario, xy, a, b, bw)
         return self.get_obs()
 
+    def spectral_efficiency(self, uav_xy: np.ndarray) -> np.ndarray:
+        """log2(1 + SNR_ij) in bit/s/Hz, i.e. the rate per Hz of Eq. (6)."""
+        ones = np.ones((self.i, uav_xy.shape[0]))
+        return link_metrics(self.scenario.iot_xy, uav_xy, ones, self.cfg)["rates"]
+
     def get_obs(self) -> np.ndarray:
         r = self.last_result
         aodt = np.nan_to_num(r.aodt, nan=0.0) if r is not None else np.zeros(self.cfg.num_processes)
         rho = r.rho if r is not None else np.zeros(self.j)
+        se = self.spectral_efficiency(self.uav_xy)
+        # SE spans several decades over the area, so feed it in log units.
+        se_obs = (np.log10(np.maximum(se, 1e-4)) + 4.0) / 4.0
         parts = [
             self.uav_xy.reshape(-1) / max(self.cfg.area_x, 1.0),
             self.scenario.iot_xy.reshape(-1) / max(self.cfg.area_x, 1.0),
             aodt / max(self.cfg.aodt_threshold, 1.0),
-            np.array([self.cfg.b_sys / 20_000.0]),
+            np.array([self.cfg.b_sys / B_SYS]),
             rho,
             self.scenario.lambdas / max(float(self.scenario.lambdas.max()), 1e-6),
+            se_obs.reshape(-1),
         ]
         return np.concatenate(parts).astype(np.float32)
+
+    def _distance_logits(self, uav_xy: np.ndarray) -> np.ndarray:
+        d = np.linalg.norm(self.scenario.iot_xy[:, None, :] - uav_xy[None, :, :], axis=-1)
+        return -d / max(self.cfg.area_x, 1.0)
 
     def parse_action(self, action: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         action = np.asarray(action, dtype=float).reshape(-1)
         j, i = self.j, self.i
         dxdy = action[: 2 * j].reshape(j, 2)
-        assoc_logits = action[2 * j : 2 * j + i * j].reshape(i, j)
-        proc_logits = action[2 * j + i * j : 2 * j + 2 * i * j].reshape(i, j)
+        assoc_off = action[2 * j : 2 * j + i * j].reshape(i, j)
+        proc_off = action[2 * j + i * j : 2 * j + 2 * i * j].reshape(i, j)
         bw_raw = action[2 * j + 2 * i * j : 2 * j + 3 * i * j].reshape(i, j)
         # Alg. 2: update UAV positions Δx, Δy × 10, clip to [0, area]
         xy = self.uav_xy + dxdy * TD3_POS_SCALE
         xy = clip_positions(xy, self.cfg)
+        base = self._distance_logits(xy)
         xy, a, b, bw = complete_solution(
             self.scenario,
             xy,
-            assoc_logits=assoc_logits,
-            proc_logits=proc_logits,
-            bandwidth=np.abs(bw_raw) * self.cfg.b_sys,
+            assoc_logits=base + TD3_ASSOC_ACTION_SCALE * assoc_off,
+            proc_logits=base + TD3_ASSOC_ACTION_SCALE * proc_off,
+            # 1 + tanh keeps the map monotone and makes a zero action a uniform
+            # request; bandwidth_from_weights only spends the R_min surplus on it.
+            bandwidth=np.maximum(1.0 + bw_raw, 0.0),
         )
         return xy, a, b, bw
 
@@ -172,12 +198,15 @@ class UAVAoDTEnv:
 
     def _reward(self, result: EvalResult) -> float:
         # Alg. 2: r = sum_rate/R_max - 10 P_AoDT - 5 P_dist - 5 V_viol
+        # V_viol uses the continuous R_min shortfall instead of a violation
+        # count: a count saturates, so once the UAVs drift out of range every
+        # action scores the same and the actor has nothing to descend.
         p_aodt = float(result.aodt_violations)
         if result.compute_available and np.any(np.isfinite(result.aodt)):
             p_aodt = float(np.sum(np.maximum(0.0, result.aodt - self.cfg.aodt_threshold)))
         p_dist = float(result.sep_violations)
         v_viol = float(
-            result.qos_violations
+            result.qos_shortfall
             + int(result.bw_excess > 1e-6)
             + result.cpu_unstable
             + result.association_violations
@@ -194,13 +223,31 @@ class UAVAoDTEnv:
 
 @dataclass
 class TD3TrainLog:
+    """Diagnostics from training. ``best_*`` is the training-search archive
+    and is **not** the reported TD3 result; ``solve_td3`` returns greedy-policy
+    evaluation after training.
+    """
+
     rewards: list[float]
     sum_rates: list[float]
+    best_xy: np.ndarray | None = None
+    best_result: EvalResult | None = None
+
+
+def _better(candidate: EvalResult, incumbent: EvalResult | None) -> bool:
+    """Fewer constraint violations first, then higher sum rate."""
+    if incumbent is None:
+        return True
+    if candidate.violation_count != incumbent.violation_count:
+        return candidate.violation_count < incumbent.violation_count
+    return candidate.sum_rate > incumbent.sum_rate
 
 
 class TD3Agent:
     def __init__(self, state_dim: int, action_dim: int, seed: int = 0, device: str | None = None):
-        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
+        # CPU by default: the nets are small enough that GPU buys nothing, and
+        # non-deterministic GPU reductions make the reported sweeps unrepeatable.
+        self.device = torch.device(device or "cpu")
         self.rng = np.random.default_rng(seed)
         torch.manual_seed(seed)
         self.actor = Actor(state_dim, action_dim).to(self.device)
@@ -258,17 +305,32 @@ class TD3Agent:
                     pt.data.mul_(1 - TD3_TAU).add_(TD3_TAU * p.data)
 
 
+def _episode_start(env: UAVAoDTEnv, episode: int) -> np.ndarray:
+    """Alternate the k-means start with random starts for exploration."""
+    if episode % 2 == 0:
+        return env.reset()
+    cfg = env.cfg
+    xy = np.column_stack(
+        [env.rng.uniform(0.0, cfg.area_x, env.j), env.rng.uniform(0.0, cfg.area_y, env.j)]
+    )
+    return env.reset(uav_xy=xy)
+
+
 def train_td3(
     scenario: Scenario,
     seed: int = 0,
     n_uav: int | None = None,
     total_steps: int = TD3_TOTAL_STEPS,
+    episode_len: int = TD3_EPISODE_LEN,
 ) -> tuple[TD3Agent, UAVAoDTEnv, TD3TrainLog]:
     env = UAVAoDTEnv(scenario, n_uav=n_uav, seed=seed)
     agent = TD3Agent(env.state_dim, env.action_dim, seed=seed)
     log = TD3TrainLog(rewards=[], sum_rates=[])
     state = env.reset()
     for t in range(total_steps):
+        # Reset before stepping so no buffer transition straddles an episode.
+        if episode_len > 0 and t % episode_len == 0:
+            state = _episode_start(env, t // episode_len)
         if t < TD3_WARMUP:
             action = env.rng.uniform(-1.0, 1.0, size=env.action_dim)
         else:
@@ -279,6 +341,9 @@ def train_td3(
             agent.train_step()
         log.rewards.append(float(reward))
         log.sum_rates.append(float(result.sum_rate))
+        if _better(result, log.best_result):
+            log.best_result = result
+            log.best_xy = env.uav_xy.copy()
         state = ns
     return agent, env, log
 
@@ -289,7 +354,7 @@ def train_td3_across_scenarios(
     seed: int = 0,
     n_uav: int | None = None,
     total_steps: int = TD3_TOTAL_STEPS,
-    resample_every: int = 40,
+    resample_every: int = TD3_EPISODE_LEN,
 ) -> tuple[TD3Agent, UAVAoDTEnv, TD3TrainLog]:
     """Train one TD3 policy on a pool of IoT deployments (paper-style generalization)."""
     from src.scenario import generate_scenario
@@ -302,6 +367,7 @@ def train_td3_across_scenarios(
     log = TD3TrainLog(rewards=[], sum_rates=[])
     state = env.reset()
     for t in range(total_steps):
+        # Resampling the deployment doubles as the episode boundary.
         if t > 0 and t % resample_every == 0:
             scenario = generate_scenario(int(rng.choice(seeds)), cfg)
             state = env.set_scenario(scenario)
@@ -328,6 +394,14 @@ def solve_td3(
     agent: TD3Agent | None = None,
     n_restarts: int = 5,
 ) -> tuple[np.ndarray, EvalResult, float, TD3TrainLog | None]:
+    """Train (unless ``agent`` is given) then evaluate the greedy policy.
+
+    Reported result: greedy-policy evaluation, not the training-search best.
+    compare / sweeps train per scenario then call this; aodt-compare passes a
+    policy from ``train_td3_across_scenarios``. All three use the same eval:
+    k-means plus random restarts, each followed by a noiseless rollout, keeping
+    the best feasible point along those rollouts.
+    """
     t0 = time.perf_counter()
     log = None
     if agent is None:
@@ -345,27 +419,20 @@ def solve_td3(
                 [rng.uniform(0.0, cfg.area_x, j), rng.uniform(0.0, cfg.area_y, j)]
             )
         )
-    best_xy = env.uav_xy.copy()
-    best_result = env.last_result
-    assert best_result is not None
-    best_fit = best_result.sum_rate
+    # Do not seed from the last training state or log.best_*: those are
+    # exploration visits. Only greedy-policy rollouts are reported.
+    best_xy: np.ndarray | None = None
+    best_result: EvalResult | None = None
     for start in starts:
         state = env.reset(uav_xy=start)
         result = env.last_result
         assert result is not None
-        if result.violation_count < best_result.violation_count or (
-            result.violation_count == best_result.violation_count and result.sum_rate >= best_fit
-        ):
-            best_fit = result.sum_rate
-            best_xy = env.uav_xy.copy()
-            best_result = result
+        if _better(result, best_result):
+            best_xy, best_result = env.uav_xy.copy(), result
         for _ in range(greedy_steps):
             action = agent.act(state, noise=0.0)
             state, _, result = env.step(action)
-            if result.violation_count < best_result.violation_count or (
-                result.violation_count == best_result.violation_count and result.sum_rate >= best_fit
-            ):
-                best_fit = result.sum_rate
-                best_xy = env.uav_xy.copy()
-                best_result = result
+            if _better(result, best_result):
+                best_xy, best_result = env.uav_xy.copy(), result
+    assert best_xy is not None and best_result is not None
     return best_xy, best_result, time.perf_counter() - t0, log

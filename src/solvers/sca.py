@@ -6,12 +6,11 @@ Algorithm 1 is a sketch. This implementation:
 3. Moves UAV positions in a trust region along the numerical gradient of
    the true evaluator (first-order / successive linearization).
 
-Known limitation: association and processing stay frozen after the initial
-repair. Placement PSO re-associates every evaluation, so it can keep QoS
-feasible after UAVs move; SCA cannot. A ~50% feasible-seed split on the
-20-run Table II geometry is that ceiling, not a bandwidth-allocator artifact.
-Refreshing ``a``/``proc`` at accepted steps would be the lever to close the
-gap vs PSO; it is intentionally not done here.
+Binaries are held fixed while the gradient is probed (so the finite differences
+measure placement only), but each candidate step is also scored with binaries
+refreshed for the new geometry, and the better of the two is taken. Without
+that refresh SCA is stuck with the association k-means chose at iteration 0,
+which makes it lose to the baselines that re-associate on every evaluation.
 
 Not bit-exact with MATLAB CVX+MOSEK.
 """
@@ -25,49 +24,55 @@ import numpy as np
 from src.comm import link_metrics
 from src.config import PSO_PENALTY, SCA_MAX_ITER, SCA_STEP, SCA_TOL, SCA_TRUST
 from src.evaluator import EvalResult, evaluate, fitness
-from src.repair import clip_positions, complete_solution, enforce_separation, equal_bandwidth
+from src.repair import (
+    bandwidth_pools,
+    clip_positions,
+    complete_solution,
+    enforce_separation,
+    equal_bandwidth,
+    link_bandwidth_cap,
+)
 from src.scenario import Scenario
 from src.solvers.kmeans import kmeans
 
 
-def _allocate_bandwidth(scenario: Scenario, xy: np.ndarray, association: np.ndarray) -> np.ndarray:
-    """Exact LP for r_ij = c_ij B_ij at fixed SNR / association.
+def _allocate_pool(se_a: np.ndarray, pool: float, cap: float, r_min: float) -> np.ndarray:
+    """Exact LP for r_i = c_i B_i on one bandwidth pool.
 
-    max  sum c_ij B_ij
-    s.t. sum B_ij = B_sys,  B_ij = 0 if not associated,
-         B_ij >= R_min / c_ij when those floors fit in B_sys.
+    max  sum c_i B_i
+    s.t. sum B_i = pool,  0 <= B_i <= cap,  B_i >= R_min / c_i if the floors fit.
 
-    If all floors fit, leftover bandwidth goes to the highest-c link (a vertex
-    of the simplex). If they do not, fund as many full floors as possible
-    (cheapest first, leaving a positive remainder for everyone else), then
-    split the rest equally across still-unfunded associated links so every
-    associated link has B > 0.
+    With floors funded, leftover bandwidth is poured into the highest-c links in
+    order until each hits ``cap``. Without the cap this is a single-link vertex,
+    which is why the cap exists (see repair.link_bandwidth_cap).
+
+    If the floors do not fit, fund as many full floors as possible (cheapest
+    first, always leaving a positive remainder for everyone else) and split the
+    rest equally over the unfunded links so every associated link keeps B > 0.
     """
-    cfg = scenario.cfg
-    dummy = equal_bandwidth(association, cfg)
-    se = np.maximum(link_metrics(scenario.iot_xy, xy, np.ones_like(dummy), cfg)["rates"], 1e-12)
-    mask = association > 0.5
-    b = np.zeros_like(dummy)
-    if not np.any(mask):
-        return dummy
+    n = int(se_a.size)
+    need = r_min / se_a
+    remaining = float(pool)
 
-    se_a = se[mask]
-    need = cfg.r_min / se_a
-    n = int(need.size)
-    remaining = float(cfg.b_sys)
     if float(need.sum()) <= remaining:
-        alloc = need.copy()
-        alloc[int(np.argmax(se_a))] += remaining - float(need.sum())
-        b[mask] = alloc
-        return b
+        alloc = np.minimum(need, cap)
+        remaining -= float(alloc.sum())
+        for k in np.argsort(-se_a):
+            if remaining <= 1e-12:
+                break
+            room = cap - alloc[k]
+            take = min(room, remaining)
+            alloc[k] += take
+            remaining -= take
+        return alloc
 
     alloc = np.zeros_like(need)
     funded = np.zeros(n, dtype=bool)
     for k in np.argsort(need):
         n_other_unfunded = int(n - funded.sum() - 1)
         if remaining >= float(need[k]) and (n_other_unfunded == 0 or remaining > float(need[k])):
-            alloc[k] = need[k]
-            remaining -= float(need[k])
+            alloc[k] = min(float(need[k]), cap)
+            remaining -= alloc[k]
             funded[k] = True
         else:
             break
@@ -76,8 +81,28 @@ def _allocate_bandwidth(scenario: Scenario, xy: np.ndarray, association: np.ndar
     if n_u:
         alloc[unfunded] = remaining / n_u
     elif remaining > 0:
-        alloc[int(np.argmax(se_a))] += remaining
-    b[mask] = alloc
+        for k in np.argsort(-se_a):
+            if remaining <= 1e-12:
+                break
+            take = min(cap - alloc[k], remaining)
+            alloc[k] += take
+            remaining -= take
+    return alloc
+
+
+def _allocate_bandwidth(scenario: Scenario, xy: np.ndarray, association: np.ndarray) -> np.ndarray:
+    """Solve the bandwidth LP independently on every pool of constraint (27)."""
+    cfg = scenario.cfg
+    dummy = equal_bandwidth(association, cfg)
+    se = np.maximum(link_metrics(scenario.iot_xy, xy, np.ones_like(dummy), cfg)["rates"], 1e-12)
+    if not np.any(association > 0.5):
+        return dummy
+
+    b = np.zeros_like(dummy)
+    for mask, pool in bandwidth_pools(association, cfg):
+        if not np.any(mask):
+            continue
+        b[mask] = _allocate_pool(se[mask], pool, link_bandwidth_cap(cfg, pool), cfg.r_min)
     return b
 
 
@@ -166,13 +191,23 @@ def solve_sca(
             delta *= trust / dnorm
             step = xy + delta
         step = enforce_separation(clip_positions(step, cfg), cfg, rng)
-        new_fit, new_result, new_xy, new_bw = _eval_fixed(scenario, step, a, proc)
+
+        cand = _eval_fixed(scenario, step, a, proc)
+        a_new, proc_new = a, proc
+        refreshed_xy, a_r, proc_r, _ = complete_solution(scenario, step)
+        if not (np.array_equal(a_r, a) and np.array_equal(proc_r, proc)):
+            cand_r = _eval_fixed(scenario, refreshed_xy, a_r, proc_r)
+            if cand_r[0] > cand[0]:
+                cand, a_new, proc_new = cand_r, a_r, proc_r
+
+        new_fit, new_result, new_xy, new_bw = cand
         if new_fit + SCA_TOL < fit:
             trust *= 0.5
             if trust < 0.5:
                 break
             continue
         xy, bw, result, fit = new_xy, new_bw, new_result, new_fit
+        a, proc = a_new, proc_new
         if abs(fit - prev) <= SCA_TOL:
             break
         prev = fit

@@ -9,13 +9,54 @@ from src.config import SimConfig
 from src.scenario import Scenario
 
 
-def equal_bandwidth(association: np.ndarray, cfg: SimConfig) -> np.ndarray:
-    """Split B_sys equally across associated links (plan.md Phase 2)."""
+def bandwidth_pools(association: np.ndarray, cfg: SimConfig) -> list[tuple[np.ndarray, float]]:
+    """Constraint (27) as (link mask, pool in Hz) pairs.
+
+    ``system`` scope is one shared pool over all associated links (literal
+    Table II reading). ``per_uav`` gives every UAV its own B_sys, so the total
+    spectrum grows with J.
+    """
     i, j = association.shape
-    n_assoc = max(int(association.sum()), 1)
-    b = np.zeros((i, j))
-    share = cfg.b_sys / n_assoc
-    b[association > 0.5] = share
+    assoc = association > 0.5
+    if cfg.bandwidth_scope == "per_uav":
+        pools = []
+        for u in range(j):
+            mask = np.zeros((i, j), dtype=bool)
+            mask[:, u] = assoc[:, u]
+            pools.append((mask, float(cfg.b_sys)))
+        return pools
+    return [(assoc, float(cfg.b_sys))]
+
+
+def link_bandwidth_cap(cfg: SimConfig, pool: float) -> float:
+    """Per-link ceiling on B_ij.
+
+    Sum rate is linear in B_ij, so an uncapped pool is always maximised at a
+    vertex: one link takes everything left after the R_min floors. That makes
+    the optimum insensitive to placement and to J. The cap keeps the allocation
+    spread over the best few links instead.
+    """
+    if cfg.max_bw_share is None:
+        return pool
+    return float(cfg.max_bw_share) * pool
+
+
+def equal_bandwidth(association: np.ndarray, cfg: SimConfig) -> np.ndarray:
+    """Split each pool equally across the associated links it covers.
+
+    Each associated link is capped at ``link_bandwidth_cap``. Leftover after
+    the equal share is offered to links that still have room. If every link
+    is already at the cap, unused pool is left unused rather than violating
+    the cap or constraint (27). Unassociated links stay at 0. With no cap
+    (``max_bw_share is None``) this is a plain equal split of the pool.
+    """
+    b = np.zeros(association.shape, dtype=float)
+    for mask, pool in bandwidth_pools(association, cfg):
+        n = int(mask.sum())
+        if n == 0:
+            continue
+        cap = link_bandwidth_cap(cfg, pool)
+        b[mask] = _spread_by_weight(np.ones(n, dtype=float), pool, np.full(n, cap, dtype=float))
     return b
 
 
@@ -88,12 +129,84 @@ def stabilize_processing(scenario: Scenario, processing: np.ndarray) -> np.ndarr
 
 
 def project_bandwidth(raw: np.ndarray, association: np.ndarray, cfg: SimConfig) -> np.ndarray:
-    b = np.maximum(raw, 0.0) * association
-    total = b.sum()
-    if total <= 1e-12:
-        return equal_bandwidth(association, cfg)
-    if total > cfg.b_sys:
-        b *= cfg.b_sys / total
+    """Make a raw bandwidth request feasible for (26), (27) and the link cap."""
+    b = np.maximum(np.asarray(raw, dtype=float), 0.0) * (association > 0.5)
+    fallback = equal_bandwidth(association, cfg)
+    for mask, pool in bandwidth_pools(association, cfg):
+        if not np.any(mask):
+            continue
+        cap = link_bandwidth_cap(cfg, pool)
+        vals = np.minimum(b[mask], cap)
+        total = float(vals.sum())
+        if total <= 1e-12:
+            b[mask] = fallback[mask]
+            continue
+        if total > pool:
+            # Scaling can only lower values, so the cap still holds afterwards.
+            vals = vals * (pool / total)
+        b[mask] = vals
+    return b
+
+
+def _spread_by_weight(weights: np.ndarray, amount: float, room: np.ndarray) -> np.ndarray:
+    """Hand out ``amount`` in proportion to ``weights`` without exceeding ``room``."""
+    out = np.zeros_like(room)
+    left = float(amount)
+    active = room > 1e-12
+    for _ in range(int(room.size) + 1):
+        w = np.where(active, np.maximum(weights, 0.0), 0.0)
+        total = float(w.sum())
+        if left <= 1e-9 or not np.any(active):
+            break
+        share = left * (w / total) if total > 1e-12 else left * active / max(int(active.sum()), 1)
+        take = np.minimum(share, room - out)
+        if float(take.sum()) <= 1e-12:
+            break
+        out += take
+        left -= float(take.sum())
+        active = active & (room - out > 1e-12)
+    return out
+
+
+def bandwidth_from_weights(
+    scenario: Scenario,
+    uav_xy: np.ndarray,
+    association: np.ndarray,
+    weights: np.ndarray,
+) -> np.ndarray:
+    """Turn a solver's raw bandwidth request into a QoS-aware allocation.
+
+    Every associated link first gets its R_min floor ``R_min / c_ij``; only the
+    surplus is distributed by ``weights``. Without the floors an unstructured
+    request nearly always starves some link below R_min, so the solution is
+    rejected as infeasible and the solver never gets credit for the allocation
+    it chose -- which is what kept TD3 pinned to its restart states.
+
+    If the floors do not fit in a pool, fall back to plain projection for
+    that pool only: other pools are unchanged. Returning from the whole
+    function would be wrong under ``bandwidth_scope="per_uav"``.
+    """
+    from src.comm import link_metrics  # local: comm has no repair dependency
+
+    cfg = scenario.cfg
+    w = np.maximum(np.asarray(weights, dtype=float), 0.0)
+    se = np.maximum(
+        link_metrics(scenario.iot_xy, uav_xy, np.ones(association.shape), cfg)["rates"], 1e-12
+    )
+    b = np.zeros(association.shape, dtype=float)
+    # Computed lazily if a pool cannot fund its floors; used only for that pool.
+    projected: np.ndarray | None = None
+    for mask, pool in bandwidth_pools(association, cfg):
+        if not np.any(mask):
+            continue
+        cap = link_bandwidth_cap(cfg, pool)
+        floors = np.minimum(cfg.r_min / se[mask], cap)
+        if float(floors.sum()) > pool:
+            if projected is None:
+                projected = project_bandwidth(weights, association, cfg)
+            b[mask] = projected[mask]
+            continue
+        b[mask] = floors + _spread_by_weight(w[mask], pool - float(floors.sum()), cap - floors)
     return b
 
 
@@ -158,9 +271,10 @@ def complete_solution(
     processing = stabilize_processing(scenario, processing)
 
     if bandwidth is None:
+        # Placement-only baselines get the naive equal split.
         bandwidth = equal_bandwidth(association, cfg)
     else:
-        bandwidth = project_bandwidth(bandwidth, association, cfg)
+        bandwidth = bandwidth_from_weights(scenario, xy, association, bandwidth)
     return xy, association, processing, bandwidth
 
 

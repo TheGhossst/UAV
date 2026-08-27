@@ -1,13 +1,20 @@
 import numpy as np
 
 from src.comm import average_path_loss, distances, los_probability, uplink_rate
-from src.config import DEFAULT, FROZEN_UAV_XY, NOISE_POWER, SIGMA
+from src.config import DEFAULT, RADIO_PROFILES, FROZEN_UAV_XY, NOISE_POWER, SIGMA, TABLE_II
 from src.scenario import generate_scenario
 
 
-def test_noise_is_sigma_squared():
+def test_radio_profiles_disagree_only_on_the_documented_knobs():
     assert SIGMA == 0.01
-    assert NOISE_POWER == SIGMA ** 2
+    # table2 squares sigma; calibrated takes Table II's "noise power" as a power.
+    assert RADIO_PROFILES["table2"].noise_power == SIGMA**2
+    assert RADIO_PROFILES["calibrated"].noise_power == SIGMA
+    assert TABLE_II.b_sys == 20_000.0
+    assert TABLE_II.max_bw_share is None
+    assert DEFAULT.noise_power == NOISE_POWER
+    for field in ("f_c", "p_i", "eta_los", "eta_nlos", "env_a", "env_b", "r_min", "uav_height"):
+        assert getattr(DEFAULT, field) == getattr(TABLE_II, field)
 
 
 def test_frozen_scenario_deterministic():

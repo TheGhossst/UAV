@@ -4,6 +4,8 @@ Python reconstruction of the paper’s shared problem (P): maximize associated u
 
 Paper Table II lives in `src/config.py`. Task size `S_i` and cycles `L` are **not** in Table II; pass `--compute` to use the documented experimental defaults (`2000` bytes, `2e6` cycles).
 
+**Radio profile.** Table II read literally (`B_sys = 20 kHz`, `sigma^2 = 1e-4 W`) caps Shannon on this channel at **0.13 Mbps**, so Eq. (6) cannot produce the Mbps-scale sum rates in Figs. 6-10 and every link sits so far into the high-SNR regime that all methods collapse into one band. The default `calibrated` profile changes three knobs (noise power, a fitted `B_sys`, and a per-link bandwidth cap) to land on the published range and ranking; `--radio-profile table2` restores the literal reading. See [`docs/calibration.md`](docs/calibration.md).
+
 ## Setup
 
 From the repo root:
@@ -40,7 +42,7 @@ python -m src.main [--mode MODE] [options]
 | `kmeans` | K-means centroids on IoT `(x, y)`. |
 | `pso` | Placement-only PSO. |
 | `pso-joint` | Joint PSO (positions + association + processing + bandwidth). |
-| `sca` | Successive convex approximation on UAV positions (binaries fixed after repair). See **Known limitations**. |
+| `sca` | Successive convex approximation on UAV positions, plus the exact bandwidth LP. |
 | `td3` | TD3 train + greedy eval on one scenario. |
 | `proposed` | Placeholder; raises `NotImplementedError`. |
 | `compare` | Random / K-means / PSO / SCA on several seeds; optional TD3. Writes CSVs + markdown under `--out`. |
@@ -54,6 +56,7 @@ python -m src.main [--mode MODE] [options]
 | `--mode` | choice | `single` | See table above. |
 | `--seed` | int | `100` | Scenario / solver seed. Used by `single` and the single-solver modes. Ignored by `compare` / `sweeps` / `aodt-compare` (those use seed lists). |
 | `--compute` | flag | off | Enable experimental `S_i` and `L`. Required for meaningful AoDT/CPU metrics. `aodt-compare` turns this on itself. |
+| `--radio-profile` | `calibrated` \| `table2` | `calibrated` | `calibrated` reproduces the Mbps-scale figures; `table2` is the literal Table II reading. See [`docs/calibration.md`](docs/calibration.md). |
 | `--num-uav` | int | config `3` | Override `J`. |
 | `--num-iot` | int | config `10` | Override `I`. If `I` is divisible by the number of processes (`2`), `iots_per_process` is updated. |
 | `--lambda-i` | float | config `2.0` | Task arrival rate (tasks/s). |
@@ -164,9 +167,22 @@ python scripts/placement_analysis.py
 
 Writes `results/aodt/placement_analysis.md`.
 
+### Radio sensitivity
+
+Sweeps sum rate vs `J` over any product of radio settings; this is how the
+default profile was chosen.
+
+```bash
+python -m scripts.calibrate --methods random kmeans sca --js 1 3 5
+python -m scripts.calibrate --b-sys 20000 --noise 1e-4 --scope system --cap -1
+```
+
 ## Known limitations
 
-**SCA frozen association.** After k-means + `complete_solution()`, SCA keeps association and processing fixed while it walks UAV positions in a 25 m trust region. Placement PSO re-runs nearest-association repair every evaluation. On 20 Table II seeds that difference—not the old `B=0` / `1e-12` AoDT cascade—is what caps SCA feasibility (historically the same ~10/20 seeds). Compare tables will now show finite `min_rate` and `aodt_mean` on the infeasible seeds; treating those seeds as a bandwidth bug is incorrect. Closing the feasibility gap vs PSO would require refreshing `a`/`proc` at accepted SCA steps (a design change, not a parameter tweak).
+- **`B_sys` is fitted, not Table II.** The `calibrated` profile's `8.8 MHz` is chosen so the `J` sweep spans the published 3-9 Mbps range. Sum rate is linear in `B_sys` only when QoS constraints are non-binding, so ranking is not guaranteed to stay the same if `B_sys` changes. Report absolute rates with the profile named (`table2` = literal Table II; `calibrated` is not a Table II constant).
+- **The per-link bandwidth cap is a modelling addition.** Without it the sum-rate LP is solved at a single-link vertex and SCA's curve is flat in `J`.
+- **SCA is not the paper's solver.** Trust-region finite differences plus an exact bandwidth LP, not CVX/MOSEK on a convexified (P).
+- **TD3 reports greedy-policy evaluation after training**, not the best deployment visited during learning. `compare`, `sweeps`, and `aodt-compare` share that eval protocol (k-means + random restarts, noiseless rollouts). `TD3_R_MAX`, `TD3_EPISODE_LEN` and `TD3_ASSOC_ACTION_SCALE` are not paper values.
 
 ## Help
 

@@ -252,8 +252,8 @@ def plot_summaries(out_dir: Path):
 def write_comparison_table(out_dir: Path, rows: list[dict], filename: str = "comparison_table.md"):
     methods = sorted({r["method"] for r in rows})
     lines = [
-        "| Method | Sum Rate (bit/s) | AoDT | QoS Violations | Runtime (s) | Std |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| Method | Sum Rate (bit/s) | Sum Rate (Mbps) | AoDT | QoS Violations | Runtime (s) | Std |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for m in methods:
         sub = [r for r in rows if r["method"] == m]
@@ -264,9 +264,10 @@ def write_comparison_table(out_dir: Path, rows: list[dict], filename: str = "com
         aodt = f"{np.mean(aodt_vals):.3f}" if aodt_vals else "n/a"
         std = float(rates.std(ddof=1)) if rates.size > 1 else 0.0
         lines.append(
-            f"| {m} | {rates.mean():.1f} | {aodt} | {qos.mean():.2f} | {rt.mean():.3f} | {std:.1f} |"
+            f"| {m} | {rates.mean():.1f} | {rates.mean() / 1e6:.3f} | {aodt} | "
+            f"{qos.mean():.2f} | {rt.mean():.3f} | {std:.1f} |"
         )
-    lines.append("| proposed | | | | | |")
+    lines.append("| proposed | | | | | | |")
     (out_dir / filename).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -328,6 +329,13 @@ def run_all_sweeps(cfg: SimConfig, args):
     plot_summaries(out_dir)
     meta = {
         "note": "TASK_SIZE_BYTES and TASK_CYCLES are not in Table II; compute sweeps use experimental defaults only if --compute.",
+        "radio": {
+            "b_sys_hz": cfg.b_sys,
+            "noise_power_w": cfg.noise_power,
+            "bandwidth_scope": cfg.bandwidth_scope,
+            "max_bw_share": cfg.max_bw_share,
+            "note": "see docs/calibration.md; literal Table II is --radio-profile table2",
+        },
         "use_compute_model": cfg.use_compute_model,
         "n_seeds": len(_seeds(args)),
         "methods": _methods(args),

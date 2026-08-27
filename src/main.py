@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -17,6 +18,7 @@ from src.config import (
     PAPER_SCENARIO_SEEDS,
     PSO_N_ITER,
     PSO_N_PARTICLES,
+    RADIO_PROFILES,
     SimConfig,
     TD3_TOTAL_STEPS,
 )
@@ -32,6 +34,8 @@ from src.solvers.td3 import solve_td3
 
 def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
     cfg = DEFAULT
+    if getattr(args, "radio_profile", None):
+        cfg = cfg.with_radio_profile(args.radio_profile)
     if getattr(args, "compute", False):
         cfg = cfg.with_compute()
     if getattr(args, "num_uav", None):
@@ -180,6 +184,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--seed", type=int, default=100)
     p.add_argument("--compute", action="store_true", help="Enable experimental S_i and L (not Table II)")
+    p.add_argument(
+        "--radio-profile",
+        choices=sorted(RADIO_PROFILES),
+        default=None,
+        help="calibrated (default) reproduces the Mbps-scale figures; table2 is the literal Table II reading",
+    )
     p.add_argument("--num-uav", type=int, default=None)
     p.add_argument("--num-iot", type=int, default=None)
     p.add_argument("--lambda-i", type=float, default=None)
