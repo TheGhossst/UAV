@@ -66,6 +66,7 @@ python -m src.main [--mode MODE] [options]
 | `--particles` | int | `20` | PSO swarm size (`pso`, `pso-joint`, `compare`, `sweeps`, `aodt-compare`). |
 | `--iters` | int | `100` | PSO iterations (same modes). |
 | `--td3-steps` | int | `7000` | TD3 training steps (`td3`, `compare --with-td3`, `sweeps --with-td3`, `aodt-compare`). |
+| `--device` | `auto` \| `cpu` \| `cuda` | `auto` | TD3 nets: `auto` uses CUDA when available. Simulator (channel, repair, evaluator, PSO, SCA) stays on CPU. |
 | `--paper-runs` | flag | off | Use 20 scenario seeds `100…119` instead of the 5-seed dev set `100…104`. Applies to `compare` and `sweeps`. |
 | `--with-td3` | flag | off | Include TD3 in `compare` and `sweeps`. |
 | `--aodt-short` | flag | off | `aodt-compare` only: 5 eval seeds `100…104` instead of `100…119`. |

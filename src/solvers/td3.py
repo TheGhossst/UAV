@@ -39,6 +39,36 @@ from src.repair import complete_solution, clip_positions, enforce_separation
 from src.scenario import Scenario
 from src.solvers.kmeans import kmeans
 
+# None/"auto" → CUDA when PyTorch sees a GPU, else CPU. Overridden by --device.
+_DEFAULT_DEVICE: str | None = None
+_DEVICE_LOGGED = False
+
+
+def set_default_device(name: str | None) -> None:
+    """Set the process-wide TD3 device (`auto`, `cpu`, `cuda`, or `cuda:N`)."""
+    global _DEFAULT_DEVICE
+    _DEFAULT_DEVICE = name
+
+
+def resolve_device(device: str | None = None) -> torch.device:
+    name = device if device is not None else _DEFAULT_DEVICE
+    if name in (None, "auto"):
+        name = "cuda" if torch.cuda.is_available() else "cpu"
+    if isinstance(name, str) and name.startswith("cuda") and not torch.cuda.is_available():
+        name = "cpu"
+    return torch.device(name)
+
+
+def _log_device(dev: torch.device) -> None:
+    global _DEVICE_LOGGED
+    if _DEVICE_LOGGED:
+        return
+    extra = ""
+    if dev.type == "cuda":
+        extra = f" ({torch.cuda.get_device_name(dev)})"
+    print(f"TD3 device: {dev}{extra}", flush=True)
+    _DEVICE_LOGGED = True
+
 
 def _mlp(in_dim: int, out_dim: int, hidden: int, out_act: nn.Module | None = None) -> nn.Sequential:
     layers: list[nn.Module] = [
@@ -245,9 +275,11 @@ def _better(candidate: EvalResult, incumbent: EvalResult | None) -> bool:
 
 class TD3Agent:
     def __init__(self, state_dim: int, action_dim: int, seed: int = 0, device: str | None = None):
-        # CPU by default: the nets are small enough that GPU buys nothing, and
-        # non-deterministic GPU reductions make the reported sweeps unrepeatable.
-        self.device = torch.device(device or "cpu")
+        # Default is CUDA when available (RTX 50-series included). The env/evaluator
+        # stay on CPU; only actor/critic updates run on the GPU. Pass device="cpu"
+        # (or --device cpu) for bit-repeatable paper sweeps.
+        self.device = resolve_device(device)
+        _log_device(self.device)
         self.rng = np.random.default_rng(seed)
         torch.manual_seed(seed)
         self.actor = Actor(state_dim, action_dim).to(self.device)
@@ -322,9 +354,10 @@ def train_td3(
     n_uav: int | None = None,
     total_steps: int = TD3_TOTAL_STEPS,
     episode_len: int = TD3_EPISODE_LEN,
+    device: str | None = None,
 ) -> tuple[TD3Agent, UAVAoDTEnv, TD3TrainLog]:
     env = UAVAoDTEnv(scenario, n_uav=n_uav, seed=seed)
-    agent = TD3Agent(env.state_dim, env.action_dim, seed=seed)
+    agent = TD3Agent(env.state_dim, env.action_dim, seed=seed, device=device)
     log = TD3TrainLog(rewards=[], sum_rates=[])
     state = env.reset()
     for t in range(total_steps):
@@ -355,6 +388,7 @@ def train_td3_across_scenarios(
     n_uav: int | None = None,
     total_steps: int = TD3_TOTAL_STEPS,
     resample_every: int = TD3_EPISODE_LEN,
+    device: str | None = None,
 ) -> tuple[TD3Agent, UAVAoDTEnv, TD3TrainLog]:
     """Train one TD3 policy on a pool of IoT deployments (paper-style generalization)."""
     from src.scenario import generate_scenario
@@ -363,7 +397,7 @@ def train_td3_across_scenarios(
     seeds = list(train_seeds)
     scenario = generate_scenario(int(seeds[0]), cfg)
     env = UAVAoDTEnv(scenario, n_uav=n_uav, seed=seed)
-    agent = TD3Agent(env.state_dim, env.action_dim, seed=seed)
+    agent = TD3Agent(env.state_dim, env.action_dim, seed=seed, device=device)
     log = TD3TrainLog(rewards=[], sum_rates=[])
     state = env.reset()
     for t in range(total_steps):
@@ -393,6 +427,7 @@ def solve_td3(
     greedy_steps: int = 20,
     agent: TD3Agent | None = None,
     n_restarts: int = 5,
+    device: str | None = None,
 ) -> tuple[np.ndarray, EvalResult, float, TD3TrainLog | None]:
     """Train (unless ``agent`` is given) then evaluate the greedy policy.
 
@@ -405,7 +440,9 @@ def solve_td3(
     t0 = time.perf_counter()
     log = None
     if agent is None:
-        agent, env, log = train_td3(scenario, seed=seed, n_uav=n_uav, total_steps=total_steps)
+        agent, env, log = train_td3(
+            scenario, seed=seed, n_uav=n_uav, total_steps=total_steps, device=device
+        )
     else:
         env = UAVAoDTEnv(scenario, n_uav=n_uav, seed=seed)
         env.reset()

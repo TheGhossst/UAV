@@ -23,7 +23,7 @@ def test_td3_env_uses_evaluator_and_alg2_action_parse():
 
 def test_td3_short_train_runs():
     s = generate_scenario(100, DEFAULT)
-    agent, env, log = train_td3(s, seed=0, n_uav=3, total_steps=8)
+    agent, env, log = train_td3(s, seed=0, n_uav=3, total_steps=8, device="cpu")
     assert len(log.rewards) == 8
     assert agent.action_dim == env.action_dim
     assert log.best_result is not None and log.best_xy is not None
@@ -59,6 +59,7 @@ def test_solve_td3_reports_greedy_eval_not_training_archive(monkeypatch):
     real_train = train_td3
 
     def wrapped(*args, **kwargs):
+        kwargs.setdefault("device", "cpu")
         agent, env, log = real_train(*args, **kwargs)
         log.best_xy = archive_xy.copy()
         log.best_result = dc_replace(
@@ -77,7 +78,7 @@ def test_solve_td3_reports_greedy_eval_not_training_archive(monkeypatch):
 
     monkeypatch.setattr("src.solvers.td3.train_td3", wrapped)
     xy, result, _, log = solve_td3(
-        s, seed=0, n_uav=3, total_steps=8, greedy_steps=2, n_restarts=2
+        s, seed=0, n_uav=3, total_steps=8, greedy_steps=2, n_restarts=2, device="cpu"
     )
     assert log is not None
     assert not np.allclose(xy, archive_xy)
@@ -94,3 +95,14 @@ def test_state_carries_per_link_spectral_efficiency():
     near = env.spectral_efficiency(np.array([[250.0, 250.0]] * 3))
     far = env.spectral_efficiency(np.array([[2500.0, 2500.0]] * 3))
     assert np.all(near > far)
+
+
+def test_resolve_device_auto_prefers_cuda_when_available():
+    from src.solvers.td3 import resolve_device
+
+    cpu = resolve_device("cpu")
+    assert cpu.type == "cpu"
+    auto = resolve_device("auto")
+    assert auto.type in ("cpu", "cuda")
+    if __import__("torch").cuda.is_available():
+        assert resolve_device("cuda").type == "cuda"

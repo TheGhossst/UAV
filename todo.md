@@ -1,0 +1,1 @@
+python -m src.main --mode sweeps --compute --with-td3 --particles 20 --iters 100 --td3-steps 7000 --out results

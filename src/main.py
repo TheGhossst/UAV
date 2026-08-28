@@ -29,7 +29,7 @@ from src.solvers.kmeans import solve_kmeans
 from src.solvers.pso import solve_pso_joint, solve_pso_placement
 from src.solvers.random import solve_random
 from src.solvers.sca import solve_sca
-from src.solvers.td3 import solve_td3
+from src.solvers.td3 import set_default_device, solve_td3
 
 
 def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
@@ -199,6 +199,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--particles", type=int, default=PSO_N_PARTICLES)
     p.add_argument("--iters", type=int, default=PSO_N_ITER)
     p.add_argument("--td3-steps", type=int, default=TD3_TOTAL_STEPS)
+    p.add_argument(
+        "--device",
+        choices=["auto", "cpu", "cuda"],
+        default="auto",
+        help="TD3 actor/critic device. auto uses the GPU when CUDA is available (e.g. RTX 5070). "
+        "The simulator itself stays on CPU. Use cpu for bit-repeatable paper sweeps.",
+    )
     p.add_argument("--paper-runs", action="store_true", help="Use 20 scenario seeds")
     p.add_argument("--with-td3", action="store_true")
     p.add_argument("--aodt-short", action="store_true", help="AoDT compare with 5 seeds instead of 20")
@@ -208,6 +215,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    set_default_device(args.device)
     cfg = _cfg_from_args(args)
     if args.mode == "single":
         run_single(cfg, seed=args.seed)
