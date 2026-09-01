@@ -1,1 +1,13 @@
-python -m src.main --mode sweeps --compute --with-td3 --particles 20 --iters 100 --td3-steps 7000 --out results
+# Completed 2026-08-31 — full audit under results/run_20260831/
+
+Re-run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1
+```
+
+Or refresh doc only:
+
+```bash
+python -m src.status_sync --results results/run_20260831
+```

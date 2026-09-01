@@ -37,11 +37,18 @@ def kmeans(points: np.ndarray, k: int, rng: np.random.Generator, max_iter: int =
     return centers
 
 
-def solve_kmeans(scenario: Scenario, seed: int = 0, n_uav: int | None = None) -> tuple[np.ndarray, EvalResult, float]:
+def solve_kmeans(
+    scenario: Scenario,
+    seed: int = 0,
+    n_uav: int | None = None,
+    *,
+    equal_split: bool = True,
+) -> tuple[np.ndarray, EvalResult, float]:
+    """K-means UAV placement. Bandwidth is an equal split unless ``equal_split=False``."""
     j = n_uav if n_uav is not None else scenario.cfg.num_uav
     rng = np.random.default_rng(seed)
     t0 = time.perf_counter()
     uav_xy = kmeans(scenario.iot_xy, j, rng)
-    xy, a, b, bw = complete_solution(scenario, uav_xy)
+    xy, a, b, bw = complete_solution(scenario, uav_xy, equal_split=equal_split)
     result = evaluate(scenario, xy, a, b, bw)
     return xy, result, time.perf_counter() - t0

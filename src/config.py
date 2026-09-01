@@ -206,17 +206,28 @@ class SimConfig:
     task_cycles: Optional[float] = TASK_CYCLES
     use_compute_model: bool = False
 
-    def with_compute(self) -> "SimConfig":
-        """Enable AoDT/CPU using documented experimental S_i and L."""
+    def with_compute(
+        self,
+        task_size_bytes: Optional[float] = None,
+        task_cycles: Optional[float] = None,
+    ) -> "SimConfig":
+        """Enable AoDT/CPU using documented experimental S_i and L.
+
+        Optional ``task_size_bytes`` / ``task_cycles`` override the experimental
+        defaults for a single config instance. They do not change
+        ``EXPERIMENTAL_TASK_SIZE_BYTES`` or ``EXPERIMENTAL_TASK_CYCLES``.
+        """
+        si = EXPERIMENTAL_TASK_SIZE_BYTES if self.task_size_bytes is None else self.task_size_bytes
+        L = EXPERIMENTAL_TASK_CYCLES if self.task_cycles is None else self.task_cycles
+        if task_size_bytes is not None:
+            si = task_size_bytes
+        if task_cycles is not None:
+            L = task_cycles
         return replace(
             self,
             use_compute_model=True,
-            task_size_bytes=EXPERIMENTAL_TASK_SIZE_BYTES
-            if self.task_size_bytes is None
-            else self.task_size_bytes,
-            task_cycles=EXPERIMENTAL_TASK_CYCLES
-            if self.task_cycles is None
-            else self.task_cycles,
+            task_size_bytes=si,
+            task_cycles=L,
         )
 
     def with_radio_profile(self, name: str) -> "SimConfig":

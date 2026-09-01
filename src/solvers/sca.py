@@ -2,7 +2,9 @@
 
 Algorithm 1 is a sketch. This implementation:
 1. Fixes binaries via k-means + repair (association / processing).
-2. Allocates bandwidth as the exact LP optimum for the linear-in-B rate model.
+2. Allocates bandwidth as the exact LP optimum for the linear-in-B rate model,
+   raising floors for AoDT when the compute model is on so each sweep's T_k / λ / μ
+   actually change the allocation.
 3. Moves UAV positions in a trust region along the numerical gradient of
    the true evaluator (first-order / successive linearization).
 
@@ -21,89 +23,34 @@ import time
 
 import numpy as np
 
-from src.comm import link_metrics
 from src.config import PSO_PENALTY, SCA_MAX_ITER, SCA_STEP, SCA_TOL, SCA_TRUST
 from src.evaluator import EvalResult, evaluate, fitness
+from src.logutil import log, mbps
 from src.repair import (
-    bandwidth_pools,
+    allocate_constrained_bandwidth,
     clip_positions,
     complete_solution,
     enforce_separation,
-    equal_bandwidth,
-    link_bandwidth_cap,
+    process_consistent_processing,
 )
 from src.scenario import Scenario
 from src.solvers.kmeans import kmeans
 
 
-def _allocate_pool(se_a: np.ndarray, pool: float, cap: float, r_min: float) -> np.ndarray:
-    """Exact LP for r_i = c_i B_i on one bandwidth pool.
+def _allocate_bandwidth(
+    scenario: Scenario,
+    xy: np.ndarray,
+    association: np.ndarray,
+    processing: np.ndarray | None = None,
+) -> np.ndarray:
+    """Solve the bandwidth LP independently on every pool of constraint (27).
 
-    max  sum c_i B_i
-    s.t. sum B_i = pool,  0 <= B_i <= cap,  B_i >= R_min / c_i if the floors fit.
-
-    With floors funded, leftover bandwidth is poured into the highest-c links in
-    order until each hits ``cap``. Without the cap this is a single-link vertex,
-    which is why the cap exists (see repair.link_bandwidth_cap).
-
-    If the floors do not fit, fund as many full floors as possible (cheapest
-    first, always leaving a positive remainder for everyone else) and split the
-    rest equally over the unfunded links so every associated link keeps B > 0.
+    When compute is on, floors include AoDT delay requirements so SCA re-solves
+    under the active T_k / λ / μ of this scenario.
     """
-    n = int(se_a.size)
-    need = r_min / se_a
-    remaining = float(pool)
-
-    if float(need.sum()) <= remaining:
-        alloc = np.minimum(need, cap)
-        remaining -= float(alloc.sum())
-        for k in np.argsort(-se_a):
-            if remaining <= 1e-12:
-                break
-            room = cap - alloc[k]
-            take = min(room, remaining)
-            alloc[k] += take
-            remaining -= take
-        return alloc
-
-    alloc = np.zeros_like(need)
-    funded = np.zeros(n, dtype=bool)
-    for k in np.argsort(need):
-        n_other_unfunded = int(n - funded.sum() - 1)
-        if remaining >= float(need[k]) and (n_other_unfunded == 0 or remaining > float(need[k])):
-            alloc[k] = min(float(need[k]), cap)
-            remaining -= alloc[k]
-            funded[k] = True
-        else:
-            break
-    unfunded = ~funded
-    n_u = int(unfunded.sum())
-    if n_u:
-        alloc[unfunded] = remaining / n_u
-    elif remaining > 0:
-        for k in np.argsort(-se_a):
-            if remaining <= 1e-12:
-                break
-            take = min(cap - alloc[k], remaining)
-            alloc[k] += take
-            remaining -= take
-    return alloc
-
-
-def _allocate_bandwidth(scenario: Scenario, xy: np.ndarray, association: np.ndarray) -> np.ndarray:
-    """Solve the bandwidth LP independently on every pool of constraint (27)."""
-    cfg = scenario.cfg
-    dummy = equal_bandwidth(association, cfg)
-    se = np.maximum(link_metrics(scenario.iot_xy, xy, np.ones_like(dummy), cfg)["rates"], 1e-12)
-    if not np.any(association > 0.5):
-        return dummy
-
-    b = np.zeros_like(dummy)
-    for mask, pool in bandwidth_pools(association, cfg):
-        if not np.any(mask):
-            continue
-        b[mask] = _allocate_pool(se[mask], pool, link_bandwidth_cap(cfg, pool), cfg.r_min)
-    return b
+    if processing is None:
+        processing = process_consistent_processing(scenario, association)
+    return allocate_constrained_bandwidth(scenario, xy, association, processing)
 
 
 def _eval_fixed(
@@ -114,7 +61,7 @@ def _eval_fixed(
 ) -> tuple[float, EvalResult, np.ndarray, np.ndarray]:
     """Score placement with binaries held fixed (no complete_solution)."""
     xy = clip_positions(xy, scenario.cfg)
-    bw = _allocate_bandwidth(scenario, xy, association)
+    bw = _allocate_bandwidth(scenario, xy, association, processing)
     result = evaluate(scenario, xy, association, processing, bw)
     return fitness(result, PSO_PENALTY), result, xy, bw
 
@@ -173,8 +120,9 @@ def solve_sca(
     fit, result, xy, bw = _eval_fixed(scenario, xy, a, proc)
     prev = fit
     eps = 1.0  # finite-difference step (m)
+    log.info("sca  J=%d max_iter=%d trust=%g", j, max_iter, trust)
 
-    for _ in range(max_iter):
+    for it in range(max_iter):
         grad = np.zeros_like(xy)
         for u in range(j):
             for ax in range(2):
@@ -211,6 +159,7 @@ def solve_sca(
         if abs(fit - prev) <= SCA_TOL:
             break
         prev = fit
+        log.debug("  sca iter %d  %s  trust=%g", it + 1, mbps(result.sum_rate), trust)
 
     result = evaluate(scenario, xy, a, proc, bw)
     return xy, result, time.perf_counter() - t0

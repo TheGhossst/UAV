@@ -28,6 +28,50 @@ def upload_times(
     return d
 
 
+def queueing_term(scenario: Scenario, members: np.ndarray, mu: float) -> float:
+    """(1/λ_Nk) * (1 + Σ λ_i / μ) for one process group. Independent of rate."""
+    if members.size == 0:
+        return np.inf
+    lam_nk = float(np.min(scenario.lambdas[members]))
+    lam_sum = float(np.sum(scenario.lambdas[members]))
+    return (1.0 / max(lam_nk, 1e-12)) * (1.0 + lam_sum / mu)
+
+
+def delay_rate_floors(
+    scenario: Scenario,
+    association: np.ndarray,
+    processing: np.ndarray,
+    mu: float,
+) -> np.ndarray:
+    """Minimum associated rate (bit/s) so AoDT_k ≤ T_k given the queueing term.
+
+    From Eq. (17): AoDT_k = D_Nk + Q_k, so D_i ≤ T_k - Q_k for every member.
+    Does not enter the Shannon formula; it only sets a rate floor that bandwidth
+    allocation must fund. Returns 0 when the compute model is off. A huge floor
+    means T_k cannot be met by bandwidth alone (negative slack).
+    """
+    cfg = scenario.cfg
+    i = association.shape[0]
+    floors = np.zeros(i)
+    if cfg.task_size_bytes is None:
+        return floors
+    s_bits = cfg.task_size_bytes * 8.0
+    i_idx = np.arange(i)
+    j_assoc = association.argmax(axis=1)
+    forwarded = processing[i_idx, j_assoc] < 0.5
+    for members in scenario.groups:
+        if members.size == 0:
+            continue
+        slack = cfg.aodt_threshold - queueing_term(scenario, members, mu)
+        for idx in members:
+            budget = slack - (cfg.t_u2u if forwarded[idx] else 0.0)
+            if budget <= 1e-12:
+                floors[idx] = 1e18
+            else:
+                floors[idx] = s_bits / budget
+    return floors
+
+
 def average_aodt(
     scenario: Scenario,
     association: np.ndarray,
@@ -49,12 +93,7 @@ def average_aodt(
             aodt[k] = np.inf
             continue
         d_nk = float(np.max(d_i[members]))
-        lam_nk = float(np.min(scenario.lambdas[members]))
-        lam_sum = float(np.sum(scenario.lambdas[members]))
         proc_uavs = processing[members].argmax(axis=1)
-        # Enforce one UAV: take the mode
-        j_star = int(np.bincount(proc_uavs).argmax())
-        mu_k = mu  # homogeneous UAVs in the paper
-        _ = j_star
-        aodt[k] = d_nk + (1.0 / max(lam_nk, 1e-12)) * (1.0 + lam_sum / mu_k)
+        _ = int(np.bincount(proc_uavs).argmax())  # mode; homogeneous μ in the paper
+        aodt[k] = d_nk + queueing_term(scenario, members, mu)
     return aodt

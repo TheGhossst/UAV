@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -23,6 +22,7 @@ from src.config import (
     TD3_TOTAL_STEPS,
 )
 from src.evaluator import evaluate
+from src.logutil import Counter, configure_logging, log, log_run, result_bits
 from src.repair import complete_solution
 from src.scenario import generate_scenario
 from src.solvers.kmeans import solve_kmeans
@@ -36,8 +36,11 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
     cfg = DEFAULT
     if getattr(args, "radio_profile", None):
         cfg = cfg.with_radio_profile(args.radio_profile)
-    if getattr(args, "compute", False):
-        cfg = cfg.with_compute()
+    if getattr(args, "compute", False) or getattr(args, "task_size_bytes", None) is not None or getattr(args, "task_cycles", None) is not None:
+        cfg = cfg.with_compute(
+            task_size_bytes=getattr(args, "task_size_bytes", None),
+            task_cycles=getattr(args, "task_cycles", None),
+        )
     if getattr(args, "num_uav", None):
         cfg = replace(cfg, num_uav=args.num_uav)
     if getattr(args, "num_iot", None):
@@ -74,25 +77,24 @@ def run_single(cfg: SimConfig, seed: int = 100) -> dict:
                 "rate": float(result.rates[i, 0]),
             }
         )
-    print("Frozen UAV at (250, 250, 100), seed", seed)
-    print(f"{'iot':>4} {'x':>8} {'y':>8} {'d':>10} {'PLoS':>8} {'Lavg':>10} {'rate':>12}")
+    log.info("Frozen UAV at (250, 250, 100), seed %d", seed)
+    log.info("%4s %8s %8s %10s %8s %10s %12s", "iot", "x", "y", "d", "PLoS", "Lavg", "rate")
     for r in rows:
-        print(
-            f"{r['iot']:4d} {r['x']:8.2f} {r['y']:8.2f} {r['distance']:10.3f} "
-            f"{r['p_los']:8.4f} {r['l_avg']:10.3f} {r['rate']:12.3f}"
+        log.info(
+            "%4d %8.2f %8.2f %10.3f %8.4f %10.3f %12.3f",
+            r["iot"], r["x"], r["y"], r["distance"], r["p_los"], r["l_avg"], r["rate"],
         )
-    print(f"sum_rate = {result.sum_rate:.6f} bit/s")
-    print(f"min_assoc_rate = {result.min_assoc_rate:.6f} bit/s")
-    print(f"qos_violations = {result.qos_violations}")
+    log.info("sum_rate = %.6f bit/s  (%s)", result.sum_rate, result_bits(result).strip())
+    log.info("min_assoc_rate = %.6f bit/s", result.min_assoc_rate)
+    log.info("qos_violations = %d", result.qos_violations)
     return {"rows": rows, "sum_rate": result.sum_rate, "feasible": result.feasible}
 
 
 def _print_result(name: str, xy: np.ndarray, result, runtime: float):
     aodt = result.aodt.tolist() if result.compute_available else "n/a (S_i/L unspecified)"
-    print(f"{name}: sum_rate={result.sum_rate:.3f} bit/s  min_rate={result.min_assoc_rate:.3f}  "
-          f"feasible={result.feasible}  qos={result.qos_violations}  "
-          f"aodt={aodt}  runtime={runtime:.3f}s")
-    print("  UAV xy:", np.array2string(xy, precision=2))
+    log.info("%s  %s", name, result_bits(result, runtime))
+    log.info("  UAV xy: %s", np.array2string(xy, precision=2))
+    log.info("  aodt=%s", aodt)
 
 
 def run_solver(mode: str, cfg: SimConfig, seed: int, args: argparse.Namespace):
@@ -110,7 +112,7 @@ def run_solver(mode: str, cfg: SimConfig, seed: int, args: argparse.Namespace):
             scenario, seed=seed, n_particles=args.particles, n_iter=args.iters
         )
         _print_result("pso-placement", xy, result, rt)
-        print(f"  conv_final_fitness={hist.best_fitness[-1] if hist.best_fitness else None}")
+        log.info("  conv_final_fitness=%s", hist.best_fitness[-1] if hist.best_fitness else None)
         return result
     if mode == "pso-joint":
         xy, result, rt, hist = solve_pso_joint(
@@ -123,10 +125,10 @@ def run_solver(mode: str, cfg: SimConfig, seed: int, args: argparse.Namespace):
         _print_result("sca", xy, result, rt)
         return result
     if mode == "td3":
-        xy, result, rt, log = solve_td3(scenario, seed=seed, total_steps=args.td3_steps)
+        xy, result, rt, train_log = solve_td3(scenario, seed=seed, total_steps=args.td3_steps)
         _print_result("td3", xy, result, rt)
-        if log and log.rewards:
-            print(f"  last_reward={log.rewards[-1]:.4f}")
+        if train_log and train_log.rewards:
+            log.info("  last_reward=%.4f", train_log.rewards[-1])
         return result
     if mode == "proposed":
         from src.solvers.proposed import solve_proposed
@@ -140,10 +142,10 @@ def run_compare(cfg: SimConfig, seeds: tuple[int, ...], args: argparse.Namespace
     if args.with_td3:
         methods.append("td3")
     rows = []
+    jobs = Counter("compare", len(seeds) * len(methods))
     for seed in seeds:
         scenario = generate_scenario(seed, cfg)
         for name in methods:
-            t0 = time.perf_counter()
             if name == "random":
                 xy, result, rt = solve_random(scenario, seed=seed)
             elif name == "kmeans":
@@ -170,9 +172,20 @@ def run_compare(cfg: SimConfig, seeds: tuple[int, ...], args: argparse.Namespace
                 ),
             }
             rows.append(row)
-            print(json.dumps(row))
-            _ = t0
+            jobs.tick(f"seed={seed}  {name:8}", result, rt)
     return rows
+
+
+def _sync_status(args: argparse.Namespace, extra: dict | None = None) -> None:
+    if getattr(args, "no_status_sync", False):
+        return
+    try:
+        from src.status_sync import refresh_status_doc
+
+        refresh_status_doc(results_dir=Path(getattr(args, "out", "results")), extra=extra)
+        log.info("updated docs/PROJECT_STATUS_AND_PAPER_ANALYSIS.md")
+    except Exception as exc:
+        log.warning("status doc refresh skipped: %s", exc)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -180,10 +193,38 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--mode",
         default="single",
-        choices=["single", "random", "kmeans", "pso", "pso-joint", "sca", "td3", "proposed", "compare", "sweeps", "aodt-compare"],
+        choices=["single", "random", "kmeans", "pso", "pso-joint", "sca", "td3", "proposed", "compare", "sweeps", "aodt-compare", "aodt-param-search", "bandwidth-sharing"],
     )
     p.add_argument("--seed", type=int, default=100)
     p.add_argument("--compute", action="store_true", help="Enable experimental S_i and L (not Table II)")
+    p.add_argument(
+        "--task-size-bytes",
+        type=float,
+        default=None,
+        help="Override S_i (bytes) when the compute model is on. Does not change the project default.",
+    )
+    p.add_argument(
+        "--task-cycles",
+        type=float,
+        default=None,
+        help="Override L (CPU cycles/task) when the compute model is on. Does not change the project default.",
+    )
+    p.add_argument(
+        "--aodt-search-stage",
+        choices=["all", "coarse", "refine", "shortlist", "td3"],
+        default="all",
+        help="aodt-param-search only: which stage to run",
+    )
+    p.add_argument(
+        "--skip-td3",
+        action="store_true",
+        help="aodt-param-search: skip TD3 on the shortlist (SCA/K-means/Random only)",
+    )
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        help="aodt-param-search: reuse existing CSVs for completed (S_i, L) pairs",
+    )
     p.add_argument(
         "--radio-profile",
         choices=sorted(RADIO_PROFILES),
@@ -210,15 +251,52 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--with-td3", action="store_true")
     p.add_argument("--aodt-short", action="store_true", help="AoDT compare with 5 seeds instead of 20")
     p.add_argument("--out", type=str, default="results")
+    p.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Progress logs go to stderr. DEBUG includes PSO/SCA iteration lines.",
+    )
+    p.add_argument("--quiet", action="store_true", help="Only warnings and errors")
+    p.add_argument(
+        "--no-status-sync",
+        action="store_true",
+        help="Do not rewrite docs/PROJECT_STATUS_AND_PAPER_ANALYSIS.md after this run",
+    )
+    p.add_argument("--log-file", type=str, default=None, help="Also write the same log to a file")
+    p.add_argument(
+        "--td3-log-every",
+        type=int,
+        default=500,
+        help="Log a TD3 training line every N steps (plus first and last)",
+    )
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    configure_logging(
+        args.log_level,
+        quiet=args.quiet,
+        log_file=args.log_file,
+        td3_log_every=args.td3_log_every,
+    )
     set_default_device(args.device)
     cfg = _cfg_from_args(args)
+    log_run(args.mode, cfg, args)
     if args.mode == "single":
-        run_single(cfg, seed=args.seed)
+        payload = run_single(cfg, seed=args.seed)
+        _sync_status(
+            args,
+            {
+                "mode": "single",
+                "seed": args.seed,
+                "compute": bool(cfg.use_compute_model),
+                "radio": getattr(args, "radio_profile", None) or "calibrated",
+                "sum_rate": payload.get("sum_rate"),
+                "feasible": payload.get("feasible"),
+            },
+        )
         return 0
     if args.mode == "compare":
         seeds = PAPER_SCENARIO_SEEDS if args.paper_runs else DEV_SCENARIO_SEEDS
@@ -237,18 +315,46 @@ def main(argv: list[str] | None = None) -> int:
             rows,
             filename="comparison_table_20runs.md" if args.paper_runs else "comparison_table.md",
         )
+        log.info("wrote compare tables under %s", out)
+        _sync_status(args)
         return 0
     if args.mode == "sweeps":
         from src.experiments.sweeps import run_all_sweeps
 
         run_all_sweeps(cfg, args)
+        _sync_status(args)
         return 0
     if args.mode == "aodt-compare":
         from src.experiments.aodt_compare import run_aodt_comparison
 
         run_aodt_comparison(cfg, args)
+        _sync_status(args)
         return 0
-    run_solver(args.mode, cfg, args.seed, args)
+    if args.mode == "aodt-param-search":
+        from src.experiments.aodt_parameter_search import run_aodt_parameter_search
+
+        if args.out == "results":
+            args.out = str(Path("results") / "aodt_parameter_search")
+        if not cfg.use_compute_model:
+            cfg = cfg.with_compute()
+        run_aodt_parameter_search(cfg, args)
+        return 0
+    if args.mode == "bandwidth-sharing":
+        from src.experiments.bandwidth_sharing import run_bandwidth_sharing
+
+        if args.out == "results":
+            args.out = str(Path("results") / "bandwidth_sharing")
+        if not cfg.use_compute_model:
+            cfg = cfg.with_compute()
+        run_bandwidth_sharing(cfg, args)
+        return 0
+    result = run_solver(args.mode, cfg, args.seed, args)
+    extra = {"mode": args.mode, "seed": args.seed, "compute": bool(cfg.use_compute_model)}
+    if result is not None:
+        extra["sum_rate"] = float(result.sum_rate)
+        extra["feasible"] = bool(result.feasible)
+        extra["qos"] = int(result.qos_violations)
+    _sync_status(args, extra)
     return 0
 
 

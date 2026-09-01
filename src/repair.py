@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from src.aodt import average_aodt, delay_rate_floors, upload_times
 from src.compute import service_rate
 from src.config import SimConfig
 from src.scenario import Scenario
@@ -129,22 +130,38 @@ def stabilize_processing(scenario: Scenario, processing: np.ndarray) -> np.ndarr
 
 
 def project_bandwidth(raw: np.ndarray, association: np.ndarray, cfg: SimConfig) -> np.ndarray:
-    """Make a raw bandwidth request feasible for (26), (27) and the link cap."""
-    b = np.maximum(np.asarray(raw, dtype=float), 0.0) * (association > 0.5)
+    """Map dimensionless relative weights onto feasible B_ij in Hz.
+
+    ``raw`` is not hertz. TD3 passes ``1 + tanh(a)`` in [0, 2]; other solvers
+    pass the same kind of non-negative request. Treating those values as Hz
+    under-fills the pool (2 Hz on a 20 kHz system) and associated links at
+    weight 0 get B = 0, which makes AoDT upload delay S_i / 1e-12.
+
+    Each pool is spent in proportion to the weights, subject to (26), (27)
+    and the per-link cap — the cap-aware form of B = pool · w / Σw. All-zero
+    weights on a pool fall back to an equal split. A mix of zeros and
+    positives gets a uniform + relative mix (w ← w + 1) so every associated
+    link stays at B > 0 without inverting the weight order.
+    """
+    w = np.maximum(np.asarray(raw, dtype=float), 0.0) * (association > 0.5)
+    b = np.zeros_like(w, dtype=float)
     fallback = equal_bandwidth(association, cfg)
     for mask, pool in bandwidth_pools(association, cfg):
         if not np.any(mask):
             continue
         cap = link_bandwidth_cap(cfg, pool)
-        vals = np.minimum(b[mask], cap)
-        total = float(vals.sum())
-        if total <= 1e-12:
+        n = int(mask.sum())
+        room = np.full(n, cap, dtype=float)
+        w_m = w[mask]
+        if float(w_m.sum()) <= 1e-12:
             b[mask] = fallback[mask]
             continue
-        if total > pool:
-            # Scaling can only lower values, so the cap still holds afterwards.
-            vals = vals * (pool / total)
-        b[mask] = vals
+        if np.any(w_m <= 1e-12):
+            # Associated zeros would otherwise receive 0 Hz. Adding 1 to every
+            # weight on the pool is a uniform share plus the request, so the
+            # mapping stays monotone (0 → 1, 2 → 3) and B > 0.
+            w_m = w_m + 1.0
+        b[mask] = _spread_by_weight(w_m, pool, room)
     return b
 
 
@@ -168,31 +185,296 @@ def _spread_by_weight(weights: np.ndarray, amount: float, room: np.ndarray) -> n
     return out
 
 
+def associated_rate_floors(
+    scenario: Scenario,
+    association: np.ndarray,
+    processing: np.ndarray,
+) -> np.ndarray:
+    """Per-IoT associated-rate floor (bit/s): max(R_min, AoDT delay floor).
+
+    Delay floors apply only when the compute model is on. They depend on λ, μ,
+    and T_k through the queueing term, not through the Shannon equation.
+    """
+    cfg = scenario.cfg
+    floors = np.full(association.shape[0], cfg.r_min, dtype=float)
+    mu = service_rate(cfg)
+    if mu is None or not cfg.use_compute_model:
+        return floors
+    delay = delay_rate_floors(scenario, association, processing, mu)
+    return np.maximum(floors, delay)
+
+
+def allocate_pool(se_a: np.ndarray, pool: float, cap: float, need: np.ndarray) -> np.ndarray:
+    """Exact LP for r_i = c_i B_i on one bandwidth pool.
+
+    max  sum c_i B_i
+    s.t. sum B_i = pool,  0 <= B_i <= cap,  B_i >= need_i if the floors fit.
+
+    ``need`` is the per-link bandwidth floor in Hz (already rate_floor / c_i).
+    Leftover after floors is poured into the highest-c links up to ``cap``
+    (callers that want an AoDT-first surplus use ``allocate_constrained_bandwidth``).
+    If the floors do not fit, fund as many cheapest floors as possible and split
+    the rest equally over the unfunded links so every associated link keeps B > 0.
+    """
+    n = int(se_a.size)
+    need = np.asarray(need, dtype=float).reshape(n)
+    remaining = float(pool)
+
+    if float(need.sum()) <= remaining:
+        alloc = np.minimum(need, cap)
+        remaining -= float(alloc.sum())
+        for k in np.argsort(-se_a):
+            if remaining <= 1e-12:
+                break
+            room = cap - alloc[k]
+            take = min(room, remaining)
+            alloc[k] += take
+            remaining -= take
+        return alloc
+
+    alloc = np.zeros_like(need)
+    funded = np.zeros(n, dtype=bool)
+    for k in np.argsort(need):
+        n_other_unfunded = int(n - funded.sum() - 1)
+        if remaining >= float(need[k]) and (n_other_unfunded == 0 or remaining > float(need[k])):
+            alloc[k] = min(float(need[k]), cap)
+            remaining -= alloc[k]
+            funded[k] = True
+        else:
+            break
+    unfunded = ~funded
+    n_u = int(unfunded.sum())
+    if n_u:
+        alloc[unfunded] = remaining / n_u
+    elif remaining > 0:
+        for k in np.argsort(-se_a):
+            if remaining <= 1e-12:
+                break
+            take = min(cap - alloc[k], remaining)
+            alloc[k] += take
+            remaining -= take
+    return alloc
+
+
+def _pour_highest_se(alloc: np.ndarray, se_a: np.ndarray, remaining: float, cap: float) -> np.ndarray:
+    """Dump leftover hertz into the highest spectral-efficiency links up to ``cap``."""
+    remaining = float(remaining)
+    for k in np.argsort(-se_a):
+        if remaining <= 1e-12:
+            break
+        take = min(cap - alloc[k], remaining)
+        if take <= 0.0:
+            continue
+        alloc[k] += take
+        remaining -= take
+    return alloc
+
+
+def _aodt_state(
+    scenario: Scenario,
+    association: np.ndarray,
+    processing: np.ndarray,
+    se: np.ndarray,
+    b: np.ndarray,
+    mu: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    rates = se * np.maximum(b, 0.0)
+    d_i = upload_times(association, processing, rates, scenario.cfg)
+    aodt = average_aodt(scenario, association, processing, rates, mu)
+    return d_i, aodt
+
+
+def _waterfill_equal_rate(
+    b: np.ndarray,
+    se: np.ndarray,
+    links: list[tuple[int, int]],
+    amount: float,
+    cap: float,
+) -> float:
+    """Raise associated rates of ``links`` by the same dR, spending ``amount`` Hz."""
+    remaining = float(amount)
+    if remaining <= 1e-12 or not links:
+        return remaining
+    for _ in range(len(links) + 1):
+        room = [(i, j, cap - float(b[i, j])) for i, j in links if cap - float(b[i, j]) > 1e-12]
+        if remaining <= 1e-12 or not room:
+            break
+        inv_se = sum(1.0 / float(se[i, j]) for i, j, _r in room)
+        if inv_se <= 1e-18:
+            break
+        d_r = remaining / inv_se
+        spent = 0.0
+        for i, j, r_hz in room:
+            take = min(r_hz, d_r / float(se[i, j]))
+            b[i, j] += take
+            spent += take
+        if spent <= 1e-12:
+            break
+        remaining -= spent
+    return remaining
+
+
+def _give_aodt_chunk(
+    scenario: Scenario,
+    association: np.ndarray,
+    processing: np.ndarray,
+    se: np.ndarray,
+    b: np.ndarray,
+    mask: np.ndarray,
+    remaining: float,
+    cap: float,
+    pool: float,
+) -> float:
+    """Spend surplus to pull down max D_i of the current worst process.
+
+    AoDT_k is max_i D_i + Q, so helping one tied member does not move the max.
+    Leftover after floors is waterfilled across every member of the worst
+    process that currently sits at that max (equal rate increase). If that
+    process is uniquely worst, waterfill continues until it matches the
+    second-worst process; leftover then goes to sum-rate. If processes are
+    tied, one quarter-pool chunk is still spent on the bottleneck set.
+    The chunk size is a fraction of the pool, not ``max_bw_share``, so
+    dropping the per-link cap does not dump the whole surplus into AoDT.
+    """
+    remaining = float(remaining)
+    if remaining <= 1e-12 or not scenario.cfg.use_compute_model:
+        return remaining
+    if scenario.cfg.task_size_bytes is None:
+        return remaining
+    mu = service_rate(scenario.cfg)
+    if mu is None:
+        return remaining
+
+    j_assoc = association.argmax(axis=1)
+
+    def bottlenecks(d_i: np.ndarray, k_star: int) -> list[tuple[int, int]]:
+        members = scenario.groups[k_star]
+        if members.size == 0:
+            return []
+        in_pool = [int(i) for i in members if mask[int(i), int(j_assoc[int(i)])]]
+        if not in_pool:
+            return []
+        d_max = max(float(d_i[i]) for i in in_pool)
+        out = []
+        for i in in_pool:
+            if float(d_i[i]) < d_max - 1e-9:
+                continue
+            j = int(j_assoc[i])
+            if cap - float(b[i, j]) > 1e-12:
+                out.append((i, j))
+        return out
+
+    for _ in range(64):
+        if remaining <= 1e-12:
+            break
+        d_i, aodt = _aodt_state(scenario, association, processing, se, b, mu)
+        score = np.where(np.isfinite(aodt), aodt, -np.inf)
+        if not np.any(np.isfinite(score)):
+            break
+        k_star = int(np.argmax(score))
+        others = [float(aodt[k]) for k in range(aodt.size) if k != k_star and np.isfinite(aodt[k])]
+        unique = not others or float(aodt[k_star]) > max(others) + 1e-9
+        links = bottlenecks(d_i, k_star)
+        if not links:
+            break
+        chunk = 0.25 * float(pool)
+        if unique:
+            step = min(remaining, max(chunk * 0.4, remaining * 0.05))
+        else:
+            step = min(remaining, chunk)
+        before = remaining
+        leftover_after_step = _waterfill_equal_rate(b, se, links, step, cap)
+        remaining = remaining - step + leftover_after_step
+        if remaining >= before - 1e-12:
+            break
+        if unique:
+            _d2, aodt2 = _aodt_state(scenario, association, processing, se, b, mu)
+            others2 = [float(aodt2[k]) for k in range(aodt2.size) if k != k_star and np.isfinite(aodt2[k])]
+            if others2 and float(aodt2[k_star]) <= max(others2) + 1e-9:
+                break
+    return remaining
+
+
+def allocate_constrained_bandwidth(
+    scenario: Scenario,
+    uav_xy: np.ndarray,
+    association: np.ndarray,
+    processing: np.ndarray,
+    *,
+    aodt_first: bool = True,
+) -> np.ndarray:
+    """Rate-optimal bandwidth under QoS and (when enabled) AoDT rate floors.
+
+    Same linear-in-B LP as SCA, with floors raised so D_Nk leaves room for the
+    queueing term under T_k. λ, μ, and T_k never enter the Shannon formula.
+
+    After the floors are funded, leftover waterfills the current worst
+    process's bottleneck members (equal rate increase) until that process is
+    no longer uniquely worst; anything left goes to the highest-SE links.
+    Pass ``aodt_first=False`` to skip that AoDT pour (sum-rate-only surplus).
+    """
+    from src.comm import link_metrics  # local: comm has no repair dependency
+
+    cfg = scenario.cfg
+    dummy = equal_bandwidth(association, cfg)
+    if not np.any(association > 0.5):
+        return dummy
+    se = np.maximum(
+        link_metrics(scenario.iot_xy, uav_xy, np.ones_like(dummy), cfg)["rates"], 1e-12
+    )
+    rate_need = associated_rate_floors(scenario, association, processing)
+    b = np.zeros_like(dummy)
+    for mask, pool in bandwidth_pools(association, cfg):
+        if not np.any(mask):
+            continue
+        cap = link_bandwidth_cap(cfg, pool)
+        rows, _cols = np.where(mask)
+        need_hz = np.minimum(rate_need[rows] / se[mask], cap)
+        if float(need_hz.sum()) > pool:
+            b[mask] = allocate_pool(se[mask], pool, cap, need_hz)
+            continue
+        alloc = np.asarray(need_hz, dtype=float).copy()
+        remaining = float(pool) - float(alloc.sum())
+        b[mask] = alloc
+        if aodt_first:
+            remaining = _give_aodt_chunk(
+                scenario, association, processing, se, b, mask, remaining, cap, pool
+            )
+        b[mask] = _pour_highest_se(b[mask], se[mask], remaining, cap)
+    return b
+
+
 def bandwidth_from_weights(
     scenario: Scenario,
     uav_xy: np.ndarray,
     association: np.ndarray,
     weights: np.ndarray,
+    processing: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Turn a solver's raw bandwidth request into a QoS-aware allocation.
+    """Turn a solver's raw bandwidth request into a QoS/AoDT-aware allocation.
 
-    Every associated link first gets its R_min floor ``R_min / c_ij``; only the
-    surplus is distributed by ``weights``. Without the floors an unstructured
-    request nearly always starves some link below R_min, so the solution is
-    rejected as infeasible and the solver never gets credit for the allocation
-    it chose -- which is what kept TD3 pinned to its restart states.
+    Every associated link first gets max(R_min, delay_floor) / c_ij. The next
+    surplus chunk goes to the current AoDT bottleneck; only what remains is
+    distributed by ``weights``. Without the floors an unstructured request
+    nearly always starves some link below R_min, so the solution is rejected
+    as infeasible and the solver never gets credit for the allocation it
+    chose -- which is what kept TD3 pinned to its restart states.
 
-    If the floors do not fit in a pool, fall back to plain projection for
-    that pool only: other pools are unchanged. Returning from the whole
+    If the floors do not fit in a pool, fall back to ``project_bandwidth``
+    for that pool only: the request is treated as relative weights on the
+    pool, not as hertz. Other pools are unchanged. Returning from the whole
     function would be wrong under ``bandwidth_scope="per_uav"``.
     """
     from src.comm import link_metrics  # local: comm has no repair dependency
 
     cfg = scenario.cfg
+    if processing is None:
+        processing = process_consistent_processing(scenario, association)
     w = np.maximum(np.asarray(weights, dtype=float), 0.0)
     se = np.maximum(
         link_metrics(scenario.iot_xy, uav_xy, np.ones(association.shape), cfg)["rates"], 1e-12
     )
+    rate_need = associated_rate_floors(scenario, association, processing)
     b = np.zeros(association.shape, dtype=float)
     # Computed lazily if a pool cannot fund its floors; used only for that pool.
     projected: np.ndarray | None = None
@@ -200,13 +482,20 @@ def bandwidth_from_weights(
         if not np.any(mask):
             continue
         cap = link_bandwidth_cap(cfg, pool)
-        floors = np.minimum(cfg.r_min / se[mask], cap)
+        rows, _cols = np.where(mask)
+        floors = np.minimum(rate_need[rows] / se[mask], cap)
         if float(floors.sum()) > pool:
             if projected is None:
                 projected = project_bandwidth(weights, association, cfg)
             b[mask] = projected[mask]
             continue
-        b[mask] = floors + _spread_by_weight(w[mask], pool - float(floors.sum()), cap - floors)
+        b[mask] = floors
+        remaining = float(pool) - float(floors.sum())
+        remaining = _give_aodt_chunk(
+            scenario, association, processing, se, b, mask, remaining, cap, pool
+        )
+        room = np.maximum(cap - b[mask], 0.0)
+        b[mask] = b[mask] + _spread_by_weight(w[mask], remaining, room)
     return b
 
 
@@ -250,8 +539,15 @@ def complete_solution(
     bandwidth: np.ndarray | None = None,
     assoc_logits: np.ndarray | None = None,
     proc_logits: np.ndarray | None = None,
+    *,
+    equal_split: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Fill missing variables so evaluate() can run."""
+    """Fill missing variables so evaluate() can run.
+
+    ``equal_split=True`` divides each bandwidth pool equally across associated
+    links (Random / K-means). The default still uses the constrained LP when
+    the compute model is on (SCA / TD3 / PSO).
+    """
     cfg = scenario.cfg
     xy = enforce_separation(clip_positions(uav_xy, cfg), cfg)
     if association is None:
@@ -271,10 +567,12 @@ def complete_solution(
     processing = stabilize_processing(scenario, processing)
 
     if bandwidth is None:
-        # Placement-only baselines get the naive equal split.
-        bandwidth = equal_bandwidth(association, cfg)
+        if equal_split or not cfg.use_compute_model:
+            bandwidth = equal_bandwidth(association, cfg)
+        else:
+            bandwidth = allocate_constrained_bandwidth(scenario, xy, association, processing)
     else:
-        bandwidth = bandwidth_from_weights(scenario, xy, association, bandwidth)
+        bandwidth = bandwidth_from_weights(scenario, xy, association, bandwidth, processing)
     return xy, association, processing, bandwidth
 
 

@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from src.config import PAPER_SCENARIO_SEEDS, SimConfig
+from src.logutil import Counter, banner, log
 from src.scenario import generate_scenario
 from src.solvers.kmeans import solve_kmeans
 from src.solvers.pso import solve_pso_joint
@@ -216,8 +217,8 @@ def _get_td3_agent(cfg: SimConfig, n_uav: int, args, cache: dict):
     key = (cfg.num_iot, n_uav, cfg.aodt_threshold)
     if key in cache:
         return cache[key]
-    print(f"Training TD3 for I={cfg.num_iot} J={n_uav} steps={args.td3_steps} ...", flush=True)
-    agent, _env, log = train_td3_across_scenarios(
+    log.info("Training TD3 pool  I=%d J=%d steps=%d seeds=%s", cfg.num_iot, n_uav, args.td3_steps, f"{TRAIN_SEEDS[0]}–{TRAIN_SEEDS[-1]}")
+    agent, _env, train_log = train_td3_across_scenarios(
         cfg,
         TRAIN_SEEDS,
         seed=0,
@@ -228,7 +229,7 @@ def _get_td3_agent(cfg: SimConfig, n_uav: int, args, cache: dict):
     out_dir.mkdir(parents=True, exist_ok=True)
     _write_csv(
         out_dir / f"td3_train_I{cfg.num_iot}_J{n_uav}.csv",
-        [{"step": i, "reward": r, "sum_rate": s} for i, (r, s) in enumerate(zip(log.rewards, log.sum_rates))],
+        [{"step": i, "reward": r, "sum_rate": s} for i, (r, s) in enumerate(zip(train_log.rewards, train_log.sum_rates))],
     )
     cache[key] = agent
     return agent
@@ -238,6 +239,7 @@ def run_fixed(cfg: SimConfig, args, seeds: tuple[int, ...], n_uav: int, cache: d
     cfg_j = replace(cfg, num_uav=n_uav)
     agent = _get_td3_agent(cfg_j, n_uav, args, cache)
     rows = []
+    jobs = Counter(f"AoDT  I={cfg.num_iot} J={n_uav}", len(seeds) * len(METHODS))
     for seed in seeds:
         scenario = generate_scenario(seed, cfg_j)
         for name in METHODS:
@@ -248,10 +250,7 @@ def run_fixed(cfg: SimConfig, args, seeds: tuple[int, ...], n_uav: int, cache: d
                 seed, name, result, rt, _xy, cfg_j.uav_height, n_uav=n_uav, n_iot=cfg.num_iot
             )
             rows.append(rec)
-            payload = {k: rec[k] for k in ("seed", "method", "sum_rate", "feasible", "aodt_mean", "qos")}
-            if payload["aodt_mean"] is not None and not np.isfinite(payload["aodt_mean"]):
-                payload["aodt_mean"] = None
-            print(json.dumps(payload), flush=True)
+            jobs.tick(f"seed={seed}  {name:8}", result, rt)
     return rows
 
 
@@ -264,6 +263,7 @@ def run_aodt_comparison(cfg: SimConfig, args):
     else:
         seeds = PAPER_SCENARIO_SEEDS
 
+    banner("AoDT comparison")
     cache: dict = {}
     default_rows = run_fixed(cfg, args, seeds, n_uav=cfg.num_uav, cache=cache)
     _write_csv(out / "raw_default.csv", default_rows)
@@ -293,7 +293,9 @@ def run_aodt_comparison(cfg: SimConfig, args):
     _plot(out, j_sum, "n_uav", "Number of UAVs J", "feasible_frac", "Feasible fraction", "fig_feasfrac_vs_uav.png")
 
     i_rows = []
-    for n in (10, 16, 20, 24, 32):
+    iots = (10, 16, 20, 24, 32)
+    jobs = Counter("AoDT  vs I  (J=3)", len(iots) * len(seeds) * len(METHODS))
+    for n in iots:
         k = cfg.num_processes
         per = n // k
         cfg_i = replace(cfg, num_iot=n, iots_per_process=per, num_uav=3)
@@ -307,6 +309,7 @@ def run_aodt_comparison(cfg: SimConfig, args):
                 i_rows.append(
                     _row(seed, name, result, rt, _xy, cfg_i.uav_height, n_uav=3, n_iot=n)
                 )
+                jobs.tick(f"I={n}  seed={seed}  {name:8}", result, rt)
     _write_csv(out / "raw_vs_iot.csv", i_rows)
     _write_csv(out / "positions_vs_iot.csv", expand_positions(i_rows))
     i_sum = summarize(i_rows, "n_iot")
@@ -336,4 +339,4 @@ def run_aodt_comparison(cfg: SimConfig, args):
         "note": "S_i and L are experimental (not Table II). Proposed method not included.",
     }
     (out / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    print(f"Wrote AoDT comparison under {out}")
+    log.info("wrote AoDT comparison under %s", out)

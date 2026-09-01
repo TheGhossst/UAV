@@ -25,6 +25,7 @@ class EvalResult:
     sep_violations: int
     cpu_unstable: int
     aodt_violations: int
+    aodt_excess: float
     association_violations: int
     processing_violations: int
     process_consistency_violations: int
@@ -135,11 +136,13 @@ def evaluate(
         cpu_bad = 0
         aodt = np.full(cfg.num_processes, np.nan)
         aodt_viol = 0
+        aodt_excess = 0.0
     else:
         rho = offered_load(b_hard, scenario.lambdas, mu)
         cpu_bad = int(np.sum(cpu_unstable(b_hard, scenario.lambdas, mu)))
         aodt = average_aodt(scenario, a_hard, b_hard, rates, mu)
         aodt_viol = int(np.sum(aodt > cfg.aodt_threshold + 1e-9))
+        aodt_excess = float(np.sum(np.maximum(0.0, aodt - cfg.aodt_threshold)))
 
     feasible = (
         assoc_viol == 0
@@ -163,6 +166,7 @@ def evaluate(
         sep_violations=sep_viol,
         cpu_unstable=cpu_bad,
         aodt_violations=aodt_viol,
+        aodt_excess=aodt_excess,
         association_violations=assoc_viol,
         processing_violations=proc_viol,
         process_consistency_violations=cons_viol,
@@ -175,4 +179,21 @@ def evaluate(
 
 
 def fitness(result: EvalResult, penalty: float) -> float:
-    return result.sum_rate - penalty * result.violation_count
+    """Penalized sum rate. Continuous AoDT excess gives a gradient toward T_k."""
+    return result.sum_rate - penalty * (result.violation_count + result.aodt_excess)
+
+
+def constraint_activity(result: EvalResult) -> dict[str, int | float]:
+    """Which Problem (P) constraints are active on this evaluation."""
+    return {
+        "qos": int(result.qos_violations),
+        "aodt": int(result.aodt_violations),
+        "aodt_excess": float(result.aodt_excess),
+        "cpu": int(result.cpu_unstable),
+        "bw": int(result.bw_excess > 1e-3),
+        "sep": int(result.sep_violations),
+        "assoc": int(result.association_violations),
+        "proc": int(result.processing_violations),
+        "cons": int(result.process_consistency_violations),
+        "feasible": int(result.feasible),
+    }

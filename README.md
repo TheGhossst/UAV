@@ -48,6 +48,7 @@ python -m src.main [--mode MODE] [options]
 | `compare` | Random / K-means / PSO / SCA on several seeds; optional TD3. Writes CSVs + markdown under `--out`. |
 | `sweeps` | Default comparison plus paper-style parameter sweeps (and plots). |
 | `aodt-compare` | AoDT-on comparison (forces compute model). Always includes TD3. Writes under `--out/aodt`. |
+| `aodt-param-search` | Coarse-to-fine search over undocumented `S_i` and `L` (Fig. 9 behaviour). Does not change project defaults. Default `--out` is `results/aodt_parameter_search`. |
 
 ### Global options
 
@@ -56,6 +57,8 @@ python -m src.main [--mode MODE] [options]
 | `--mode` | choice | `single` | See table above. |
 | `--seed` | int | `100` | Scenario / solver seed. Used by `single` and the single-solver modes. Ignored by `compare` / `sweeps` / `aodt-compare` (those use seed lists). |
 | `--compute` | flag | off | Enable experimental `S_i` and `L`. Required for meaningful AoDT/CPU metrics. `aodt-compare` turns this on itself. |
+| `--task-size-bytes` | float | unset | Override `S_i` (bytes) for this run only. Implies `--compute`. Does not change `EXPERIMENTAL_TASK_SIZE_BYTES`. |
+| `--task-cycles` | float | unset | Override `L` (cycles/task) for this run only. Implies `--compute`. Does not change `EXPERIMENTAL_TASK_CYCLES`. |
 | `--radio-profile` | `calibrated` \| `table2` | `calibrated` | `calibrated` reproduces the Mbps-scale figures; `table2` is the literal Table II reading. See [`docs/calibration.md`](docs/calibration.md). |
 | `--num-uav` | int | config `3` | Override `J`. |
 | `--num-iot` | int | config `10` | Override `I`. If `I` is divisible by the number of processes (`2`), `iots_per_process` is updated. |
@@ -71,6 +74,10 @@ python -m src.main [--mode MODE] [options]
 | `--with-td3` | flag | off | Include TD3 in `compare` and `sweeps`. |
 | `--aodt-short` | flag | off | `aodt-compare` only: 5 eval seeds `100…104` instead of `100…119`. |
 | `--out` | str | `results` | Output directory. `aodt-compare` writes to `<out>/aodt`. |
+| `--log-level` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` | `INFO` | Progress on stderr (job counters, TD3 step ETA). `DEBUG` adds PSO/SCA iteration lines. |
+| `--quiet` | flag | off | Warnings and errors only. |
+| `--log-file` | str | off | Also write the same log to a file. |
+| `--td3-log-every` | int | `500` | TD3 training line every N steps (plus first and last). |
 
 Config defaults are in `src/config.py` (`DEFAULT`, `PSO_*`, `TD3_TOTAL_STEPS`, `DEV_SCENARIO_SEEDS`, `PAPER_SCENARIO_SEEDS`).
 
@@ -167,6 +174,17 @@ python scripts/placement_analysis.py
 ```
 
 Writes `results/aodt/placement_analysis.md`.
+
+### AoDT parameter search (`S_i`, `L`)
+
+Sweeps the paper-unspecified task size and CPU cycles against Fig. 9 (`T_k` from 0.8 s to 3 s). Calibrated radio is required (`B_sys = 8.8e6` Hz). SCA / K-means / Random first; TD3 only on the 20-seed shortlist.
+
+```bash
+python -m src.main --mode aodt-param-search --compute --out results/aodt_parameter_search
+python -m src.main --mode aodt-param-search --skip-td3 --out results/aodt_parameter_search
+```
+
+`--aodt-search-stage {all,coarse,refine,shortlist,td3}` and `--resume` continue a partial run. Report: `results/aodt_parameter_search/REPORT.md`.
 
 ### Radio sensitivity
 

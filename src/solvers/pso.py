@@ -17,6 +17,7 @@ from src.config import (
     PSO_W,
 )
 from src.evaluator import EvalResult, evaluate, fitness
+from src.logutil import log, mbps
 from src.repair import (
     clip_positions,
     complete_solution,
@@ -68,7 +69,8 @@ def solve_pso_placement(
     history = PSOHistory(best_fitness=[], best_sum_rate=[])
 
     t0 = time.perf_counter()
-    for _it in range(n_iter):
+    log.info("pso placement  J=%d particles=%d iters=%d", j, n_particles, n_iter)
+    for it in range(n_iter):
         for n in range(n_particles):
             xy = enforce_separation(clip_positions(pos[n].reshape(j, 2), cfg), cfg, rng)
             pos[n] = xy.reshape(-1)
@@ -89,6 +91,8 @@ def solve_pso_placement(
         pos = pos + vel
         history.best_fitness.append(float(gbest_fit))
         history.best_sum_rate.append(float(gbest_rate))
+        if it == 0 or (it + 1) % 25 == 0 or it + 1 == n_iter:
+            log.debug("  pso iter %d/%d  best %s", it + 1, n_iter, mbps(gbest_rate))
 
     xy = enforce_separation(clip_positions(gbest.reshape(j, 2), cfg), cfg, rng)
     result = _eval_placement(scenario, xy)
@@ -149,7 +153,8 @@ def solve_pso_joint(
     history = PSOHistory(best_fitness=[], best_sum_rate=[])
 
     t0 = time.perf_counter()
-    for _it in range(n_iter):
+    log.info("pso joint  J=%d particles=%d iters=%d", j, n_particles, n_iter)
+    for it in range(n_iter):
         for n in range(n_particles):
             xy, a, b, bw = _decode_joint(scenario, pos[n], j)
             pos[n, : j * 2] = xy.reshape(-1)
@@ -169,6 +174,8 @@ def solve_pso_joint(
         pos = pos + vel
         history.best_fitness.append(float(gbest_fit))
         history.best_sum_rate.append(float(gbest_rate))
+        if it == 0 or (it + 1) % 25 == 0 or it + 1 == n_iter:
+            log.debug("  pso joint iter %d/%d  best %s", it + 1, n_iter, mbps(gbest_rate))
 
     xy, a, b, bw = _decode_joint(scenario, gbest, j)
     result = evaluate(scenario, xy, a, b, bw)

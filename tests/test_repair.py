@@ -12,6 +12,7 @@ from src.repair import (
     link_bandwidth_cap,
     nearest_association,
     process_consistent_processing,
+    project_bandwidth,
 )
 from src.scenario import generate_scenario
 
@@ -187,6 +188,55 @@ def test_bandwidth_from_weights_processes_per_uav_pools_independently():
     assert np.isclose(b[:, 0].sum(), cfg.b_sys)
     # UAV 1 is infeasible for floors but still gets a projected allocation.
     assert b[:, 1].sum() > 0.0
+
+
+def test_project_bandwidth_treats_unitless_weights_as_a_share_of_the_pool():
+    """O(1) TD3 weights must map onto B_sys, not be copied through as Hz."""
+    cfg = replace(DEFAULT, max_bw_share=None)
+    s = generate_scenario(100, cfg)
+    a = nearest_association(s.iot_xy, XY)
+    weights = np.zeros_like(a)
+    weights[a > 0.5] = np.linspace(0.1, 2.0, int((a > 0.5).sum()))
+    b = project_bandwidth(weights, a, cfg)
+    assert np.all(b[a < 0.5] == 0.0)
+    assert np.all(b[a > 0.5] > 0.0)
+    assert np.isclose(b.sum(), cfg.b_sys)
+    # Proportional to the associated weights (no cap on this profile).
+    w = weights[a > 0.5]
+    np.testing.assert_allclose(b[a > 0.5], cfg.b_sys * w / w.sum(), rtol=1e-9)
+    assert b[a > 0.5].max() > 100.0
+
+
+def test_project_bandwidth_mixed_zero_weights_do_not_starve_associated_links():
+    cfg = replace(DEFAULT, max_bw_share=None)
+    s = generate_scenario(100, cfg)
+    a = nearest_association(s.iot_xy, XY)
+    weights = np.zeros_like(a)
+    first = tuple(int(x) for x in np.argwhere(a > 0.5)[0])
+    weights[first] = 2.0
+    b = project_bandwidth(weights, a, cfg)
+    assert np.all(b[a < 0.5] == 0.0)
+    assert np.all(b[a > 0.5] > 1.0)
+    assert np.isclose(b.sum(), cfg.b_sys)
+    assert b[first] == b[a > 0.5].max()
+
+
+def test_infeasible_floor_fallback_does_not_copy_td3_weights_as_hz():
+    """When R_min floors overflow, 1+tanh weights must still spend the pool."""
+    cfg = replace(DEFAULT.with_radio_profile("table2"), max_bw_share=None)
+    s = generate_scenario(100, cfg)
+    s.iot_xy[:] = [0.0, 0.0]
+    s.iot_xy[-1] = [cfg.area_x, cfg.area_y]
+    xy = np.array([[cfg.area_x, cfg.area_y], [cfg.area_x - 10.0, cfg.area_y], [cfg.area_x, cfg.area_y - 10.0]])
+    a = nearest_association(s.iot_xy, xy)
+    proc = process_consistent_processing(s, a)
+    weights = np.maximum(a, 0.0) * 0.5
+    weights[0, int(a[0].argmax())] = 0.0
+    b = bandwidth_from_weights(s, xy, a, weights, proc)
+    assert np.all(b[a < 0.5] == 0.0)
+    assert np.all(b[a > 0.5] > 1.0)
+    assert b.sum() <= cfg.b_sys + 1e-6
+    assert b[a > 0.5].max() > 2.0 + 1e-9
 
 
 def test_qos_shortfall_is_continuous_where_the_count_saturates():

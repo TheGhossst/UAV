@@ -1,0 +1,1570 @@
+===== PAGE 1 =====
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+3013
+A UAV-Aided Digital Twin Framework for IoT
+Networks With High Accuracy and Synchronization
+Ghofran Khalaf , May Itani , Member, IEEE, and Sanaa Sharafeddine , Senior Member, IEEE
+Abstract—Digital Twin (DT) technology has emerged as a
+promising link between the physical and virtual worlds, enabling
+simulation, prediction, and real-time performance optimization in
+different domains. In this work we develop a high-ﬁdelity digital
+twin framework, focusing on synchronization and accuracy
+between physical and digital systems to enhance data-driven
+decision making. To achieve this, we deploy several stationary
+UAVs in optimized locations to collect data from IoT devices,
+which were used to monitor multiple physical entities and
+perform computations to evaluate their status. We formulate a
+mixed-integer non-convex program to maximize the total amount
+of data collected from all IoT devices while ensuring a constrained
+age of digital twin threshold and solve it using successive convex
+approximation (SCA). To cope with realistic scenarios involving
+unpredictable environments and large network sizes, we model
+our problem as a Markov Decision Process (MDP), and propose
+a deep reinforcement learning-based approach using a Twin
+Delayed Deep Deterministic Policy Gradient (TD3) to optimize
+the uncrewed aerial vehicle positions and the sum rate. Finally,
+we present different simulation results of the SCA and TD3 based
+solutions together with two baseline approaches and evaluated
+the sum rate in terms of IoT device count, AoDT threshold, task
+arrival rate and UAVs’ computational capacity. In all simulation
+results, the proposed TD3-based approach consistently proved to
+be superior as compared to the baseline solutions.
+Index Terms—Age of information, digital twin, high accuracy
+and synchronization, age of digital twin, uncrewed aerial vehicles,
+multiple-sensor monitoring.
+I. INTRODUCTION
+W
+ITH the emerging 5G networks that ensure instanta-
+neous connectivity to billions of Internet of Things
+devices, the demand for accurate and fast data updates is
+increasing to facilitate remote monitoring and control [1], [2].
+This presents signiﬁcant challenges for network operators in
+providing dynamic adaptation to customer needs. To overcome
+these challenges, many industries are using digital twins to
+Received 18 November 2025; revised 17 February 2026; accepted 27 Febru-
+ary 2026. Date of publication 3 March 2026; date of current version 10 March
+2026. This work was supported by the University Research Board at the
+American University of Beirut (AUB) under Grant 104632. The associate
+editor coordinating the review of this article and approving it for publication
+was M. F. Zhani. (Corresponding author: Sanaa Sharafeddine.)
+Ghofran Khalaf is with the Department of Computer Science, American
+University of Beirut, Beirut 1107 2020, Lebanon.
+May Itani is with the Department of Mathematics and Computer Science,
+Beirut Arab University, Beirut 1107 2809, Lebanon.
+Sanaa Sharafeddine is with the Department of Electrical and Computer
+Engineering, American University of Beirut, Beirut 1107 2020, Lebanon
+(e-mail: ss30@aub.edu.lb).
+Digital Object Identiﬁer 10.1109/TNSM.2026.3670040
+improve operational efﬁciency and build accurate maintenance
+strategies. A recent study estimates that 85% of IoT indus-
+tries are expected to incorporate digital twinning in the near
+future [3].
+A digital twin is a virtual representation of a physical
+system, process, or object designed to accurately reﬂect the
+physical entity through synchronization and real-time data
+updates. It uses simulation, machine learning, and reasoning
+to make better decisions [4], [5]. Digital Twin platforms
+provide networks with improved automation, resilience testing,
+full life cycle operation, and infrastructure maintenance [5].
+To build a high-ﬁdelity digital twin, various challenges are
+involved. According to [5] and [6], the main challenges include
+data acquisition and processing, high-ﬁdelity modeling, and
+real-time communication between virtual and real twins. The
+precision and efﬁciency of data collection signiﬁcantly affect
+the quality of the DT model [7]. Since a large amount of
+real-time data is required to establish a high-ﬁdelity digital
+twin [5], IoT devices often fail to deliver their real-time
+measurements to the base station due to limited transmit power
+and processing capacity. Utilizing uncrewed aerial vehicles
+(UAVs) to collect and process data from IoT devices offers
+a reliable and affordable wireless connectivity solution and is
+widely adopted in similar problem setup [8], [9], [10], [11].
+The large amount of real-time data enforces adequate
+synchronization and accuracy between the physical and dig-
+ital twins. On one hand, synchronization can be improved
+by reducing the Age of Digital Twin (AoDT) metric. This
+synchronization metric measures the time gap between the
+current status of the monitored physical entity and its digital
+counterpart. AoDT was ﬁrst introduced in [12] and is based
+on the AoI, which reﬂects information freshness and was
+ﬁrst introduced in 2010 [13]. Thus, AoDT measures status
+freshness to determine whether the digital twin accurately
+mirrors the current condition of a given physical entity. On
+the other hand, a higher level of accuracy can be achieved
+by maximizing the amount of data collected. However, jointly
+enhancing synchronization and accuracy introduces a trade-
+off since we are considering several IoT devices monitoring
+different physical processes. While attempting to improve
+the accuracy of one physical entity by collecting more data,
+the synchronization of another physical entity is negatively
+impacted, resulting in a tradeoff between the accuracy and
+synchronization among the digital twins of the various physical
+entities. Thus, higher accuracy increases AoDT, leading to a
+lack of synchronization between the digital and physical twins.
+To this end, this work develops a digital twin framework that
+1932-4537 © 2026 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+3014
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+optimizes a DT-aided IoT network by balancing accuracy and
+synchronization.
+We consider a system composed of several physical entities,
+each monitored by a group of IoT devices. UAVs are deployed
+to collect measurements from all IoT devices and process them
+to determine the status of the physical entities in the system.
+Our work utilizes the novel AoDT metric, which accounts
+for both upload and processing of sensitive data through
+employment of UAVs as edge devices to provide computing
+services and efﬁcient data collection and transmission to the
+base station. We derive a closed-form expression for the
+AoDT metric to reﬂect the status freshness of the digital twin.
+We then formulate a mixed-integer non-convex optimization
+problem to maximize DT accuracy while maintaining syn-
+chronization and solve the problem using successive convex
+approximations (SCA). We propose a more efﬁcient and
+scalable solution using reinforcement learning, speciﬁcally
+twin delayed deep deterministic policy gradient (TD3) solution
+approach. Extensive simulations validate the effectiveness of
+the SCA-based and TD3-based approaches. To the best of our
+knowledge, no research work has tackled a similar problem
+with IoT devices sending fresh status updates to the digital
+twin platform to build a highly synchronized and accurate
+digital twin, with each physical entity being monitored by
+multiple IoT devices.
+The paper is organized as follows. We start by surveying
+recent relevant literature in Section II and highlight our
+contributions. Section III presents the system model and its
+key components. Section IV formulates the problem as a
+mixed integer non-convex program, and Section V proposes
+the convex optimization solution approach while Section VI
+proposes the TD3 model solution approach. Simulation results
+and analysis are provided in Section VII. Finally, Section VIII
+concludes the work and presents interesting future directions.
+II. LITERATURE REVIEW
+To build a high-ﬁdelity digital twin, various challenges are
+involved. According to [5] and [6], the main challenges include
+data acquisition and processing, high-ﬁdelity modeling, and
+real-time communication between virtual and real twins.
+The precision and efﬁciency of data collection signiﬁcantly
+affect the quality of the DT model [7]. In this section, we
+survey selected related literature that utilizes mobile edge
+computing in delay sensitive IoT applications to empower
+the DT technology. Authors in [12] developed a high-ﬁdelity
+digital twin model where its consistency with the physical
+system is measured through accuracy and synchronization.
+They deployed a UAV that follows an optimized trajectory to
+collect data from multiple industrial IoT devices. The data was
+then processed through several virtual machines equipped in
+the UAV to determine the status of physical entities, which
+was subsequently uploaded to the digital twin running at
+the base station. Authors introduced the age of digital twin
+(AoDT) metric to represent the synchronization gap between
+the actual status of a physical entity and its digital replica.
+The main aim was to develop a DT model consistent with
+the physical system, relying on the amount of data collected
+and on AoDT as crucial metrics to enhance DT accuracy
+and synchronization. Authors only utilized one UAV and did
+not consider any practical scenario of equipping devices with
+multiple sensors. Moreover authors did not address scalability
+or complex industrial IoT environments. In [14], authors aim
+to optimize the trajectories of multiple UAVs serving several
+IIoT devices in an industrial urban ﬁeld using DT technology.
+The main aim of the study is to minimize the total energy
+consumption and improve the efﬁciency of UAVs in terms of
+latency and computation. Several IIoTs devices with different
+tasks; classiﬁed as delay sensitive and computational sensitive
+tasks, are deployed in different subareas. Each IIoT device
+sends its requirement state data via the UAV to the DT server,
+which updates the global state of the system and assigns UAVs
+to perform these tasks. The authors proposed dueling deep
+Q-networks with prioritized experience replay to optimize
+trajectory planning and balance latency, computation, and
+energy. Li et al. in [15] studied the problem of synchronizing
+the digital twin with its physical counterpart using an energy-
+constrained UAV that collects data from sensors deployed in
+a remote region. Each sensor is powered by a solar panel and
+its generated data is energy constrained. Authors assume that
+the digital twin is updated in discretized time slots. Given that
+the DTs of sensors are stored in cloudlets in a mobile edge
+computing network, authors introduced an update budget that
+reﬂects how much DT states of a speciﬁc group of sensors
+are synchronized with their physical counterparts at each time
+slot. The aim is to minimize the average DT state staleness
+of all objects given an energy-limited UAV. However in both
+problems ([14] and [15]), authors assumed that each device
+is equipped with one sensor, age of information metric was
+not utilized for freshness and authors only considered one
+traveling UAV. Moreover, in [15], authors considered partial
+DT object synchronization per round instead of maximizing
+data collected from all devices for optimum accuracy with
+synchronization. Authors in [16] studied the problem of digital
+twin placement for improving user satisfaction based on min-
+imum user query service delays that depends on digital twin
+data freshness which, in turn, relies on the age of information.
+They proposed two different problem scenarios: static digital
+twin placement and dynamic digital twin placement based
+on launching new digital twins periodically. Both scenarios
+involved deploying digital twins in cloudlets to maximize user
+satisfaction based on information freshness and subject to
+computational capacity constraints. In [17], authors proposed a
+digital twin edge network where two types of real-time tasks
+in digital twin applications are considered: update tasks for
+periodic synchronization with the digital twin, and inference
+tasks for testing the response of a physical system by sim-
+ulating the corresponding digital twin by users. The system
+consisted of an edge server with a set of physical systems, and
+multiple users. For each physical system, the corresponding
+cyber twin is implemented in the edge server to provide DT
+applications. Update tasks are generated by data collected from
+the physical systems while inference tasks are requested by
+users on demand. Authors formulated an optimization problem
+to maximize digital twin freshness ratio. Authors proposed a
+DT task scheduler that prioritizes update tasks based on the
+number of corresponding inference tasks. Both studies ([16],
+[17]) utilized age of information metric for DT freshness and
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3015
+TABLE I
+RELATED WORK COMPARISON
+were conducted without deploying any UAVs. Authors in [16]
+utilized mobile cloud servers for edge computing and only
+one digital twin of a randomly chosen object was selected to
+minimize its age at a time, while authors in [17] considered
+DT update tasks as a part of the optimization process.
+To develop practical and scalable solutions, reserach efforts
+are being done based on reinforcement learning techniques
+mainly in dynamic environments for UAV-assisted DT-driven
+frameworks [18], [19], [20], [21], [22]. For example, in [18]
+a new scalable multi-agent reinforcement learning (MARL)
+based algorithm is adopted to improve effectiveness and adapt-
+ability in a DT-driven framework for multi-UAV cooperative
+target search applications. Authors in [19] and [20] utilized
+deep Q-learning in a digital-twin (DT)-assisted task assign-
+ment framework in a multi-UAV system to improve dynamic
+task assignment and resource utilization, and to improve the
+overall network performance respectively. In [21] authors
+employed a deep reinforcement learning based synchronization
+(DRLS) algorithm to generate synchronization actions with
+low-time complexity in a DT-synchronization framework to
+minimize the synchronization latency in UAV assisted edge
+computing environments, while authors in [22] employed
+federated reinforcement learning to create a generalized RL
+model to optimize computation ofﬂoading and resource allo-
+cation in UAV-assisted mobile edge computing (MEC). Table I
+summarizes recent relevant literature to better highlight the
+research gap.
+In light of the above-surveyed literature, no existing research
+work, to the best of our knowledge, has jointly optimized
+accuracy and synchronization neither derived a closed formula
+for DT synchronization in a multi-UAV-aided DT for an
+IoT network where multiple sensors are monitoring a single
+physical process. The main contributions of this work are as
+follows:
+1) We propose a digital twin framework that builds a
+digital twin with high accuracy and synchronization
+with the physical system in an IoT network. Every
+physical entity of the physical system is monitored by a
+group of IoT devices that upload their measurements to
+multiple UAVs optimally positioned. The UAVs process
+all collected measurements to determine the status of the
+monitored physical entities and deliver this information
+to the digital twin running at the base station for system
+monitoring and management.
+2) We derive a closed form expression for the novel AoDT
+metric introduced in [12] and used it to evaluate the
+synchronization difference between the physical system
+and its digital counterpart. This will guarantee tackling
+the challenge of DT real-time synchronization stated
+earlier.
+3) We mathematically formulate the problem as a mixed
+integer non-convex program to maximize the accuracy
+of the digital twin by optimizing the amount of collected
+data while ensuring a target synchronization degree with
+the physical system.
+4) We implement an iterative optimization approach to
+determine the optimized placement scheme for UAVs
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+3016
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+while maximizing data collection and ensuring freshness
+using successive convex approximations.
+5) We develop a reinforcement learning approach based
+on TD3 to address uncertainty in the problem and
+handle realistic scenarios with large scale environments
+by leveraging RL techniques that provide powerful capa-
+bilities for making real-time decisions.
+6) We present extensive simulation results to evaluate the
+performance of our proposed solution and demonstrate
+its effectiveness to build a highly synchronized and
+accurate digital twin.
+III. SYSTEM MODEL
+We consider a system such as an industrial facility, where
+several IoT devices are monitoring multiple physical processes
+with a digital twin running at a nearby base station located
+at (xBS, yBS, zBS). A set of I IoT devices, denoted by
+I = {1, 2, . . . , I}, is deployed at ground level at {xi, yi, 0}
+for monitoring various aspects of the physical environment.
+IoT devices are supposed to collect real-time measurements,
+such as temperature, pressure, humidity, vibration, ﬂow rate,
+and others, of the components of the system, named physical
+entities. Due to their limited transmission power and lack of
+processing capabilities, IoT devices deliver their readings to a
+set of J stationary UAVs denoted by J = {1, 2, . . . , J}, and
+that are optimally positioned at the coordinates (xj, yj, H),
+∀j ∈J where H is the height UAVs are positioned. UAV
+repositioning can be performed based on network demand
+between mission intervals, allowing ﬂexibility when opera-
+tional conditions permit. The UAVs are assumed to be fully
+meshed with a high-speed link and they use their computa-
+tional power to process the measurements and determine the
+current status of the physical entities. Status updates of the
+physical entities are then uploaded to the digital twin on the
+BS in a way to ensure high synchronization with the physical
+system. Fig. 1 illustrates this system model.
+Depending on the size, structure, or functionality of each
+physical entity, multiple IoT devices may be needed to capture
+measurements from different angles or locations. Each IoT
+device i generates tasks of size Si in bytes that are uploaded
+to UAV j. However, if UAV j lacks sufﬁcient computational
+resources to process a task, it forwards the task to another UAV
+k for processing. UAVs are considered to operate in full duplex
+mode, allowing them to receive and transmit simultaneously,
+while using orthogonal channels to avoid self-interference.
+Moreover, UAVs opt to use the most recent measurements
+coming from IoTs to ensure that the resulting status reliably
+mirrors the current status of the monitored physical entity.
+This being said, a UAV discards old data once it obtains fresh
+measurements from a respective IoT.
+A. Communication Channel Model
+Ground-to-air (G2A) communication between UAVs and
+ground IoT devices is based on a probabilistic path loss model
+that accounts for line-of-sight (LoS) and non-line-of-sight
+(NLoS) components. Accordingly, we employ the following
+LoS and NLoS channel models between IoT device i and UAV
+j [23]:
+LLoS
+i,j
+= JF S + 20 log di,j + ηLoS,
+(1)
+Fig. 1. System model.
+and
+LNLoS
+i,j
+= JF S + 20 log di,j + ηNLoS,
+(2)
+where JF S = 20 log fc + 20 log 4π
+c , the variable fc signiﬁes
+the system’s carrier frequency, and c is the speed of light’s
+constant. The parameters ηLoS and ηNLoS are additional
+attenuation factors speciﬁc to the line-of-sight (LoS) and
+non-line-of-sight (NLoS) link environments, respectively. di,j
+denotes the Euclidean distance between device i and UAV j
+is represented by:
+di,j =
+q
+(xi −xj)2 + (yi −yj)2 + H2.
+(3)
+In addition, the probability of a LoS communication link,
+denoted as P LoS
+i,j
+, between a UAV j an IoT i device is
+represented as:
+P LoS
+i,j
+=
+1
+1 + a · exp
+
+−b ·
+
+arcsin
+
+zj
+di,j
+
+−a
+
+(4)
+where a and b are environment parameters. As a result, the
+average path loss is expressed to be:
+Lavg
+i,j = P LoS
+i,j
+LLoS
+ij
++ (1 −P LoS
+i,j
+)LNLoS
+i,j
+(5)
+Based on the above, the achieved uplink rate from IoT i to
+UAV j is computed as [23]:
+ri,j = Bij log2
+
+1 + pi · 10
+−Lavg
+i,j
+10
+· 1
+σ2
+
+(6)
+where Bij represents the channel bandwidth that is distributed
+among the devices based on their needs, pi is the power level
+of IoT device i, and σ2 is the Gaussian white noise power.
+For simplicity, we assume a high-speed LoS link between
+UAVs. Therefore, the elapsed time to upload data from the
+associated UAV j with the IoT device i to another UAV k is
+considered constant and equal to Tu2u. The UAVs are assumed
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3017
+to communicate with the base station via high capacity fron-
+thaul links (such as free space optics (FSO) or millimeter-wave
+(mmWave) links) with high communication speed and low
+latency [27], [28]. According to related literature [29], [30],
+the download time of the computed results from the UAV to
+the BS can be neglected, since the processed data is relatively
+small.
+B. Data Generation and Computing Models
+During monitoring a physical entity, each IoT device i
+generates data based on a Poisson distribution [31], [32] with
+an average rate λi. The data generated from multiple IoT
+devices is transferred to UAV j for potential processing.
+Since each associated IoT device generates its tasks accord-
+ing to a Poisson process with rate λi, and assuming a constant
+propagation delay from the IoT device i to UAV j, the
+aggregated workload from a set Nj of IoT devices on UAV j
+can also be modeled as a Poisson process with rate P
+k∈Nj λk.
+We assume that the service times at UAV j are independent
+and identically distributed exponential random variables, with
+an average service time of
+1
+µj , where µj resembles the average
+service rate of the UAV j. The service rate µj, measured in
+requests per second, can be expressed as:
+µj = fj
+L
+(7)
+where fj is the processing capacity of UAV j in cycles per
+second, and L is the average task size in cycles. Hence, we
+model each UAV j as an M / M / 1 queueing system with
+an arrival rate λtotal,j = P
+k∈Nj λk and a service rate µj
+[33], [34].
+We deﬁne the offered load ρi from IoT device i to the
+processing UAV j by:
+ρi = λi
+µj
+(8)
+Thus, the total offered load at UAV j where the tasks from a
+set of Nj IoT devices are processed is:
+ρtotal,j = λtotal,j
+µj
+=
+X
+k∈Nj
+λk
+µj
+(9)
+C. Modeling Quality of Service in a Digital Twin
+Many research is emerging to deﬁne methods and met-
+rics for evaluating digital twin performance. Authors in [35]
+illustrated that ensuring real-time synchronization between
+a DT and its physical counterpart as well as maintaining
+high accuracy in a DT is crucial for effective DT adoption
+in different applications. Authors in [36] introduced digital
+twin entanglement metric that represents to which extent the
+digital and physical systems’ synchronization process fulﬁlls
+the needs of a speciﬁc application. Authors took into account
+the freshness of the collected data and the ratio of collected
+to total data. This ratio reﬂects the DT accuracy. Moreover,
+authors in [37] illustrated that DT freshness may be deﬁned
+using the age of information concept as the elapsed time after
+a DT has been updated. However, they did not derive any
+closed formula to model this metric. DT freshness can be
+best represented through a novel metric introduced in [12] as
+age of digital twin metric (AoDT) that takes into account: (i)
+time of data upload from sensors to edge device; (ii) time of
+data processing to reﬂect device status; and (iii) time of data
+download to BS for DT updates. Authors in [12] considered a
+simple scenario where one IoT monitors one physical process.
+They proposed a problem to optimize DT accuracy subject to
+AoDT constraints. However; in practice, multiple IoT devices
+might monitor the same physical entity. In this work, we
+formulate a closed form expression to model age of digital
+twin in such a practical scenario.
+The age of information (AoI) is a destination-centric mea-
+sure for information freshness that counts the time that has
+passed since the last fresh update was generated at the source.
+In this study, we apply the concept of AoI to the setting of
+digital twins, where we need to express the freshness of the
+physical entity’s status through the responsive DT. As a result,
+we utilize the Age of Digital Twin (AoDT) metric introduced
+in [12] and deﬁned as the elapsed time between data generation
+and the status update received by the BS.
+The calculation of the AoDT for each monitored process
+accounts for different phases after data collection, namely:
+• Upload phase: The data is transmitted to the associated
+UAV through the wireless channel for processing, and
+then forwarded from the associated UAV to another one
+when the ﬁrst UAV lacks computation resources.
+• Processing phase: The uploaded data enters the compu-
+tation queue at the UAV and is then processed to obtain
+results.
+• Download phase: The data is processed from the UAV to
+the BS via the LoS channel to update the DT’s status.
+We deﬁne the instantaneous AoDT at time t for the ith IoT
+device as follows:
+ζi(t) = t −ui(t)
+(10)
+where ui(t) is the instant generation of the last update of the
+DT from IoT i. Figure. 2 illustrates an example of the evolution
+of the AoDT ζ(t) for IoT device i over time t. Without loss
+of generality, suppose we start monitoring at time t = 0, when
+the computation queue is empty and the age is ζ(0). In the
+absence of updates, the AoDT for the DT corresponding to
+the source i climbs linearly with time and is reset to a lower
+value when an update is received.
+Update l for IoT device i, generated at time tg
+l , is uploaded
+to the associated UAV j and then to another UAV k if the UAV
+j lacks computation resources. We denote by tu
+l the upload
+time. As a result, we can express the upload duration Xl =
+tu
+l −tg
+l of task l for IoT device i as follows:
+Xl =
+
+
+
+
+
+
+
+
+
+
+
+Si
+rij
+if the task lis processed
+by the associated UAVj
+Si
+rij
++ Tu2u
+otherwise
+(11)
+where Si represents the generated task size in bytes from IoT
+device i, and Tu2u is the required time to upload the generated
+data of the device i from its associated UAV j to another one,
+when j lacks sufﬁcient computation resources.
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+3018
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+Fig. 2. Evolution of AoDT example.
+Assuming stable radio conditions for each IoT device i with
+tasks of the same size Si, the upload time Xl is constant and
+equal to Di for all l.
+After the uploading phase, data is processed at tp
+l , and
+the result is received by the BS to update the status of the
+corresponding DT at td
+l . At td
+l , the AoDT ζi(td
+l ) is reset to
+(td
+l −tg
+l ).
+Regarding the download phase of the processed task l from
+UAVs to the BS, the download duration is given by:
+Zl = td
+l −tp
+l
+(12)
+Therefore, the evolution of the AoDT is mainly affected by
+the processing phase since the time elapsed at other phases is
+considered constant. Given that we have modeled every UAV
+j as a M/M/1 system and inﬁnite buffer, we can select either
+ﬁrst-come, ﬁrst-serve (FCFS) or last-come, ﬁrst-serve (LCFS)
+queuing discipline.
+Noting that the FCFS queue paradigm allows new update
+messages to be queued behind outdated messages issued
+earlier, and that we want to transfer the most recent data from
+IoT to reduce the AoDT, it is preferable to use the LCFS
+queuing discipline. Considering LCFS, fresh information from
+an IoT device preempts any previously queued update packets,
+and the preempted data is deleted. Furthermore, based on the
+performance evaluation in [38], the AoI values achieved using
+the LCFS strategy outperformed those obtained under the
+FCFS strategy. Hence, we will consider LCFS with preemption
+in service (LCFS-S). When a new packet is uploaded, it
+preempts the packets that are being served. We can show
+from Fig. 2 after the third generated update task at time tg
+3
+is uploaded to the UAV at time tu
+3, it preempts the previous
+task in service to process recent data.
+For the proposed system, multiple IoT devices monitor a
+single physical process. Each device i ∈Nk, where Nk repre-
+sents the set of devices monitoring the same process, generates
+updates at a rate λi following a Poisson process. Updates are
+transmitted directly to a UAV without an aggregator. Then,
+the UAV processes each update and updates the state of the
+corresponding Digital Twin (DT). Once an update is processed,
+the Age of Digital Twin (AoDT) for the corresponding DT is
+reset.
+Since multiple IoT devices directly send updates to the UAV,
+the min rate should be taken into consideration to wait for the
+slowest update to be received, λNk is given as:
+λNk = min
+i∈Nk λi,
+(13)
+The Average Age of Information (AAoI) for a multiple-
+source, single-server system with LCFS preemption in service
+[38] is:
+∆= 1
+λ
+
+1 + λ
+µ
+
+,
+(14)
+where λ is the total arrival rate and µ is the service rate.
+For our system, the average arrival rate λNk replaces λ.
+Hence, the average AoDT for a Digital Twin DTk monitoring
+the physical process is:
+∆k = DNk +
+1
+λNk
+
+1 + λNk
+µ
+
+,
+(15)
+where DNk represents the maximum upload time for updates
+from the devices in Nk and is given as:
+DNk = max
+i∈Nk Di,
+(16)
+where Di is the upload time for device i.
+Substituting DNk into the AoDT expression, we obtain the
+ﬁnal form of the average AoDT:
+∆DTk = max
+i∈Nk Di +
+1
+λNk
+
+1 +
+P
+i∈Nk λi
+µ
+
+.
+(17)
+IV. PROBLEM FORMULATION
+In this section, we formulate a non-convex optimization
+problem (P) to maximize the DT accuracy. We consider the
+scenario in which multiple IoT devices monitor a single phys-
+ical entity. Each IoT device i ∈I is associated with a single
+UAV j ∈J that receives uploaded tasks and processes them.
+However, when the associated UAV has limited computational
+capabilities, it will delegate the tasks to another UAV for
+processing. We deﬁne two binary decision variables aij and
+bij. The ﬁrst variable aij indicates whether IoT i is associated
+with UAV j.
+aij =
+(
+1
+if IoT device iis associated with UAVj
+0
+otherwise
+(18)
+The second binary variable bij indicates whether the tasks of
+IoT i are processed by UAV j.
+bij =
+
+
+
+
+
+1
+if the tasks generated by IoT device i
+are processed by UAVj
+0
+otherwise
+(19)
+Since multiple sensors are monitoring one process, we deﬁne
+K groups or sets of IoT sensors where each set Nk is
+monitoring a process as stated earlier.
+We use δik to specify the set to which the IoT device
+belongs.
+δik =
+(
+1,
+if IoT device iis assigned to a set k
+0,
+otherwise
+The formulated problem (P) determines the optimized position
+for each UAV j ∈J . Furthermore, (P) derives for each IoT
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3019
+device i ∈I its associated UAV and the UAV responsible for
+processing its tasks.
+(P) : max
+I
+X
+i=1
+J
+X
+j=1
+aijrij
+(20)
+s.t.
+J
+X
+j=1
+aij = 1,
+∀i ∈Nk,
+(21)
+J
+X
+j=1
+bk
+ij = δik,
+∀i ∈Nk, k ∈K,
+(22)
+δik.δnk.bk
+ij = δik.δnk.bk
+nj,
+∀i, n ∈Nk, j ∈J , k ∈K,
+(23)
+fj
+L −
+K
+X
+i=k
+I
+X
+i=1
+bk
+ijλi ≥0,
+∀j ∈J ,
+(24)
+rij ≥aijRmin,
+∀i ∈Nk, j ∈J ,
+(25)
+Bij ≤aij · M,
+∀i ∈Nk, j ∈J , M →∞(26)
+I
+X
+i=1
+J
+X
+j=1
+Bij ≤Bsys,
+(27)
+q
+(xj −xl)2 + (yj −yl)2 + (zj −zl)2 ≥θ,
+∀j, l ∈J ,
+(28)
+λNk ≤λi,
+∀i ∈Nk,
+(29)
+vk ≤Tk,
+∀k ∈K,
+(30)
+vk ≥
+J
+X
+j=1
+aij
+Si
+rij
++
+1
+λNk
+
+1 +
+P
+i∈Nk λi
+µ
+
++
+
+1 −
+J
+X
+j=1
+aijbk
+ij
+
+· Tu2u
+∀i ∈Nk, k ∈K,
+(31)
+Problem (P) optimizes data collection from IoT devices
+by maximizing the sum rate while considering constraints
+related to computation tasks, AoDT, available resources, and
+overall system performance. The objective function (20) aims
+to maximize the sum rate. Constraints (21) and (22) ensure
+that each IoT device i is associated with a single UAV j
+and that the tasks of each device i are being processed by
+a single UAV j. Constraint (24) is crucial to maintaining a
+stable queuing system where we ensure that the rate at which
+computational requests arrive is lower than the service rate
+for each UAV. To guarantee a minimum quality of service
+(QoS), constraint (25) ensures that the communication rate
+between the IoT devices and the UAV is higher than the
+target value. Constraint (26) ensures that the bandwidth is set
+to zero if there is no association between IoT i and UAV
+j. Constraint (27) ensures that the total uplink bandwidth of
+the system does not exceed the available system bandwidth
+of value Bsys. Constraint (28) mandates a minimum safety
+distance θ between any two deployed UAVs. Constraints (30)
+and (31) ensure that the average AoDT ∆k for IoT device
+i remains below a predeﬁned threshold TK to maintain the
+freshness of data updates.
+Algorithm 1 SCA-Based Solution of Problem P
+Input: I, J , positions of IoT devices, position of the base
+station, error tolerance
+Initialization: Set initial position for UAVs, bandwidth, and
+iteration number n
+while |ObjP(n) −ObjP(n −1)| ≤ϵ do
+Solve the convex problem P to obtain optimal UAV
+positions and system bandwidth
+Update UAV positions
+Update bandwidth value
+Update sum rate matrix
+Update n = n + 1
+end while
+Output: The optimal UAV positioning and the maximum
+system bandwidth
+V. OPTIMIZATION SOLUTION APPROACH
+Problem (P) is a mixed integer non-convex optimization
+problem. In this section, introduce a successive convex approx-
+imation (SCA) approach to solve the problem and determine
+the optimized positions of the UAVs in a way to maximize
+the data collection rates under AoDT threshold to improve
+both accuracy and synchronization of the DT. Constraint
+25 is non-convex and constraints (3), (4), (5) are nonlin-
+ear. These constraints are linearized using ﬁrst-order Taylor
+approximations. Algorithm (1) presents the successive convex
+approximations of (P).
+We used the Matlab Mosek cvx solver, which applies a
+primal-dual interior-point algorithm that simultaneously solves
+the primal and dual problems to achieve good accuracy. This
+solver iteratively solves continuous convex optimization prob-
+lems by moving within the feasible region while maximizing
+the objective function. To keep variables within the feasible
+region, interior-point methods work by using Newton’s method
+on “barrier” functions. Also, Mosek’s primal-dual interior-
+point method ensures fast convergence for the high complexity
+of the problem involving UAV placement and data collec-
+tion. Thus, the worst-case complexity of this problem can
+be roughly estimated as C ∼
+√
+number of variables because
+the complexity depends on the number of Newton steps, in
+which the latter is inﬂuenced by the number of variables of
+the optimization problem and the iterations needed for the
+algorithm to converge given an initial start as stated in [12].
+VI. TWIN DELAYED DEEP DETERMINISTIC POLICY
+GRADIENT-BASED SOLUTION APPROACH
+In UAV-assisted IoT networks with DT functionality, real-
+time decision-making and dynamic optimization are crucial
+in maximizing data collection efﬁciency while maintaining
+AoDT constraints. Owing to the complexity of the optimiza-
+tion problem due to its nonconvex constraints and to cope
+with uncertainty and to ensure real time adaptability especially
+in dynamic environments, we resort to deep reinforcement
+learning (DRL) as a viable solution approach [23].
+The standard DDPG algorithm occasionally encounters
+instability and hyperparameter sensitivity, due to Q-value
+overestimation, and hence produces a non-optimal or divergent
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+3020
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+policy in highly dynamic and continuous decision-making
+scenarios. Therefore, in our work, we adopt the TD3 algo-
+rithm, an off-policy actor-critic method that extends the DDPG
+framework to continuous action spaces. It learns a deter-
+ministic policy using two Q-value critics to estimate the
+optimal policy value while addressing value-function overes-
+timation bias. This is achieved through three key techniques:
+clipped Double Q-learning, delayed policy updates, and tar-
+get policy smoothing. The most crucial one is the clipped
+Double Q-Learning technique, which trains two independent
+Q-networks in parallel and uses the lower estimate as the
+target value to enhance stability and robustness. The thing
+that distinguishes TD3 from conventional DDPG algorithms
+and addresses their limitations in overestimation bias and
+training instability [39], [40]. Combining the three key ideas
+of TD3, our approach mitigates these problems, achieving
+stable training dynamics and improved performance. Based on
+these improvements, the algorithm’s design aligns with our
+research objectives, enabling dynamic optimization of UAV
+positioning and resource allocation, while actively resorting
+to the speciﬁed system constraints, mainly AoDT constraints,
+and channel conditions.
+A. MDP Formulation
+We formulate the problem as an MDP problem that is
+formally deﬁned by the tuple
+ S, A, R, P, γ), where
+• S is the set of all states s ∈S,
+• A is the set of all actions a ∈A,
+• R(s, a) denotes the immediate reward obtained by taking
+action a in state s
+• P is the probability of shifting from one state to another
+given an action
+• γ is the discount factor that deﬁnes the action to take in
+each state
+A DRL approach based on the TD3 algorithm is proposed
+for ﬁnding the policy that optimizes UAV positioning, IoT-
+to-UAV assignment, and edge-computation scheduling under
+unknown activation patterns. We customize TD3 to our frame-
+work by redeﬁning the state S, action A, and reward R
+functions as follows:
+• State: The state space of our TD3-based reinforcement
+learning algorithm is deﬁned by the initial positions
+of UAVs and IoT devices, task arrival rate, allocated
+bandwidth for the whole system, current load on UAV j,
+average AoDT, and communication channel conditions.
+Thus, the state at time step t is represented as:
+S(t) =
+(xj(t), yj(t), H), (xi, yi), ∆DT (t),
+Bsys(t), Lj(t), λi(t)
+
+(32)
+• Action: The action space at each time step t involves the
+continuous adjustment of UAV positions to maximize the
+sum rate, while having the best association, computation
+assignments, and bandwidth allocation between IoTs and
+UAVs. We deﬁne our continuous action space as:
+A(t) = {(∆xj(t), ∆yj(t)), aij(t), bij(t), Bij(t)}
+(33)
+where (∆xj(t), ∆yj(t)) represents positional adjust-
+ments for each UAV j at a ﬁxed height.
+• Reward: The reward function r(t) simultaneously max-
+imizes the sum rate collected by UAVs with penalties
+for violating AoDT constraints, minimum safety distance
+between any two UAVs, and any other previously deﬁned
+constraints. The reward at time step t is deﬁned as:
+r(t)=α
+X
+i,j
+aij(t) rij(t) −β
+X
+k
+max(0, ∆DTk(t) −Tk)
+−γPdist(t) −δVviol(t)
+(34)
+where P
+i,j aij(t)·rij(t) represents the total sum rate col-
+lected by UAVs at time t, while P
+k max(0, ∆DTk(t) −
+Tk) captures the AoDT violation penalties, where Tk is
+the AoDT threshold. Pdist(t) penalizes any pair of UAVs
+closer than θ, and Vviol(t) accounts for any breach of
+QoS, CPU, or bandwidth restriction. In our implemen-
+tation, the weighting coefﬁcients α, β, γ and δ are set
+through scaling in which the sum rate is normalized and
+the AoDT penalty is given the highest weight to reﬂect
+its critical impact on system performance. This ensures
+that our research objectives focus on optimizing UAV
+positions and resource allocation dynamically in response
+to varying IoT demands, channel conditions, and AoDT
+requirements.
+Fig. 3 presents our system architecture, divided into three
+interconnected components. On the left, the RL Module
+includes the actor-critic pair: the actor proposes continuous
+control commands (UAV motion deltas, IoT-UAV associations
+and bandwidth allocations) which are evaluated by two critic
+networks. Then, the experience tuples are stored in a replay
+buffer and used, along with clipped target actions from slowly
+updated target networks, to perform off-policy learning. In
+the middle, the digital model simulates the environment state,
+including UAV and IoT locations, task arrival rates, allocated
+resources and resulting communication metrics, and computes
+the scalar reward by aggregating throughput, AoDT penalties,
+distance penalties, and constraint violations. Finally, on the
+right, the physical entities depict the UAV ﬂeet and IoT devices
+executing the digital model’s commands and feeding back
+sensor data, thus completing the cycle from perception to
+action.
+B. RL Algorithm
+In this subsection, we delineate our TD3-based solution
+presented in Algorithm 2 to optimize UAV placement and task
+ofﬂoading under AoDT constraints in a continuously evolving
+environment. We train a TD3 agent where at each time step
+t the agent observes a high-dimensional state st (including
+UAV/IoT positions, group assignments, loads, AoDT values,
+and bandwidths) and selects a continuous action at (UAV
+positioning plus IoT-to-UAV association and processing logits
+with added exploration noise). The environment parses at,
+updates UAV positions, recomputes bandwidth, data rates,
+and AoDT penalties, and returns a scalar reward rt that
+balances normalized throughput against penalties for AoDT
+threshold violations, inter-UAV proximity breaches, and other
+constraint violations. Each transition (st, at, rt, st+1) is stored
+in a replay buffer. On every step, both critic networks are
+updated via Bellman backups using clipped Double Q targets,
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3021
+Fig. 3. TD3 solution framework.
+TABLE II
+SIMULATION PARAMETERS
+and once every d steps the actor network and all target net-
+works are softly updated. This iterative process continues until
+the policy converges, yielding a trained TD3 agent capable
+of dynamically optimizing UAV deployment strategies under
+resource and freshness constraints in digital twin-enhanced
+aerial computing networks. Regarding complexity, the com-
+putational complexity of the TD3 algorithm depends on its
+actor and critic networks. Assuming m denotes the number of
+parameters in each critic network, and n denotes the number
+of parameters in the actor network, B the mini-batch size, and
+T the total number of training steps, then the overall training
+complexity of TD3 scales as O
+ T
+ mB + nB
+d
+
+. Therefore,
+TD3 has linear time complexity in the number of training steps
+and linear memory complexity in the size of stored transitions.
+VII. SIMULATION RESULTS AND PERFORMANCE
+ANALYSIS
+In this section, we evaluate the proposed solution approach
+formulated above. We consider an industrial ﬁeld of 500 ×
+500 m2 where ten IoT devices are randomly deployed, with
+every ﬁve devices monitoring one process. We consider the
+Fig. 4. Convergence of the TD-3 solution approach.
+system parameters as shown in Table II unless otherwise
+stated. We present different simulation results of the TD3-
+based solution compared to the SCA-based solution and two
+baseline approaches, k-means and random placement of UAVs
+as an initialization step. The k-means positioning approach
+determines UAV locations by minimizing the sum of distances
+between the IoT devices and their cluster centroids where the
+UAV is supposed to be positioned. In contrast, the random
+deployment method assigns UAV positions without any spe-
+ciﬁc strategy, disregarding the locations of IoT devices or any
+optimization concerns.
+For simulation, we used DELL laptop 13th Gen Intel(R)
+Core(TM) i7-1355U, an x64-based processor, and a CPU core
+running at 2.06 GHz with 16 GB RAM. Note that each data
+point in the ﬁgures represents the average of 20 different
+random runs. In Figure 4, we demonstrate the convergence
+characteristic of the proposed TD3-based solution. The ﬁgure
+shows that the learning curve for cumulative reward increases
+as the agent starts to explore the environment and change
+the position of the UAVs based on the penalties imposed on
+AoDT and the task arrival rates. The curve starts to stabilize
+upon further training, which proves that the TD3 agent has
+learned the best policy on how to balance UAV trajectory and
+bandwidth allocation while satisfying the AoDT constraint.
+The agent reaches a stable behavior after approximately 7000
+steps. This convergence curve demonstrates a high degree of
+the TD3 agent’s generalization ability in the Digital Twin
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+3022
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+Algorithm 2 TD3-Based Solution
+Require: Environment E ←UAVAoDTEnv(Nu, Ni, area, K)
+Actor network µφ, critics Qθ1(s, a), Qθ2(s, a) and targets
+µφ′(s), Qθ′
+1(s, a), Qθ′
+2(s, a)
+Replay buffer D, noise scale σ, policy delay d, discount
+γ, soft-update rate τ, total steps T
+Initialize φ, θ1, θ2 and set φ′ ←φ, θ′
+1 ←θ1, θ′
+2 ←θ2
+Initialize replay buffer D ←∅
+for t = 1toT do
+Select action at = µφ(st) + ϵ, with noise ϵ ∼N(0, σ)
+Execute action at and observe reward rt+1 and next
+state st+1:
+-parse at into movement deltas, association logits, pro-
+cessing logits
+-update UAV positions: ∆x, ∆y × 10, clip to [0, area]
+- aij ←normalize association(associate logits)
+- bij ←normalize processing(process logits)
+-update bandwidth,
+calculate rates and
+loads, calculate AoDT
+-compute sum rate, AoDT penalty, dist penalty, violations
+-compute reward r = sum rate
+Rmax −10 PAoDT−5 Pdist−5 Vviol
+-st+1 ←E.get obs()
+Store (st, at, rt+1, st+1) in replay buffer D
+if enough samples in replay buffer D & it’s time to
+update then
+Sample minibatch {(si, ai, ri, si+1)}N
+i=1 from D
+Compute target actions with noise:
+a′
+i+1 = µφ′(si+1) + ϵ′, with ϵ′ ∼clip(N(0, σ′), −c, c)
+Compute target Q-value:
+yi = ri + γ minj=1,2 Qθ′
+j(si+1, a′
+i+1)
+Update each critic
+θj ←θj −η ∇θj
+1
+N
+P
+i
+
+Qθj(si, ai) −yi
+2
+if t mod d = 0 then
+Update actor:
+φ ←φ + η ∇φ 1
+N
+P
+i Qθ1(si, µφ(si))
+Soft-update targets:
+for j ∈{1, 2} do
+θ′
+j ←τ θj + (1 −τ) θ′
+j
+end for
+φ′ ←τ φ + (1 −τ) φ′
+end if
+end if
+s ←st+1
+end for
+environment, as it can identify and execute accurately the
+movements and ofﬂoading actions that lead to long-term
+reward optimization when the synchronization and resource
+constraints are applied.
+In Fig. 5, we demonstrate the scalability property of the
+proposed TD3-based solution as compared to SCA-based
+approach. For larger network sizes, the SCA-based solution
+fails to give results in reasonable time, exceeding two hours
+with 30 IoT devices. As we increase the number of devices,
+the TD3-based solution continues to provide highly optimized
+solutions within few minutes.
+Fig. 5. Peformance of TD3-based solution versus SCA-based solution.
+Fig. 6. Sum rate vs. number of UAVs, where I = 10.
+Fig. 6 shows the relationship between the number of
+deployed UAVs and the sum rate. The sum rate improves
+across all four approaches as more UAVs are deployed
+due to enhanced resource utilization and spatial coverage,
+enabling efﬁcient data collection to ensure fresh status updates
+for the DT. SCA-based approach consistently outperforms
+all other approaches, achieving the highest sum rate of
+approximately 8.8 Mbps with the deployment of ﬁve UAVs,
+compared to 7 Mbps for TD3-based placement, 5.6 Mbps
+for k-means placement, and 3.4 Mbps for random placement.
+These results illustrate that SCA-based approach achieves the
+best performance, however, at the expense of running time
+as demonstrated in the earlier ﬁgure. TD3-based solution
+achieves highly optimized results notably exceeding the two
+baseline approaches. It ensures timely updates, improving
+synchronization for the digital twin, which, in turn, enhances
+data freshness and accuracy of the digital model.
+Increasing the number of IoT devices, Fig 7 shows an
+increase in the sum rate for a ﬁxed number of deployed
+UAVs (three), across all placement strategies. This reﬂects
+the increased data generation effect and improved utilization
+of network resources for parallel and efﬁcient data collec-
+tion by UAVs. The SCA-based solution approach achieved
+a maximum sum rate exceeding approximately 14 Mbps for
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3023
+Fig. 7. Sum rate in terms of IoT device count where J = 3.
+Fig. 8. Sum rate vs. task arrival rate, with I = 10 and J = 3.
+32 devices, followed by the TD3-based solution that remains
+superior to the baseline approaches. TD3 solution achieved
+11.6 Mbps for 32 devices, while the two baseline approaches
+achieved 7.8 Mbps, and 5.2 Mbps, respectively. This consid-
+erable performance gap underscores the effectiveness of our
+proposed TD3 solution that maintains a highly synchronized
+and accurate digital twin with low complexity.
+In Fig 8 we increase the task arrival rate from 1 to 3.5
+tasks per second and the achieved sum rate improves across
+all UAV placement methods. However, TD3-based placement
+shows consistent performance while increasing the arrival rate
+and remains closest to the SCA-based solution. It achieves
+approximately 7.3 Mbps, while K-means placement achieves
+5.3 Mbps and random placement achieves 4.2 Mbps for a task
+arrival rate of 3.5 per each device. These results demonstrate
+how a higher arrival rate affects the total sum rate, as more
+data packets are generated and transmitted.
+To better demonstrate the impact of the AoDT metric on the
+system performance, we compared the total sum rate in Fig. 9
+while varying the AoDT threshold, starting from 0.8 seconds,
+across different UAV placement strategies. All placement
+approaches demonstrate an increase in sum rate with a more
+relaxed AoDT threshold. The TD3-based solution was the
+closest to the SCA-based results, reaching 6 Mbps compared
+Fig. 9. Sum rate in terms of age of digital twin threshold, with I = 10 and
+J = 3.
+Fig. 10. Sum rate in terms of UAV’s computational capacity, with I = 10
+and J = 3.
+to k-means, and random UAV placement that achieved around
+4.4 Mbps, and 3.2 Mbps, respectively, when the threshold
+was relaxed to 3 seconds. The performance of the baseline
+approaches highlights their limitations in improving system
+efﬁciency due to poor spatial conﬁguration, resulting in the
+under-utilization of available resources. In contrast, the TD3-
+based placement signiﬁcantly enhances system efﬁciency and
+network throughput, particularly as the AoDT threshold is
+relaxed, allowing UAVs to allocate communication resources
+more effectively and ﬂexibly.
+The results in Figure 10 illustrate how the sum rate per-
+formance is evaluated across different UAV computational
+capacities for the different placement strategies. The ﬁgure
+shows that increasing UAV computational capacity improves
+the sum rate performance among all four plots, demonstrating
+that enhanced processing capabilities enable faster handling of
+computational tasks, which, in turn, optimizes communication
+resources, allowing for additional data transmission tasks. The
+SCA-based solution approach continues to yield the highest
+sum rate, achieving approximately 7.5 Mbps at 250 MHz.
+TD3-based placement achieved highly optimized sum rate of
+6.7 Mbps, and the other two baseline approaches achieved a
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 12 =====
+3024
+IEEE TRANSACTIONS ON NETWORK AND SERVICE MANAGEMENT, VOL. 23, 2026
+Fig. 11.
+Heterogeneous vs. uniform task arrival rate within a group, with
+I = 10, J = 3.
+sum rate lower than 4.5 Mbps for the same computational
+capacity of 250 MHz.
+To provide better understanding of the AoDT expression, we
+explore the implications of heterogeneity in the task arrival
+rates of devices. We consider a network with two groups
+of devices, where each group is composed of ﬁve devices.
+Fig. 11 compares different scenarios while varying the number
+of deployed UAVs: one scenario, referred to as Uniform fast
+λ, has a uniform and high arrival rate within each group
+(λ1 = 2, λ2 = 3), another scenario, referred to as Uniform
+slow λ, has a uniform and low arrival rate within each group
+(λ1 = 0.8, λ2 = 1), and a third scenario, referred to as
+Heterogeneous λ, has a varying arriving rate within each group
+(0.8 ≤λ1, λ2 ≤3). The generated results show that the
+performance when considering heterogeneous task arrival rates
+within the same group (Heterogeneous λ) lies under that of
+Uniform fast λ and above that of Uniform slow λ. In the case
+of heterogeneous arrival rates, the age of the process requires
+status updates from all IoT devices to be aggregated thus the
+age will be limited by the IoT device with the slowest rate.
+In summary, across all evaluated metrics (Figures 6-10),
+the TD3-based reinforcement learning solution consistently
+trails the SCA-based solution by a small margin providing
+clear performance gains as compared to baseline approaches.
+The TD3-based solution demonstrates that its learned RL
+policy can generalize without re-optimization, and therefore
+offers a scalable, operationally efﬁcient alternative to SCA-
+based solution and is well-suited for larger and more dynamic
+networks.
+VIII. CONCLUSION
+DT technology serves as a vital tool in real-time network
+monitoring and performance optimization [41]. In this work,
+we addressed the problem of developing a highly synchronized
+and highly accurate digital twin of a physical system by
+leveraging multiple UAVs positioned in optimized locations
+to collect and process data from a ﬁeld of IoT devices used to
+monitor multiple processes in the given system. Our problem
+considered the practical case where a group of multiple IoT
+devices monitors the same physical process. We formulated the
+problem as a mixed-integer non-convex program to optimize
+the total sum rate of IoT devices, resource allocation, and UAV
+postioning, while ensuring a constrained AoDT that reﬂects the
+digital twin data freshness. We solve the problem using succes-
+sive convex approximations and propose a more efﬁcient and
+scalable learning-based solution. To do so, we model the prob-
+lem as MDP and solve it using twin delayed deep deterministic
+policy gradient method. We conduct extensive simulations to
+demonstrate the performance superiority of the TD3-based
+approach as compared to baseline solutions while remaining
+close to SCA results. Some interesting future research includes
+adopting the AoDT metric in different industry verticals
+including manufacturing, healthcare, aerospace, maritime and
+smart city environments [35]. Another interesting direction
+involves protecting the integrity of the digital twin against
+malicious attacks through securing the IoT infrastructure with
+block-chain-based authentication [42], [43], [44].
+REFERENCES
+[1]
+W. Pan, Z. Deng, X. Wang, P. Zhou, and W. Wu, “Optimizing the age of
+information for multi-source information update in Internet of Things,”
+IEEE Trans. Netw. Sci. Eng., vol. 9, no. 2, pp. 904–917, Mar. 2022.
+[2]
+A. Hakiri, A. Gokhale, S. B. Yahia, and N. Mellouli, “A comprehensive
+survey on digital twin for future networks and emerging Internet of
+Things industry,” Comput. Netw., vol. 244, May 2024, Art. no. 110350.
+[3]
+Y. Xu, Y. Sun, X. Liu, and Y. Zheng, “A digital-twin-assisted
+fault diagnosis using deep transfer learning,” IEEE Access, vol. 7,
+pp. 19990–19999, 2019.
+[4]
+Y. Wu, K. Zhang, and Y. Zhang, “Digital twin networks: A survey,”
+IEEE Internet Things J., vol. 8, no. 18, pp. 13789–13804, Sep. 2021.
+[5]
+C. Zhou et al., “Network digital twin: Concepts and reference
+architecture,” Version 8, Internet Eng. Task Force, Internet-Draft, Oct.
+2024.
+[6]
+W. Hu, T. Zhang, X. Deng, Z. Liu, and J. Tan, “Digital twin: A state-of-
+the-art review of its enabling technologies, applications and challenges,”
+J. Intell. Manuf. Special Equip., vol. 2, no. 1, pp. 1–34, Aug. 2021.
+[7]
+M. A. Hafeez, A. Procacci, A. Coussement, and A. Parente, “Challenges
+and opportunities for the application of digital twins in hard-to-abate
+industries: A review,” Resour., Conservation Recycling, vol. 209, Oct.
+2024, Art. no. 107796.
+[8]
+O. A. Amodu, U. A. Bukar, R. A. Raja Mahmood, C. Jarray, and
+M. Othman, “Age of information minimization in UAV-aided data
+collection for WSN and IoT applications: A systematic review,” J. Netw.
+Comput. Appl., vol. 216, Jul. 2023, Art. no. 103652.
+[9]
+C. M. W. Basnayaka, D. N. K. Jayakody, and M. Beko, “Freshness-in-
+air: An AoI-inspired UAV-assisted wireless sensor networks,” ICT Exp.,
+vol. 10, no. 5, pp. 1103–1109, Oct. 2024.
+[10] X. Gao, X. Zhu, and L. Zhai, “AoI-sensitive data collection in
+multi-UAV-assisted wireless sensor networks,” IEEE Trans. Wireless
+Commun., vol. 22, no. 8, pp. 5185–5197, Aug. 2023.
+[11] X. Zhang, Z. Chang, T. H¨am¨al¨ainen, and G. Min, “AoI-energy tradeoff
+for data collection in UAV-assisted wireless networks,” IEEE Trans.
+Commun., vol. 72, no. 3, pp. 1849–1861, Mar. 2024.
+[12] M. Itani and S. Sharafeddine, “Toward industrial metaverse: A high
+ﬁdelity digital twin for IIoT with optimized age-accuracy tradeoff,”
+IEEE Access, vol. 12, pp. 104242–104253, 2024.
+[13] Y. Sun, I. Kadota, R. Talak, and E. Modiano, Age of Information: A New
+Metric for Information Freshness. Cham, Switzerland: Springer Nature,
+2022.
+[14] L. Zhao et al., “Adaptive multi-UAV trajectory planning leveraging
+digital twin technology for urban IIoT applications,” IEEE Trans. Netw.
+Sci. Eng., vol. 11, no. 6, pp. 5349–5363, Nov. 2024.
+[15] Y. Li, W. Liang, Z. Xu, W. Xu, and X. Jia, “Budget-constrained digital
+twin synchronization and its application on ﬁdelity-aware queries in edge
+computing,” IEEE Trans. Mobile Comput., vol. 24, no. 1, pp. 165–182,
+Jan. 2025.
+[16] J. Li et al., “AoI-aware user service satisfaction enhancement in digital
+twin-empowered edge computing,” IEEE/ACM Trans. Netw., vol. 32,
+no. 2, pp. 1677–1690, Apr. 2024.
+[17] C. Kim, W. Saad, J. Han, T. Yu, K. Sakaguchi, and M. Jung, “Real-time
+task scheduling with fairness in digital twin systems,” IEEE Internet
+Things J., vol. 12, no. 7, pp. 7846–7862, Apr. 2025.
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 13 =====
+KHALAF et al.: UAV-AIDED DT FRAMEWORK FOR IoT NETWORKS WITH HIGH ACCURACY AND SYNCHRONIZATION
+3025
+[18] P. Cao, L. Lei, G. Shen, S. Cai, X. Liu, and X. Liu, “AAV swarm
+cooperative search based on scalable multiagent deep reinforcement
+learning with digital twin-enabled sim-to-real transfer,” IEEE Trans.
+Mobile Comput., vol. 24, no. 6, pp. 5173–5188, Jun. 2025.
+[19] X. Tang et al., “Digital-twin-assisted task assignment in multi-UAV
+systems: A deep reinforcement learning approach,” IEEE Internet Things
+J., vol. 10, no. 17, pp. 15362–15375, Sep. 2023.
+[20] X. Wang, N. Cheng, L. Ma, Z. Yin, T. Luan, and N. Lu, “Imperfect
+digital twin assisted low cost reinforcement training for multi-UAV
+networks,” in Proc. IEEE Int. Conf. Metaverse Comput., Netw. Appl.
+(MetaCom), Jun. 2023, pp. 365–369.
+[21] J.
+Tang
+et
+al.,
+“UAV-assisted
+digital-twin
+synchronization
+with
+tiny-machine-learning-based
+semantic
+communications,”
+IEEE
+Internet
+Things
+J.,
+vol. 11,
+no. 17,
+pp. 28437–28451,
+Sep. 2024.
+[22] P.
+Consul,
+I.
+Budhiraja,
+D.
+Garg,
+N.
+Kumar,
+R.
+Singh,
+and
+A. S. Almogren, “A hybrid task ofﬂoading and resource alloca-
+tion approach for digital twin-empowered UAV-assisted MEC network
+using federated reinforcement learning for future wireless network,”
+IEEE
+Trans.
+Consum.
+Electron.,
+vol. 70,
+no. 1,
+pp. 3120–3130,
+Feb. 2024.
+[23] H. Guo, X. Zhou, J. Wang, J. Liu, and A. Benslimane, “Intelligent
+task ofﬂoading and resource allocation in digital twin based aerial
+computing networks,” IEEE J. Sel. Areas Commun., vol. 41, no. 10,
+pp. 3095–3110, Oct. 2023.
+[24] Z. Kuang, H. Wang, J. Li, and F. Hou, “Utility-aware UAV deployment
+and task ofﬂoading in multi-UAV edge computing networks,” IEEE
+Internet Things J., vol. 11, no. 8, pp. 14755–14770, Apr. 2024.
+[25] G. Shen et al., “Deep reinforcement learning for ﬂocking motion of
+multi-UAV systems: Learn from a digital twin,” IEEE Internet Things
+J., vol. 9, no. 13, pp. 11141–11153, Jul. 2022.
+[26] N. Cheng, X. Wang, Z. Li, Z. Yin, T. H. Luan, and X. Shen, “Toward
+enhanced reinforcement learning-based resource management via digital
+twin: Opportunities, applications, and challenges,” IEEE Netw., vol. 39,
+no. 1, pp. 189–196, Jan. 2025.
+[27] M. Samir, S. Sharafeddine, C. Assi, T. M. Nguyen, and A. Ghrayeb,
+“Trajectory planning and resource allocation of multiple UAVs for
+data delivery in vehicular networks,” IEEE Netw. Lett., vol. 1, no. 3,
+pp. 107–110, Sep. 2019.
+[28] J. Ji, K. Zhu, and L. Cai, “Trajectory and communication design
+for cache- enabled UAVs in cellular networks: A deep reinforcement
+learning approach,” IEEE Trans. Mobile Comput., vol. 22, no. 10,
+pp. 6190–6204, Oct. 2023.
+[29] J. Bi, Z. Wang, H. Yuan, J. Zhang, and M. Zhou, “Cost-minimized
+computation ofﬂoading and user association in hybrid cloud and edge
+computing,” IEEE Internet Things J., vol. 11, no. 9, pp. 16672–16683,
+May 2024.
+[30] J. Huang, M. Zhang, J. Wan, Y. Chen, and N. Zhang, “Joint data
+caching and computation ofﬂoading in UAV-assisted Internet of Vehicles
+via federated deep reinforcement learning,” IEEE Trans. Veh. Technol.,
+vol. 73, no. 11, pp. 17644–17656, Nov. 2024.
+[31] S. He, K. Shi, C. Liu, B. Guo, J. Chen, and Z. Shi, “Collaborative sensing
+in Internet of Things: A comprehensive survey,” IEEE Commun. Surveys
+Tuts., vol. 24, no. 3, pp. 1435–1474, 3rd Quart., 2022.
+[32] D. E. Ruiz-Guirola, O. L. A. L´opez, and S. Montejo-S´anchez, “Modeling
+IoT trafﬁc patterns: Insights from a statistical analysis of an mtc dataset,”
+Expert Syst. Appl., vol. 272, May 2025, Art. no. 126726.
+[33] H. A. Alameddine, S. Sharafeddine, S. Sebbah, S. Ayoubi, and C. Assi,
+“Dynamic task ofﬂoading and scheduling for low-latency IoT services
+in multi-access edge computing,” IEEE J. Sel. Areas Commun., vol. 37,
+no. 3, pp. 668–682, Mar. 2019.
+[34] A. Tout, S. Sharafeddine, and N. Abbas, “UAV-assisted multi-tier
+computing framework for IoT networks,” Ad Hoc Netw., vol. 142, Apr.
+2023, Art. no. 103119.
+[35] T. H. Khan, C. Noh, and S. Han, “Correspondence measure: A review for
+the digital twin standardization,” Int. J. Adv. Manuf. Technol., vol. 128,
+nos. 5–6, pp. 1907–1927, Sep. 2023.
+[36] P. Bellavista, N. Bicocchi, M. Fogli, C. Giannelli, M. Mamei, and
+M. Picone, “ODTE: A metric for digital twin entanglement,” IEEE Open
+J. Commun. Soc., vol. 5, pp. 2377–2390, 2024.
+[37] C. Kim, M. Chehimi, M. Jung, and W. Saad, “Real-time task scheduling
+for digital twin edge network,” in Proc. GLOBECOM - IEEE Global
+Commun. Conf., Dec. 2023, pp. 7043–7048.
+[38] R. D. Yates and S. K. Kaul, “The age of information: Real-time status
+updating by multiple sources,” IEEE Trans. Inf. Theory, vol. 65, no. 3,
+pp. 1807–1827, Mar. 2019.
+[39] H. Sun, Y. Zhou, J. Tang, Z. Kang, X. Wang, and T. Q. S. Quek,
+“Average AoI-minimal trajectory design for UAV-assisted IoT data
+collection system: A safe-TD3 approach,” IEEE Wireless Commun. Lett.,
+vol. 13, no. 2, pp. 530–534, Feb. 2024.
+[40] S. Fujimoto, H. van Hoof, and D. Meger, “Addressing function approx-
+imation error in actor-critic methods,” in Proc. Int. Conf. Mach. Learn.,
+2018, pp. 1587–1596. [Online]. Available: https://proceedings.mlr.press/
+v80/fujimoto18a.html
+[41] B. Li, Y. Liu, L. Tan, H. Pan, and Y. Zhang, “Digital twin assisted task
+ofﬂoading for aerial edge computing and networks,” IEEE Trans. Veh.
+Technol., vol. 71, no. 10, pp. 10863–10877, Oct. 2022.
+[42] S. B. Prathiba et al., “Fortifying federated learning in IIoT: Leveraging
+blockchain and digital twin innovations for enhanced security and
+resilience,” IEEE Access, vol. 12, pp. 68968–68980, 2024.
+[43] S. D. Okegbile and I. P. Gambo, “Artiﬁcial intelligence-driven security
+framework for Internet of Things-enhanced digital twin networks,”
+Internet Things, vol. 31, May 2025, Art. no. 101564.
+[44] W. Issa, N. Moustafa, B. Turnbull, and K.-K.-R. Choo, “DT-BFL: Digital
+twins for blockchain-enabled federated learning in Internet of Things
+networks,” Ad Hoc Netw., vol. 178, Nov. 2025, Art. no. 103934.
+Ghofran Khalaf received the B.S. and M.S. degrees in computer science
+from American University of Beirut (AUB) in 2023 and 2025, respectively.
+Her research interests include wireless networking, digital twin technology,
+and AI-driven optimization problems.
+May Itani (Member, IEEE) received the B.E. degree
+in electrical engineering and the M.E. degree in
+computer and communications engineering from
+American University of Beirut (AUB), Lebanon, in
+1999 and 2004, respectively, and the Ph.D. degree
+in computer science from Beirut Arab University in
+2017.
+From 1999 to 2011, she was a Teaching Assistant
+with Beirut Arab University (BAU). From 2012
+to 2019, she as a part-time Faculty Member with
+Lebanese American University and AUB. In Septem-
+ber 2020, she joined AUB as a Full Timer. She is currently an Associate
+Professor with the Mathematics and Computer Science Department, BAU. Her
+research interests include heuristic optimization using artiﬁcial intelligence,
+future wireless networks, parallel processing, and cryptography.
+Dr. Itani was a recipient of the Charli Korban Award for Outstanding Grad-
+uate Student in the Maroun Semaan Faculty of Engineering and Architecture,
+AUB.
+Sanaa
+Sharafeddine
+(Senior
+Member,
+IEEE)
+received the B.E. and M.E. degrees in computer
+and communications engineering from American
+University of Beirut and the Ph.D. degree in com-
+munications engineering from Munich University of
+Technology (TUM).
+She is currently a Professor of electrical and
+computer engineering with American University of
+Beirut. Her Ph.D. research work was conducted in
+collaboration with Siemens AG Research Laborato-
+ries, Munich, and resulted in two granted patents.
+Her research interests are in the areas of wireless networking, 6G systems,
+multi-access edge computing, network planning, and optimization.
+Prof. Sharafeddine received the Best Paper Award in the 2023 IEEE
+Globecom. She was selected as the L’Oreal-Unesco International Rising
+Talent in 2015 and the L’Oreal-Unesco Pan Arab Regional Fellowship
+Award in 2013. She was a recipient of the Siemens Youth and Knowledge
+Scholarship for Highly Distinguished Students and the Charli Korban Award
+for Outstanding Graduate Student in the Maroun Semaan Faculty of Engi-
+neering and Architecture, American University of Beirut. She serves on the
+Computing Accreditation Commission (CAC) of ABET as a Commissioner
+and Team Chair, and on the CSAB Board of Directors. She served on
+the Editorial Board for IEEE NETWORKING LETTERS, IEEE Internet of
+Things Magazine, Ad Hoc Networks (Elsevier), IEEE ACCESS, and IEEE
+JOURNAL ON SELECTED AREAS IN COMMUNICATIONS—Series on Network
+Softwarization and Enablers.
+Authorized licensed use limited to: National Institute of Technology Goa. Downloaded on August 18,2026 at 07:37:41 UTC from IEEE Xplore.  Restrictions apply. 
