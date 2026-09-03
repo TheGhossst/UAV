@@ -1,4 +1,4 @@
-"""UAV placement baselines (no SCA / TD3 in this milestone)."""
+"""UAV placement baselines (random, k-means). SCA lives in uavdt.sca."""
 
 from uavdt.placement.kmeans import place_kmeans
 from uavdt.placement.random import place_random

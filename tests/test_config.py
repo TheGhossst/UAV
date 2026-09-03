@@ -19,3 +19,22 @@ def test_task_size_bytes_is_times_eight():
     )
     cfg = _cfg_from_args(args)
     assert cfg.task_size_bits == 16_000.0
+    assert cfg.max_bw_share is None
+
+
+def test_max_bw_share_cli():
+    parser = build_parser()
+    args = parser.parse_args(["sca", "--max-bw-share", "0.25", "--bandwidth-preset", "8.8mhz"])
+    cfg = _cfg_from_args(args)
+    assert cfg.max_bw_share == 0.25
+    assert abs(cfg.link_bandwidth_cap_hz - 0.25 * 8_800_000.0) < 1e-6
+    sca_parser = None
+    for action in parser._actions:
+        choices = getattr(action, "choices", None)
+        if isinstance(choices, dict) and "sca" in choices:
+            sca_parser = choices["sca"]
+            break
+    assert sca_parser is not None
+    help_text = sca_parser.format_help()
+    assert "EXTERNAL PARAMETER" in help_text
+    assert "Problem (P)" in help_text

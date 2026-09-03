@@ -16,6 +16,10 @@ from uavdt.config import (
     SimConfig,
 )
 from uavdt.experiments import run_one, run_seeds
+from uavdt.sca import SCASettings, solve_sca
+from uavdt.sca.algorithm import write_history
+from uavdt.sca.debug import print_human_table, run_sca_seq_debug
+from uavdt.scenario import generate_scenario
 
 
 def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
@@ -32,6 +36,7 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
         lambda_i_per_s=float(args.lambda_i),
         aodt_threshold_s=float(args.aodt_threshold),
         los_angle_unit=args.los_angle_unit,
+        max_bw_share=args.max_bw_share,
     )
 
 
@@ -68,6 +73,15 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
     )
     p.add_argument("--lambda-i", type=float, default=DEFAULT.lambda_i_per_s)
     p.add_argument("--aodt-threshold", type=float, default=DEFAULT.aodt_threshold_s)
+    p.add_argument(
+        "--max-bw-share",
+        type=float,
+        default=None,
+        help=(
+            "EXTERNAL PARAMETER: optional per-link cap as a fraction of "
+            "B_sys (e.g. 0.25). Not in Problem (P) or Table II."
+        ),
+    )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
     p.add_argument("--placement", choices=("random", "kmeans"), default="random")
 
@@ -161,6 +175,93 @@ def cmd_bandwidth_sweep(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sca(args: argparse.Namespace) -> int:
+    cfg = _cfg_from_args(args)
+    scenario = generate_scenario(args.seed, cfg)
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+    settings = SCASettings(
+        max_iterations=int(args.max_iterations),
+        epsilon=float(args.epsilon),
+        step_size_m=float(args.step_size),
+        solver=solver,
+    )
+    result = solve_sca(scenario, args.seed, settings=settings)
+    write_history(result, args.history_json)
+    write_history(result, args.history_csv)
+    ev = result.true_eval
+    c = ev.constraints
+    d = result.diagnostics
+    stop = str(d.get("stop_reason", ""))
+    print("method                Algorithm 1 SCA of Problem (P)")
+    print(f"B_sys                 {_fmt_hz(cfg.b_sys_hz)}")
+    if cfg.max_bw_share is None:
+        print("max_bw_share          none (paper (26)–(27) only)")
+    else:
+        print(
+            f"max_bw_share          {cfg.max_bw_share:g}  "
+            f"(B_ij <= {cfg.link_bandwidth_cap_hz:.6g} Hz; "
+            "EXTERNAL PARAMETER, not Problem (P))"
+        )
+    print(f"solver_status         {result.solver_status}")
+    print(f"solver_name           {result.solver_name}")
+    print(f"solver_backend        {d.get('solver_backend')}")
+    if d.get("se_max_abs_diff") is not None:
+        print(f"se_max_abs_diff       {d.get('se_max_abs_diff')}")
+    print(f"n_iterations          {result.n_iterations}")
+    print(f"stop_reason           {stop}")
+    print(stop)
+    print(f"accepted_steps        {d.get('accepted_steps')}")
+    print(f"rejected_steps        {d.get('rejected_steps')}")
+    print(f"step_size_reductions  {d.get('step_size_reductions')}")
+    if d.get("final_step_m") is not None:
+        print(f"final_step_m          {d.get('final_step_m')}")
+    init_obj = result.history[0].true_objective if result.history else float("nan")
+    print(f"initial_true_obj      {init_obj:.6g}")
+    print(f"final_true_obj        {result.true_objective:.6g}")
+    print(f"improvement           {result.true_objective - init_obj:.6g}")
+    print(f"true_sum_rate_Mbps    {ev.sum_rate_mbps:.6g}")
+    print(f"AoDT_s                {np_list(ev.aodt_s)}")
+    print(f"rho                   {np_list(ev.rho)}")
+    print(f"min_uav_separation_m  {result.history[-1].current_min_separation:.6g}")
+    print(f"bandwidth_used_Hz     {result.history[-1].bandwidth_usage:.6g}")
+    print(f"max_link_B_Hz         {float(result.allocation.bandwidth_hz.max()):.6g}")
+    print(f"feasible              {ev.feasible}")
+    print(
+        "violations            "
+        f"qos={c.qos_violations} aodt={c.aodt_violations} "
+        f"sep={c.sep_violations} cpu={c.cpu_unstable_count} "
+        f"bw_excess_Hz={c.bw_excess_hz:.4g}"
+    )
+    print("uav_xyz_m")
+    print(result.uav_xyz_m)
+    print("bandwidth_hz")
+    print(result.allocation.bandwidth_hz)
+    print("assoc_rates_bit_per_s")
+    print(ev.assoc_rates_bit_per_s)
+    print(f"history_json          {args.history_json}")
+    print(f"history_csv           {args.history_csv}")
+    return 0
+
+
+def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
+    cfg = _cfg_from_args(args)
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+    payload = run_sca_seq_debug(
+        args.seed,
+        cfg,
+        max_iterations=int(args.max_iterations),
+        step_size_m=float(args.step_size),
+        out_json=args.out_json,
+        solver=solver,
+    )
+    print_human_table(payload)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="uavdt",
@@ -184,6 +285,42 @@ def build_parser() -> argparse.ArgumentParser:
     _add_shared(sw)
     sw.add_argument("--seed", type=int, default=1)
     sw.set_defaults(func=cmd_bandwidth_sweep)
+
+    sc = sub.add_parser(
+        "sca",
+        help="Algorithm 1 SCA; scores with the true evaluator",
+    )
+    _add_shared(sc)
+    sc.add_argument("--seed", type=int, default=1)
+    sc.add_argument("--max-iterations", type=int, default=30)
+    sc.add_argument("--epsilon", type=float, default=1e-4)
+    sc.add_argument("--step-size", type=float, default=20.0, help="L-inf SCA neighborhood of q (m)")
+    sc.add_argument(
+        "--solver",
+        type=str,
+        default="matlab",
+        help="matlab/MOSEK: one-session MATLAB CVX+MOSEK; cvxpy: Python HiGHS LP",
+    )
+    sc.add_argument("--history-json", type=str, default="results/sca_history.json")
+    sc.add_argument("--history-csv", type=str, default="results/sca_history.csv")
+    sc.set_defaults(func=cmd_sca)
+
+    dbg = sub.add_parser(
+        "sca-seq-debug",
+        help="Algorithm 1 SCA iteration log (true-feasible gate)",
+    )
+    _add_shared(dbg)
+    dbg.add_argument("--seed", type=int, default=1)
+    dbg.add_argument("--max-iterations", type=int, default=30)
+    dbg.add_argument("--step-size", type=float, default=20.0)
+    dbg.add_argument(
+        "--solver",
+        type=str,
+        default="matlab",
+        help="matlab/MOSEK: one-session MATLAB CVX+MOSEK; cvxpy: Python HiGHS LP",
+    )
+    dbg.add_argument("--out-json", type=str, default="results/sca_seq_debug.json")
+    dbg.set_defaults(func=cmd_sca_seq_debug)
     return p
 
 

@@ -3,11 +3,19 @@
 Fresh implementation of the Khalaf et al. (IEEE TNSM, 2026) **system
 model**, with a 100 × 100 m field and configurable `B_sys`.
 
-The paper is the source of truth. This tree does **not** carry the old
-calibrated-radio reconstruction. SCA and TD3 are not in this milestone.
+The paper is the source of **methodology and Table II parameters**,
+except area, bandwidth, `S_i`, and `L`. Published Mbps figures are
+**not** a target: Table II’s 20 kHz is infeasible under this model’s
+QoS/AoDT floors (~102 kHz required) and cannot produce the paper’s
+7–14 Mbps plots (Eq. (6) bounds 20 kHz at ~0.13 Mbps). Headline
+results are **2.4 MHz and 8.8 MHz**, each with no per-link cap and
+with a 25% per-link cap (`max_bw_share=0.25`, an **EXTERNAL
+PARAMETER**, not Problem (P)).
 
-See `docs/REPRODUCTION.md` for the inspection report, equations,
-parameter table, and ambiguities.
+TD3 is not in this milestone.
+
+See `docs/REPRODUCTION.md` §4.1 for the 20 kHz substitution, the
+inspection report, equations, and the parameter ledger.
 
 ```text
 pip install -r requirements.txt
@@ -16,4 +24,7 @@ python -m pytest
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --placement random
 python -m uavdt evaluate --bandwidth-preset 2.4mhz --placement kmeans
 python -m uavdt evaluate --bandwidth-preset 8.8mhz
+python -m uavdt sca --seed 1 --bandwidth-preset 2.4mhz --solver matlab
+python -m uavdt sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver matlab
+python -m uavdt sca-seq-debug --seed 1 --bandwidth-preset 2.4mhz --solver matlab
 ```

@@ -39,8 +39,11 @@ ENV_B = 0.16
 AREA_X_M = 100.0
 AREA_Y_M = 100.0
 
-# Bandwidth experiments (Hz). Table II lists 20_000 Hz; the other two
-# replace that single paper value for this reproduction.
+# Bandwidth experiments (Hz). Table II lists 20_000 Hz. That paper value
+# is infeasible here (QoS/AoDT floors need ~102 kHz) and cannot produce
+# the paper's 7–14 Mbps plots (Eq. (6) bounds 20 kHz at ~0.13 Mbps).
+# Headline results: 2.4 MHz and 8.8 MHz, each with and without a 25%
+# per-link cap. 20 kHz is kept only as a diagnostic of Table II.
 BANDWIDTH_PRESETS: dict[str, float] = {
     "20khz": 20_000.0,
     "2.4mhz": 2_400_000.0,
@@ -88,6 +91,10 @@ class SimConfig:
     # External — not paper Table II.
     task_size_bits: float = EXTERNAL_TASK_SIZE_BITS
     task_cycles: float = EXTERNAL_TASK_CYCLES
+    # Per-link cap as a fraction of B_sys. None = only (26)–(27) as written.
+    # 0.25 is an EXTERNAL PARAMETER (experimental restriction), not in
+    # Problem (P) and not in Table II.
+    max_bw_share: float | None = None
 
     def __post_init__(self) -> None:
         if self.num_iot != self.num_processes * self.iots_per_process:
@@ -103,6 +110,8 @@ class SimConfig:
             raise ValueError("task_cycles is external and must be positive")
         if self.los_angle_unit not in ("rad", "deg"):
             raise ValueError("los_angle_unit must be 'rad' or 'deg'")
+        if self.max_bw_share is not None and not (0.0 < self.max_bw_share <= 1.0):
+            raise ValueError("max_bw_share must be in (0, 1] or None")
 
     @property
     def noise_power_w(self) -> float:
@@ -113,6 +122,16 @@ class SimConfig:
     def service_rate_per_s(self) -> float:
         """mu_j = f_j / L. L is external."""
         return self.uav_cpu_cycles_per_s / self.task_cycles
+
+    @property
+    def link_bandwidth_cap_hz(self) -> float:
+        """Per-link B_ij cap. Paper (26)–(27): full B_sys.
+
+        Optional max_bw_share is an EXTERNAL PARAMETER, not Problem (P).
+        """
+        if self.max_bw_share is None:
+            return self.b_sys_hz
+        return float(self.max_bw_share) * self.b_sys_hz
 
     def with_bandwidth_hz(self, b_sys_hz: float) -> "SimConfig":
         return replace(self, b_sys_hz=float(b_sys_hz))

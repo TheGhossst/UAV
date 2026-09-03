@@ -52,11 +52,14 @@ Do **not** carry these forward from the old tree:
 
 - Default area `500 × 500 m`
 - Radio profile `calibrated` (`B_sys = 8.8 MHz` and `noise_power = σ` instead of `σ²`)
-- Per-link cap `max_bw_share`
+- Unlabeled per-link cap treated as part of Problem (P) (a 25% cap
+  exists here only as an **EXTERNAL PARAMETER**, see §4.1 / §6.7)
 - Default LoS angle unit `deg` (Al-Hourani convention, not written in Eq. (4))
 - Silent `S_bytes × 8` without labeling it as an interpretation
 - Experimental `S_i`, `L` values presented near Table II
 - Bandwidth LP / “repair” that is not in Problem (P)
+- Treating the paper’s 7–14 Mbps figures at 20 kHz as a calibration
+  target (this reproduction does not chase those Mbps)
 - PSO, SCA surrogate, CVX/MOSEK wrapper, TD3 (later milestones)
 - Any scale factor whose purpose is to hit the published Mbps figures
 
@@ -142,7 +145,8 @@ Seeds are explicit. A CLI path can average 20 runs later.
 | `p_i` | 0.2 W | Table II |
 | `a` | 9.61 | Table II |
 | `b` | 0.16 | Table II |
-| Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | Intentional modification (paper Table II: 20,000 Hz) |
+| Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | See §4.1: Table II 20 kHz is **infeasible** here; headline runs are 2.4 MHz and 8.8 MHz |
+| Per-link cap `max_bw_share` | `None` or `0.25` | **EXTERNAL PARAMETER**, not Problem (P) / Table II |
 | `S_i` (task size) | External (`task_size_bits`) | **Not specified** in Table II |
 | `L` (cycles/task) | External (`task_cycles`) | **Not specified** in Table II |
 
@@ -269,10 +273,59 @@ the CLI can run. They are **not** paper values.
 
 ## 4. Intentional modifications (this reproduction)
 
+Paper methodology and Table II are used **except** the items below.
+Numerical figures in the paper’s plots are **not** a target (advisor
+instruction: ignore the published Mbps and re-evaluate the written
+model).
+
 1. Field is **100 × 100 m**, not 500 × 500 m.
-2. `B_sys` is an experiment parameter: 20 kHz, 2.4 MHz, or 8.8 MHz.
+2. `B_sys` is an experiment parameter: 20 kHz (Table II diagnostic),
+   2.4 MHz, or 8.8 MHz. Each of 2.4 MHz and 8.8 MHz is run **with no
+   per-link cap** and **with a 25% per-link cap**.
+3. `S_i` (`task_size_bits`) and `L` (`task_cycles`) are **EXTERNAL**
+   execution defaults; Table II does not specify them.
 
 No other communication parameters are replaced to chase figure Mbps.
+
+### 4.1 Paper 20 kHz / 7–14 Mbps vs this model — documented substitution
+
+**PAPER:** Table II lists `B_sys = 20,000 Hz`. Figs. 6–10 report
+sum-rate on the order of **7–14 Mbps**.
+
+**This reproduction (DERIVED from Eqs. (1)–(6), (25), (31)):**
+
+- At 20 kHz, Eq. (6) with `σ²` Shannon-bounds the whole system at
+  **~0.13 Mbps**. 7–14 Mbps is about **50–100×** that bound. The
+  written channel plus Table II bandwidth **cannot** produce the
+  plotted Mbps. That is a scale/unit/model inconsistency (or
+  non-reproducible reported figures), **not** a solver bug.
+- Under this reproduction’s QoS/AoDT floors, a typical 100 × 100 m
+  start needs on the order of **~102 kHz** of total bandwidth
+  (`∑_i R_min / SE_ij`). **20 kHz is infeasible.**
+- **Headline results are therefore reported at 2.4 MHz and 8.8 MHz**,
+  each with `max_bw_share = None` and `max_bw_share = 0.25`. The
+  20 kHz preset remains in the CLI only as a Table II diagnostic.
+  This substitution is **explicit**, not implied.
+
+**IMPLEMENTATION CHOICE / EXTERNAL:** the 25% per-link cap
+(`B_ij ≤ 0.25 B_sys`) is **not** part of Problem (P). It is an
+external experimental restriction used to stop leftover spectrum from
+collapsing onto a single highest-SE link.
+
+### 4.2 Cap vs uncapped arithmetic
+
+When comparing a no-cap run to a 25% cap run at the **same** `B_sys`:
+
+```text
+gap_vs_uncapped     = uncapped_rate - capped_rate
+gap_vs_uncapped_pct = 100 * gap_vs_uncapped / uncapped_rate
+```
+
+Both rates must already be in the **same** unit (bit/s or Mbps). Do
+**not** introduce a factor of 10. Helper: `uavdt.sca.gap_vs_uncapped`.
+Sweep JSON (`scripts/run_sca_bw_matrix.py`) writes `gaps_vs_uncapped`.
+No stored sweep JSONs are in-tree at the time of this note; recompute
+from `results/` when a campaign is run.
 
 ---
 
@@ -285,6 +338,9 @@ python -m uavdt evaluate --seed 1 --bandwidth 20000 --placement random
 python -m uavdt evaluate --bandwidth-preset 2.4mhz --placement kmeans
 python -m uavdt evaluate --bandwidth-preset 8.8mhz --seed 1
 python -m uavdt multi-seed --n-runs 5 --bandwidth 20000 --placement random
+python -m uavdt sca --seed 1 --bandwidth-preset 2.4mhz
+python -m uavdt sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25
+python -m uavdt sca-seq-debug --seed 1 --bandwidth-preset 2.4mhz
 ```
 
 From the repo root, `src/` must be on `PYTHONPATH` (pytest.ini sets this
@@ -294,3 +350,173 @@ for tests). Example:
 $env:PYTHONPATH="src"
 python -m uavdt evaluate --seed 1 --bandwidth 20000
 ```
+
+---
+
+## 6. Algorithm 1 SCA of Problem (P)
+
+**PAPER:** Algorithm 1 is successive convex approximation of Problem (P).
+Each iteration solves **one convexified (P)** for UAV positions **and**
+bandwidth. Section V linearizes (25) and the channel maps (3)–(5) with
+first-order Taylor expansions. MATLAB CVX + MOSEK is the stated solver.
+The PDF does not print the algebra of the convexified program; the map
+below is the reconstruction used here.
+
+Labels used below: **PAPER** / **DERIVED** / **IMPLEMENTATION CHOICE** /
+**PAPER CORRECTION** / **EXTERNAL PARAMETER**.
+
+**PAPER CORRECTION:** Algorithm 1 prints
+`while |ObjP(n)-ObjP(n-1)| <= epsilon` (the usual **stop** test written
+as a loop condition). Stop when the true objective change after an
+accepted update is \(\le\varepsilon\).
+
+**Binaries — IMPLEMENTATION CHOICE, not a paper requirement.**
+Algorithm 1’s update list is UAV positions, bandwidth, and the
+sum-rate matrix. This implementation **freezes** \(a_{ij}\) and
+\(b_{ij}\) after initialization. That is **not** required by the paper.
+
+### 6.1 Original Problem (P) — PAPER
+
+Objective (20): maximize \(\sum_i\sum_j a_{ij} r_{ij}\).
+
+| Constraint | Content | In this solver |
+| --- | --- | --- |
+| (21) | \(\sum_j a_{ij}=1\) | Held by fixing \(a_{ij}\) |
+| (22) | one processing UAV per IoT | Held by fixing \(b_{ij}\) |
+| (23) | same process → same processing UAV | Held by process-consistent \(b\) |
+| (24) | \(\mu_j \ge \lambda_{\mathrm{total},j}\) | Checked at init; constant if \(b\) fixed |
+| (25) | \(r_{ij}\ge a_{ij} R_{\min}\) | Exact in \(B\) at frozen \(q\): \(B_{ij}\ge R_{\min}/\mathrm{SE}_{ij}(q)\) |
+| (26) | \(B_{ij}\le a_{ij} M\) | \(B_{ij}=0\) if \(a_{ij}=0\); **DERIVED** \(M=B_{\mathrm{sys}}\) under (27). Optional 25% cap sets \(M=0.25 B_{\mathrm{sys}}\) (**EXTERNAL PARAMETER**, not (P)). |
+| (27) | \(\sum_{i,j} B_{ij}\le B_{\mathrm{sys}}\) | Exact linear |
+| (28) | \(\|q_j-q_l\|\ge\theta\) | True evaluator gate (not a supporting halfspace in the loop) |
+| (29) | \(\lambda_{N_k}\le\lambda_i\) | Identity if \(\lambda_{N_k}=\min\lambda_i\) |
+| (30)–(31) | process AoDT \(\le T_k\) | Exact convex constraint in \(B\) at frozen \(q\) (see 6.3) |
+
+Altitude \(H=100\) is fixed. Box: \(x_j,y_j\in[0,100]\).
+
+### 6.2 Variables — IMPLEMENTATION CHOICE
+
+Problem (P) is a MINLP. **This implementation freezes \(a_{ij}\) and
+\(b_{ij}\) after initialization** (nearest UAV, process-consistent
+processing). That is **not** a paper requirement. Constraint (23)
+remains satisfied. Discrete association/processing are not solved here.
+
+### 6.3 Sequential phases — IMPLEMENTATION CHOICE
+
+Two convex LPs are solved in sequence. They are **not** a joint
+\((B,q)\) Taylor program and **not** unpublished paper algebra.
+
+**Position LP (bandwidth frozen).** Maximize the first-order map of
+\(\sum_i a_{ij} B_{ij}^{(n)}\mathrm{SE}_{ij}(q_j)\) using the numerical
+Jacobian of the core channel. Constraints: field box,
+\(\|q_j-q_j^{(n)}\|_\infty\le\) `step_size` (default **1 m**), and the
+supporting halfspace for (28),
+\(u_{jl}\cdot(q_j-q_l)\ge\theta\). This LP is **not** a QoS certificate.
+
+The CVXPY fallback used by unit tests takes the same Jacobian as a
+normalized gradient step instead of calling MOSEK for positions.
+
+**True feasibility gate.** A candidate \((q,B)\) is accepted only if it
+is feasible on the MATLAB-side copy of Eqs. (1)–(6)/(17) **and** the
+true sum rate improves by `improvement_tolerance`. After MATLAB returns,
+Python `evaluate()` is the published score and must also be clean.
+Rejected candidates never become the linearization point.
+
+**Bandwidth LP (geometry frozen).** \(\mathrm{SE}_{ij}(q)\) comes from
+Eqs. (1)–(6). Then \(r_{ij}=B_{ij}\mathrm{SE}_{ij}(q)\) is exactly
+linear in \(B_{ij}\). Maximize \(\sum a_{ij}\mathrm{SE}_{ij}B_{ij}\)
+subject to (26)–(27) and the exact floors below.
+
+**AoDT / QoS at fixed \(q\).** With \(a,b\) fixed, \(Q_k\) is constant.
+\(S_i/(B_{ij}\mathrm{SE}_{ij})\le\mathrm{slack}_i\) is **exactly**
+
+\[
+B_{ij}\ge\max\Bigl(\frac{R_{\min}}{\mathrm{SE}_{ij}(q)},\;
+\frac{S_i}{\mathrm{SE}_{ij}(q)\,\mathrm{slack}_i}\Bigr),
+\]
+
+where \(\mathrm{slack}_i=T_k-Q_k-\mathbf{1}_{\mathrm{fwd}}T_{\mathrm{u2u}}\).
+That is an LP, not `inv_pos` and not a joint Taylor of \((B,q)\).
+Process-level \(\max_i D_i\) is enforced by applying the floor to every
+member of \(N_k\).
+
+Leftover spectrum on the largest-\(\mathrm{SE}\) associated link is an
+expected vertex of a linear sum-rate objective, not a modelling bug.
+
+### 6.4 Initialization — IMPLEMENTATION CHOICE
+
+Algorithm 1 does not specify the start. We use k-means UAV positions
+(paper’s named initialization baseline, §VII) with the existing
+\(\theta\) repair, nearest-UAV \(a_{ij}\), process-consistent \(b_{ij}\),
+then the **exact** fixed-\(q\) bandwidth LP above.
+
+If (24) already fails at this \(b\), the solver raises: positions and
+bandwidth cannot repair CPU load when processing is frozen.
+
+### 6.5 Stopping — PAPER CORRECTION / IMPLEMENTATION CHOICE
+
+Algorithm 1 prints `while |ObjP(n)-ObjP(n-1)| <= epsilon` (the usual
+**stop** test written as a loop condition). **PAPER CORRECTION:** stop
+when the **true** objective change after an accepted step is
+\(\le\varepsilon\).
+
+Also stop with **`STEP_SIZE_LIMIT`** if `accepted_steps == 0` at any
+non-`MAX_ITERATIONS` stop (including a stationary convex step, and
+including `step_size` still above `min_step_size`). **`CONVERGED`**
+requires `accepted_steps >= 1`. **`MAX_ITERATIONS`** only if the
+iteration cap is hit with remaining `step_size` still above
+`min_step_size`. A MOSEK `Solved` subproblem is **not** by itself
+convergence.
+
+Python `classify_stop_reason` and MATLAB `classify_stop_reason` in
+`matlab/sca_seq.m` implement **the same** rule.
+
+`improvement_tolerance` (default 1 bit/s) ignores solver jitter.
+
+Returned point: last **accepted** true-feasible iterate (the incumbent).
+
+\(\varepsilon\), `step_size`, and `max_iterations` are algorithm knobs,
+not Table II.
+
+### 6.6 Solver
+
+Default CLI engine is **MATLAB CVX + MOSEK** in **one** session
+(`matlab/bandwidth_lp.m`, `matlab/position_step_lp.m`,
+`matlab/sca_seq.m`). Physics stay in the Python core; MATLAB solves the
+two LPs. `channel_se.m` must match `uavdt.channel` (checked as
+`se_max_abs_diff`). Python `evaluate()` remains the published score.
+
+`--solver cvxpy` uses a CVXPY HiGHS/CLARABEL bandwidth LP and a
+finite-difference position step (this is what `pytest` runs).
+
+```text
+python -m uavdt sca --seed 1 --bandwidth-preset 2.4mhz --solver matlab
+python -m uavdt sca-seq-debug --seed 1 --bandwidth-preset 2.4mhz --solver matlab
+python -m uavdt sca --seed 1 --bandwidth-preset 2.4mhz --solver cvxpy
+```
+
+Debug log writes `results/sca_seq_debug.json` and `.csv`.
+
+Interface: `solve_sca(scenario, seed) -> SCAResult`.
+
+### 6.7 External parameters
+
+These are **EXTERNAL PARAMETER**, not paper Table II and not part of
+Problem (P) as written:
+
+| Quantity | Config | Role |
+| --- | --- | --- |
+| Task size `S_i` | `task_size_bits` | Upload delay Eq. (11) |
+| Cycles/task `L` | `task_cycles` | `μ_j = f_j / L` |
+| Per-link bandwidth share | `max_bw_share` (e.g. `0.25`) | Optional `B_ij ≤ share · B_sys`. Default `None` is paper (26)–(27) only. |
+
+### 6.8 Known gaps vs the paper
+
+- The explicit convexified (P) is not in the PDF; this sequential split
+  is an implementation choice, not unpublished paper text.
+- Association/processing are not re-optimized (**IMPLEMENTATION CHOICE**,
+  not a paper requirement).
+- Paper Table II 20 kHz is infeasible here and cannot produce the
+  published 7–14 Mbps; headline `B_sys` is 2.4 MHz / 8.8 MHz (§4.1).
+- No 20-seed campaign in this milestone.
+- TD3 is out of scope.
