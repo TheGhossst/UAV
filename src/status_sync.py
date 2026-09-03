@@ -374,6 +374,18 @@ def _load_raw_stats(path: Path) -> dict[str, dict[str, float]]:
     return summarize_raw(_read_csv(path))
 
 
+def _newest_sweep_csv(root: Path, filename: str) -> Path | None:
+    """Prefer the newest lambda/Tk/fj summary under sweeps/ or sweeps_constraints/."""
+    candidates: list[Path] = []
+    for needle in ("sweeps", "sweeps_constraints"):
+        p = _newest_matching(root, filename, (needle,))
+        if p is not None:
+            candidates.append(p)
+    if not candidates:
+        return newest(root, (filename,))
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
 def _build_updates(results: Path) -> dict[str, str]:
     n_tests = count_tests()
     updates: dict[str, str] = {}
@@ -389,15 +401,9 @@ def _build_updates(results: Path) -> dict[str, str]:
     aodt_j = _newest_aodt_csv(results, "summary_vs_uav.csv")
     aodt_i = _newest_aodt_csv(results, "summary_vs_iot.csv")
     sweep_cmp = newest(results, ("raw_default_comparison.csv",))
-    sweep_lam = _newest_matching(results, "sumrate_vs_lambda.csv", ("sweeps_constraints",))
-    if sweep_lam is None:
-        sweep_lam = newest(results, ("sumrate_vs_lambda.csv",))
-    sweep_tk = _newest_matching(results, "sumrate_vs_aodt.csv", ("sweeps_constraints",))
-    if sweep_tk is None:
-        sweep_tk = newest(results, ("sumrate_vs_aodt.csv",))
-    sweep_cpu = _newest_matching(results, "sumrate_vs_cpu.csv", ("sweeps_constraints",))
-    if sweep_cpu is None:
-        sweep_cpu = newest(results, ("sumrate_vs_cpu.csv",))
+    sweep_lam = _newest_sweep_csv(results, "sumrate_vs_lambda.csv")
+    sweep_tk = _newest_sweep_csv(results, "sumrate_vs_aodt.csv")
+    sweep_cpu = _newest_sweep_csv(results, "sumrate_vs_cpu.csv")
 
     snap_lines = [
         f"Last auto-refresh **{_now()}**. Test functions currently in `tests/`: **{n_tests}**.",
@@ -458,7 +464,8 @@ def _build_updates(results: Path) -> dict[str, str]:
 
     if aodt_def:
         st = _load_raw_stats(aodt_def)
-        snap_lines.append(f"- `aodt-compare` default I=10 J=3 (joint PSO, pooled TD3): {ranking_line(st, {**LABEL, 'pso': 'PSO-joint'})}")
+        aodt_label = "joint PSO, pooled TD3" if "td3" in st else "joint PSO, no TD3"
+        snap_lines.append(f"- `aodt-compare` default I=10 J=3 ({aodt_label}): {ranking_line(st, {**LABEL, 'pso': 'PSO-joint'})}")
         artifacts.append(f"- aodt default: `{_rel(aodt_def)}`")
         updates["aodt_default"] = "\n".join(table_aodt_default(st) + ["", _src_note(aodt_def)])
 
@@ -554,7 +561,7 @@ def refresh_status_doc(
     results = Path(results_dir) if results_dir else DEFAULT_RESULTS
     if not results.is_absolute():
         results = (REPO / results).resolve()
-    search_root = DEFAULT_RESULTS if DEFAULT_RESULTS.exists() else results
+    search_root = results if results_dir else (DEFAULT_RESULTS if DEFAULT_RESULTS.exists() else results)
     doc = Path(doc_path) if doc_path else DEFAULT_DOC
     if extra:
         record_run(extra)

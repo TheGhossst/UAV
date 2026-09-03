@@ -50,11 +50,13 @@ def main() -> None:
         by[seed][method].append((int(r["uav_id"]), float(r["x"]), float(r["y"])))
         meta[(seed, method)] = (int(r["feasible"]), float(r["sum_rate"]))
 
-    methods = ["random", "kmeans", "pso", "sca", "td3"]
+    methods = [m for m in ("random", "kmeans", "pso", "sca", "td3") if any(m in mm for mm in by.values())]
     stats = {m: {"spread": [], "to_cent": [], "feas": [], "rate": []} for m in methods}
     for seed, mm in sorted(by.items()):
         cents = np.array(sorted(mm["kmeans"], key=lambda t: t[0]))[:, 1:3].astype(float)
         for m in methods:
+            if m not in mm:
+                continue
             xy = np.array(sorted(mm[m], key=lambda t: t[0]))[:, 1:3].astype(float)
             stats[m]["spread"].append(pairwise_spread(xy))
             stats[m]["to_cent"].append(match_cost(xy, cents))

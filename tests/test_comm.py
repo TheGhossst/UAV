@@ -12,6 +12,7 @@ def test_radio_profiles_disagree_only_on_the_documented_knobs():
     assert RADIO_PROFILES["calibrated"].noise_power == SIGMA
     assert TABLE_II.b_sys == 20_000.0
     assert TABLE_II.max_bw_share is None
+    assert DEFAULT.max_bw_share is None
     assert DEFAULT.noise_power == NOISE_POWER
     for field in ("f_c", "p_i", "eta_los", "eta_nlos", "env_a", "env_b", "r_min", "uav_height"):
         assert getattr(DEFAULT, field) == getattr(TABLE_II, field)
@@ -47,3 +48,22 @@ def test_plos_in_unit_interval():
     d = distances(s.iot_xy, uav, DEFAULT.uav_height)
     p = los_probability(d, DEFAULT.uav_height, DEFAULT)
     assert np.all(p >= 0) and np.all(p <= 1)
+
+
+def test_spectral_efficiency_grad_matches_channel_finite_difference():
+    from src.comm import spectral_efficiency, spectral_efficiency_grad
+
+    s = generate_scenario(100, DEFAULT)
+    xy = np.array([[100.0, 120.0], [380.0, 210.0], [240.0, 390.0]])
+    se, g_x, g_y = spectral_efficiency_grad(s.iot_xy, xy, s.cfg, eps=1e-3)
+    np.testing.assert_allclose(se, spectral_efficiency(s.iot_xy, xy, s.cfg))
+    eps = 0.5
+    shifted = xy.copy()
+    shifted[1, 1] += eps
+    se_s = spectral_efficiency(s.iot_xy, shifted, s.cfg)
+    np.testing.assert_allclose(
+        se[:, 1] + g_y[:, 1] * eps,
+        se_s[:, 1],
+        rtol=0.05,
+        atol=1e-5,
+    )

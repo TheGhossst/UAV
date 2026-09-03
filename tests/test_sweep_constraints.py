@@ -87,8 +87,9 @@ def test_frozen_geometry_sum_rate_rises_when_tk_slackens():
 
 
 def test_frozen_geometry_lambda_changes_delay_floors():
-    s_lo = _scenario(lambda_i=1.0, aodt_threshold=1.2)
-    s_hi = _scenario(lambda_i=3.5, aodt_threshold=1.2)
+    kw = dict(task_size_bytes=2000.0, task_cycles=2e6)
+    s_lo = _scenario(lambda_i=1.0, aodt_threshold=1.2, **kw)
+    s_hi = _scenario(lambda_i=3.5, aodt_threshold=1.2, **kw)
     a, proc = _freeze(s_lo)
     floors_lo = associated_rate_floors(s_lo, a, proc)
     floors_hi = associated_rate_floors(s_hi, a, proc)
@@ -102,8 +103,9 @@ def test_frozen_geometry_lambda_changes_delay_floors():
 
 
 def test_frozen_geometry_cpu_changes_delay_floors_when_tk_binds():
-    s_slow = _scenario(uav_cpu=1e8, aodt_threshold=1.2)
-    s_fast = _scenario(uav_cpu=2.5e8, aodt_threshold=1.2)
+    kw = dict(task_size_bytes=2000.0, task_cycles=2e6)
+    s_slow = _scenario(uav_cpu=1e8, aodt_threshold=1.2, **kw)
+    s_fast = _scenario(uav_cpu=2.5e8, aodt_threshold=1.2, **kw)
     a, proc = _freeze(s_slow)
     floors_slow = associated_rate_floors(s_slow, a, proc)
     floors_fast = associated_rate_floors(s_fast, a, proc)

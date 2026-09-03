@@ -54,9 +54,10 @@ def test_kmeans_and_random_equal_split_even_with_compute():
     assert np.isclose(res_r.sum_rate, evaluate(s, xy_d, a_d, proc_d, bw_d).sum_rate)
 
 
-def test_aodt_surplus_helps_the_worst_device_before_best_se():
+def test_leftover_goes_to_highest_se_after_qos_aodt_floors():
+    """AoDT is a floor constraint. Leftover must raise sum rate, not extra slack."""
     cfg = replace(
-        DEFAULT.with_compute(),
+        DEFAULT.with_compute(task_size_bytes=2000.0, task_cycles=2e6),
         num_iot=2,
         num_uav=1,
         num_processes=1,
@@ -72,28 +73,23 @@ def test_aodt_surplus_helps_the_worst_device_before_best_se():
     se = link_metrics(s.iot_xy, xy, np.ones((2, 1)), cfg)["rates"]
     assert se[0, 0] > se[1, 0]
 
-    bw_se = allocate_constrained_bandwidth(s, xy, a, proc, aodt_first=False)
-    bw_af = allocate_constrained_bandwidth(s, xy, a, proc, aodt_first=True)
-    assert bw_se[0, 0] > bw_se[1, 0]
-    assert bw_af[1, 0] > bw_se[1, 0]
-
-    r_se = evaluate(s, xy, a, proc, bw_se)
-    r_af = evaluate(s, xy, a, proc, bw_af)
-    assert float(np.max(r_af.aodt)) <= float(np.max(r_se.aodt)) + 1e-9
+    bw = allocate_constrained_bandwidth(s, xy, a, proc)
+    assert bw[0, 0] > bw[1, 0]
+    r = evaluate(s, xy, a, proc, bw)
+    assert r.qos_violations == 0
+    assert r.aodt_violations == 0
+    assert r.feasible
 
 
-def test_dropping_the_link_cap_concentrates_sca_leftover():
-    s_cap = generate_scenario(100, DEFAULT)
-    s_free = generate_scenario(100, replace(DEFAULT, max_bw_share=None))
-    a = nearest_association(s_cap.iot_xy, XY)
+def test_uncapped_leftover_concentrates_on_one_highest_se_link():
+    s = generate_scenario(100, DEFAULT)
+    a = nearest_association(s.iot_xy, XY)
     from src.solvers.sca import _allocate_bandwidth
 
-    b_cap = _allocate_bandwidth(s_cap, XY, a)
-    b_free = _allocate_bandwidth(s_free, XY, a)
-    cap = s_cap.cfg.max_bw_share * s_cap.cfg.b_sys
-    assert int(np.sum(b_cap[a > 0.5] >= cap - 1e-6)) >= 2
-    extra = b_free - (s_free.cfg.r_min / np.maximum(
-        link_metrics(s_free.iot_xy, XY, np.ones_like(b_free), s_free.cfg)["rates"], 1e-12
+    b = _allocate_bandwidth(s, XY, a)
+    extra = b - (s.cfg.r_min / np.maximum(
+        link_metrics(s.iot_xy, XY, np.ones_like(b), s.cfg)["rates"], 1e-12
     ))
     extra = np.where(a > 0.5, extra, 0.0)
     assert int(np.count_nonzero(extra > 1e-6)) == 1
+    assert s.cfg.max_bw_share is None

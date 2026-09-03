@@ -11,7 +11,7 @@ from src.repair import (
     process_consistent_processing,
 )
 from src.scenario import generate_scenario
-from src.solvers.sca import _allocate_bandwidth, _eval_fixed, solve_sca
+from src.solvers.sca import _allocate_bandwidth, _convexified_lp, _eval_fixed, solve_sca
 
 
 def test_bandwidth_residual_fills_best_links_up_to_the_cap():
@@ -115,3 +115,62 @@ def test_sca_runs_with_frozen_binaries():
     xy, result, _ = solve_sca(s, seed=0, max_iter=5)
     assert xy.shape == (3, 2)
     assert result.sum_rate > 0
+
+
+def test_zero_trust_convex_lp_reduces_to_the_bandwidth_slice():
+    """Pin q → the joint LP is exactly the linear-in-B slice of (P)."""
+    s = generate_scenario(100, DEFAULT)
+    xy, a, proc, _ = complete_solution(
+        s, np.array([[100.0, 100.0], [400.0, 200.0], [250.0, 400.0]])
+    )
+    bw0 = _allocate_bandwidth(s, xy, a, proc)
+    solved = _convexified_lp(s, xy, bw0, a, proc, trust=1e-8)
+    assert solved is not None
+    xy1, bw1 = solved
+    np.testing.assert_allclose(xy1, xy, atol=1e-6)
+    np.testing.assert_allclose(bw1, bw0, rtol=1e-5, atol=1.0)
+    assert np.isclose(bw1.sum(), s.cfg.b_sys, rtol=1e-5)
+
+
+def test_convex_step_jointly_moves_positions_and_bandwidth():
+    """Algorithm 1 step 4: one LP, both q and B. Not FD placement then a B LP."""
+    s = generate_scenario(100, DEFAULT)
+    xy, a, proc, _ = complete_solution(
+        s, np.array([[120.0, 130.0], [380.0, 200.0], [250.0, 400.0]])
+    )
+    bw0 = _allocate_bandwidth(s, xy, a, proc)
+    solved = _convexified_lp(s, xy, bw0, a, proc, trust=25.0)
+    assert solved is not None
+    xy1, bw1 = solved
+    assert xy1.shape == xy.shape
+    assert bw1.shape == bw0.shape
+    assert np.all(bw1[a < 0.5] == 0.0)
+    assert np.all(xy1[:, 0] >= -1e-9) and np.all(xy1[:, 0] <= s.cfg.area_x + 1e-9)
+    assert np.all(xy1[:, 1] >= -1e-9) and np.all(xy1[:, 1] <= s.cfg.area_y + 1e-9)
+    import src.solvers.sca as sca_mod
+
+    assert not hasattr(sca_mod, "_partial_axis")
+    bw_at_old = _allocate_bandwidth(s, xy, a, proc)
+    np.testing.assert_allclose(bw_at_old, bw0)
+    if np.linalg.norm(xy1 - xy) > 1e-3:
+        bw_at_new = _allocate_bandwidth(s, xy1, a, proc)
+        assert not np.allclose(bw1, bw_at_new) or not np.allclose(bw1, bw0)
+
+
+def test_taylor_rate_matches_true_rate_at_expansion_point():
+    from src.comm import average_path_loss, distances, spectral_efficiency_grad, uplink_rate
+
+    s = generate_scenario(100, DEFAULT)
+    xy = np.array([[100.0, 100.0], [400.0, 200.0], [250.0, 400.0]])
+    a = nearest_association(s.iot_xy, xy)
+    bw = _allocate_bandwidth(s, xy, a)
+    se, g_x, g_y = spectral_efficiency_grad(s.iot_xy, xy, s.cfg)
+    r_lin = se * bw
+    dist = distances(s.iot_xy, xy, s.cfg.uav_height)
+    r_true = uplink_rate(bw, average_path_loss(dist, s.cfg), s.cfg)
+    np.testing.assert_allclose(r_lin, r_true, rtol=1e-10)
+    xy_shift = xy.copy()
+    xy_shift[0, 0] += 1.0
+    se_shift, _, _ = spectral_efficiency_grad(s.iot_xy, xy_shift, s.cfg)
+    pred = se[:, 0] + g_x[:, 0] * 1.0
+    np.testing.assert_allclose(pred, se_shift[:, 0], rtol=0.05, atol=1e-4)

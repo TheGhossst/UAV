@@ -30,14 +30,14 @@ from src.main import _cfg_from_args, build_parser
 
 
 def test_experimental_defaults_unchanged():
-    assert EXPERIMENTAL_TASK_SIZE_BYTES == 2000.0
-    assert EXPERIMENTAL_TASK_CYCLES == 2e6
+    assert EXPERIMENTAL_TASK_SIZE_BYTES == 12000.0
+    assert EXPERIMENTAL_TASK_CYCLES == 3.75e6
     assert DEFAULT.task_size_bytes is None
     assert DEFAULT.task_cycles is None
     assert DEFAULT.use_compute_model is False
     cfg = DEFAULT.with_compute()
-    assert cfg.task_size_bytes == 2000.0
-    assert cfg.task_cycles == 2e6
+    assert cfg.task_size_bytes == 12000.0
+    assert cfg.task_cycles == 3.75e6
     assert cfg.b_sys == 8.8e6
 
 
@@ -46,9 +46,9 @@ def test_with_compute_override_does_not_mutate_defaults():
     assert cfg.task_size_bytes == 8000.0
     assert cfg.task_cycles == 1e6
     assert cfg.use_compute_model is True
-    assert EXPERIMENTAL_TASK_SIZE_BYTES == 2000.0
-    assert EXPERIMENTAL_TASK_CYCLES == 2e6
-    assert DEFAULT.with_compute().task_size_bytes == 2000.0
+    assert EXPERIMENTAL_TASK_SIZE_BYTES == 12000.0
+    assert EXPERIMENTAL_TASK_CYCLES == 3.75e6
+    assert DEFAULT.with_compute().task_size_bytes == 12000.0
 
 
 def test_with_compute_keeps_replace_then_enable():
@@ -229,8 +229,8 @@ def test_tiny_search_writes_outputs(tmp_path):
     assert payload["coarse"]
     report = (tmp_path / "REPORT.md").read_text(encoding="utf-8")
     assert "S_i" in report
-    assert EXPERIMENTAL_TASK_SIZE_BYTES == 2000.0
-    assert EXPERIMENTAL_TASK_CYCLES == 2e6
+    assert EXPERIMENTAL_TASK_SIZE_BYTES == 12000.0
+    assert EXPERIMENTAL_TASK_CYCLES == 3.75e6
 
 
 def test_search_refuses_non_calibrated_radio():

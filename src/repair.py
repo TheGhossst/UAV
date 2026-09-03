@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.aodt import average_aodt, delay_rate_floors, upload_times
+from src.aodt import delay_rate_floors
 from src.compute import service_rate
 from src.config import SimConfig
 from src.scenario import Scenario
@@ -211,8 +211,7 @@ def allocate_pool(se_a: np.ndarray, pool: float, cap: float, need: np.ndarray) -
     s.t. sum B_i = pool,  0 <= B_i <= cap,  B_i >= need_i if the floors fit.
 
     ``need`` is the per-link bandwidth floor in Hz (already rate_floor / c_i).
-    Leftover after floors is poured into the highest-c links up to ``cap``
-    (callers that want an AoDT-first surplus use ``allocate_constrained_bandwidth``).
+    Leftover after floors is poured into the highest-c links up to ``cap``.
     If the floors do not fit, fund as many cheapest floors as possible and split
     the rest equally over the unfunded links so every associated link keeps B > 0.
     """
@@ -270,148 +269,20 @@ def _pour_highest_se(alloc: np.ndarray, se_a: np.ndarray, remaining: float, cap:
     return alloc
 
 
-def _aodt_state(
-    scenario: Scenario,
-    association: np.ndarray,
-    processing: np.ndarray,
-    se: np.ndarray,
-    b: np.ndarray,
-    mu: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    rates = se * np.maximum(b, 0.0)
-    d_i = upload_times(association, processing, rates, scenario.cfg)
-    aodt = average_aodt(scenario, association, processing, rates, mu)
-    return d_i, aodt
-
-
-def _waterfill_equal_rate(
-    b: np.ndarray,
-    se: np.ndarray,
-    links: list[tuple[int, int]],
-    amount: float,
-    cap: float,
-) -> float:
-    """Raise associated rates of ``links`` by the same dR, spending ``amount`` Hz."""
-    remaining = float(amount)
-    if remaining <= 1e-12 or not links:
-        return remaining
-    for _ in range(len(links) + 1):
-        room = [(i, j, cap - float(b[i, j])) for i, j in links if cap - float(b[i, j]) > 1e-12]
-        if remaining <= 1e-12 or not room:
-            break
-        inv_se = sum(1.0 / float(se[i, j]) for i, j, _r in room)
-        if inv_se <= 1e-18:
-            break
-        d_r = remaining / inv_se
-        spent = 0.0
-        for i, j, r_hz in room:
-            take = min(r_hz, d_r / float(se[i, j]))
-            b[i, j] += take
-            spent += take
-        if spent <= 1e-12:
-            break
-        remaining -= spent
-    return remaining
-
-
-def _give_aodt_chunk(
-    scenario: Scenario,
-    association: np.ndarray,
-    processing: np.ndarray,
-    se: np.ndarray,
-    b: np.ndarray,
-    mask: np.ndarray,
-    remaining: float,
-    cap: float,
-    pool: float,
-) -> float:
-    """Spend surplus to pull down max D_i of the current worst process.
-
-    AoDT_k is max_i D_i + Q, so helping one tied member does not move the max.
-    Leftover after floors is waterfilled across every member of the worst
-    process that currently sits at that max (equal rate increase). If that
-    process is uniquely worst, waterfill continues until it matches the
-    second-worst process; leftover then goes to sum-rate. If processes are
-    tied, one quarter-pool chunk is still spent on the bottleneck set.
-    The chunk size is a fraction of the pool, not ``max_bw_share``, so
-    dropping the per-link cap does not dump the whole surplus into AoDT.
-    """
-    remaining = float(remaining)
-    if remaining <= 1e-12 or not scenario.cfg.use_compute_model:
-        return remaining
-    if scenario.cfg.task_size_bytes is None:
-        return remaining
-    mu = service_rate(scenario.cfg)
-    if mu is None:
-        return remaining
-
-    j_assoc = association.argmax(axis=1)
-
-    def bottlenecks(d_i: np.ndarray, k_star: int) -> list[tuple[int, int]]:
-        members = scenario.groups[k_star]
-        if members.size == 0:
-            return []
-        in_pool = [int(i) for i in members if mask[int(i), int(j_assoc[int(i)])]]
-        if not in_pool:
-            return []
-        d_max = max(float(d_i[i]) for i in in_pool)
-        out = []
-        for i in in_pool:
-            if float(d_i[i]) < d_max - 1e-9:
-                continue
-            j = int(j_assoc[i])
-            if cap - float(b[i, j]) > 1e-12:
-                out.append((i, j))
-        return out
-
-    for _ in range(64):
-        if remaining <= 1e-12:
-            break
-        d_i, aodt = _aodt_state(scenario, association, processing, se, b, mu)
-        score = np.where(np.isfinite(aodt), aodt, -np.inf)
-        if not np.any(np.isfinite(score)):
-            break
-        k_star = int(np.argmax(score))
-        others = [float(aodt[k]) for k in range(aodt.size) if k != k_star and np.isfinite(aodt[k])]
-        unique = not others or float(aodt[k_star]) > max(others) + 1e-9
-        links = bottlenecks(d_i, k_star)
-        if not links:
-            break
-        chunk = 0.25 * float(pool)
-        if unique:
-            step = min(remaining, max(chunk * 0.4, remaining * 0.05))
-        else:
-            step = min(remaining, chunk)
-        before = remaining
-        leftover_after_step = _waterfill_equal_rate(b, se, links, step, cap)
-        remaining = remaining - step + leftover_after_step
-        if remaining >= before - 1e-12:
-            break
-        if unique:
-            _d2, aodt2 = _aodt_state(scenario, association, processing, se, b, mu)
-            others2 = [float(aodt2[k]) for k in range(aodt2.size) if k != k_star and np.isfinite(aodt2[k])]
-            if others2 and float(aodt2[k_star]) <= max(others2) + 1e-9:
-                break
-    return remaining
-
-
 def allocate_constrained_bandwidth(
     scenario: Scenario,
     uav_xy: np.ndarray,
     association: np.ndarray,
     processing: np.ndarray,
-    *,
-    aodt_first: bool = True,
 ) -> np.ndarray:
     """Rate-optimal bandwidth under QoS and (when enabled) AoDT rate floors.
 
     Same linear-in-B LP as SCA, with floors raised so D_Nk leaves room for the
     queueing term under T_k. λ, μ, and T_k never enter the Shannon formula.
 
-    After the floors are funded, leftover waterfills the current worst
-    process's bottleneck members (equal rate increase) until that process is
-    no longer uniquely worst; anything left goes to the highest-SE links.
-    Pass ``aodt_first=False`` to skip that AoDT pour (sum-rate-only surplus).
+    After the floors are funded, leftover goes to the highest-SE links (objective
+    20). AoDT is a constraint, not a surplus objective: once v^k ≤ T_k, extra
+    hertz raises sum rate instead of driving AoDT further below the threshold.
     """
     from src.comm import link_metrics  # local: comm has no repair dependency
 
@@ -436,10 +307,6 @@ def allocate_constrained_bandwidth(
         alloc = np.asarray(need_hz, dtype=float).copy()
         remaining = float(pool) - float(alloc.sum())
         b[mask] = alloc
-        if aodt_first:
-            remaining = _give_aodt_chunk(
-                scenario, association, processing, se, b, mask, remaining, cap, pool
-            )
         b[mask] = _pour_highest_se(b[mask], se[mask], remaining, cap)
     return b
 
@@ -453,9 +320,8 @@ def bandwidth_from_weights(
 ) -> np.ndarray:
     """Turn a solver's raw bandwidth request into a QoS/AoDT-aware allocation.
 
-    Every associated link first gets max(R_min, delay_floor) / c_ij. The next
-    surplus chunk goes to the current AoDT bottleneck; only what remains is
-    distributed by ``weights``. Without the floors an unstructured request
+    Every associated link first gets max(R_min, delay_floor) / c_ij. Leftover
+    is distributed by ``weights``. Without the floors an unstructured request
     nearly always starves some link below R_min, so the solution is rejected
     as infeasible and the solver never gets credit for the allocation it
     chose -- which is what kept TD3 pinned to its restart states.
@@ -491,9 +357,6 @@ def bandwidth_from_weights(
             continue
         b[mask] = floors
         remaining = float(pool) - float(floors.sum())
-        remaining = _give_aodt_chunk(
-            scenario, association, processing, se, b, mask, remaining, cap, pool
-        )
         room = np.maximum(cap - b[mask], 0.0)
         b[mask] = b[mask] + _spread_by_weight(w[mask], remaining, room)
     return b

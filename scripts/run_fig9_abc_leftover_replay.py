@@ -407,7 +407,7 @@ def run(out_dir: Path) -> None:
                 s = generate_scenario(seed, cfg)
                 # Same IoT geometry; only the cap flag differs.
                 bw = allocate_constrained_bandwidth(
-                    s, xy, a, proc, aodt_first=aodt_first
+                    s, xy, a, proc
                 )
                 result = evaluate(s, xy, a, proc, bw)
                 pool = float(cfg.b_sys)

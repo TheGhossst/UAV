@@ -29,6 +29,7 @@ from src.solvers.kmeans import solve_kmeans
 from src.solvers.pso import solve_pso_joint, solve_pso_placement
 from src.solvers.random import solve_random
 from src.solvers.sca import solve_sca
+from src.solvers.sca_cvx import solve_sca_cvx
 from src.solvers.td3 import set_default_device, solve_td3
 
 
@@ -124,6 +125,10 @@ def run_solver(mode: str, cfg: SimConfig, seed: int, args: argparse.Namespace):
         xy, result, rt = solve_sca(scenario, seed=seed)
         _print_result("sca", xy, result, rt)
         return result
+    if mode == "sca-cvx":
+        xy, result, rt = solve_sca_cvx(scenario, seed=seed)
+        _print_result("sca-cvx", xy, result, rt)
+        return result
     if mode == "td3":
         xy, result, rt, train_log = solve_td3(scenario, seed=seed, total_steps=args.td3_steps)
         _print_result("td3", xy, result, rt)
@@ -193,7 +198,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--mode",
         default="single",
-        choices=["single", "random", "kmeans", "pso", "pso-joint", "sca", "td3", "proposed", "compare", "sweeps", "aodt-compare", "aodt-param-search", "bandwidth-sharing"],
+        choices=["single", "random", "kmeans", "pso", "pso-joint", "sca", "sca-cvx", "td3", "proposed", "compare", "sweeps", "aodt-compare", "aodt-param-search", "bandwidth-sharing"],
     )
     p.add_argument("--seed", type=int, default=100)
     p.add_argument("--compute", action="store_true", help="Enable experimental S_i and L (not Table II)")
@@ -218,7 +223,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--skip-td3",
         action="store_true",
-        help="aodt-param-search: skip TD3 on the shortlist (SCA/K-means/Random only)",
+        help="Skip TD3 (aodt-compare / aodt-param-search; compare/sweeps omit --with-td3 instead)",
     )
     p.add_argument(
         "--resume",

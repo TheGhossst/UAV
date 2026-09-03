@@ -42,7 +42,8 @@ python -m src.main [--mode MODE] [options]
 | `kmeans` | K-means centroids on IoT `(x, y)`. |
 | `pso` | Placement-only PSO. |
 | `pso-joint` | Joint PSO (positions + association + processing + bandwidth). |
-| `sca` | Successive convex approximation on UAV positions, plus the exact bandwidth LP. |
+| `sca` | Successive convex approximation; convexified LP via SciPy HiGHS. |
+| `sca-cvx` | Same SCA loop; convexified LP via MATLAB CVX + MOSEK (paper §V stack). |
 | `td3` | TD3 train + greedy eval on one scenario. |
 | `proposed` | Placeholder; raises `NotImplementedError`. |
 | `compare` | Random / K-means / PSO / SCA on several seeds; optional TD3. Writes CSVs + markdown under `--out`. |
@@ -99,6 +100,7 @@ python -m src.main --mode kmeans --seed 100
 python -m src.main --mode pso --seed 100 --particles 20 --iters 100
 python -m src.main --mode pso-joint --seed 100 --particles 20 --iters 100
 python -m src.main --mode sca --seed 100
+python -m src.main --mode sca-cvx --seed 100
 python -m src.main --mode td3 --seed 100 --td3-steps 7000
 ```
 
@@ -200,7 +202,7 @@ python -m scripts.calibrate --b-sys 20000 --noise 1e-4 --scope system --cap -1
 
 - **`B_sys` is fitted, not Table II.** The `calibrated` profile's `8.8 MHz` is chosen so the `J` sweep spans the published 3-9 Mbps range. Sum rate is linear in `B_sys` only when QoS constraints are non-binding, so ranking is not guaranteed to stay the same if `B_sys` changes. Report absolute rates with the profile named (`table2` = literal Table II; `calibrated` is not a Table II constant).
 - **The per-link bandwidth cap is a modelling addition.** Without it the sum-rate LP is solved at a single-link vertex and SCA's curve is flat in `J`.
-- **SCA is not the paper's solver.** Trust-region finite differences plus an exact bandwidth LP, not CVX/MOSEK on a convexified (P).
+- **Default SCA uses SciPy HiGHS.** `--mode sca-cvx` solves the same convexified LP with MATLAB CVX + MOSEK (the paper’s §V stack). Requires MATLAB, CVX on the MATLAB path (`cvx_setup`), and a MOSEK license. Optional env `UAV_MATLAB` points at `matlab.exe`.
 - **TD3 reports greedy-policy evaluation after training**, not the best deployment visited during learning. `compare`, `sweeps`, and `aodt-compare` share that eval protocol (k-means + random restarts, noiseless rollouts). `TD3_R_MAX`, `TD3_EPISODE_LEN` and `TD3_ASSOC_ACTION_SCALE` are not paper values.
 
 ## Help

@@ -1,8 +1,7 @@
 """Test whether baseline vs paper gaps are a bandwidth-sharing rule, not S_i / L.
 
 Random and K-means split each pool equally (no LP). SCA keeps the constrained
-LP. A second SCA variant drops the undocumented 25% per-link cap. Surplus
-after floors goes to the current AoDT bottleneck first (production LP).
+LP. Surplus after QoS/AoDT floors goes to highest spectral-efficiency links.
 """
 
 from __future__ import annotations
@@ -82,22 +81,20 @@ def _aodt_at(summary: list[dict], method: str, tk: float) -> float:
 
 
 def frozen_aodt_first_delta(cfg: SimConfig, seed: int = 100) -> dict:
-    """Same geometry: SE-only surplus vs AoDT-first surplus (no placement search)."""
+    """Same geometry: SE leftover after QoS/AoDT floors (no placement search)."""
     s = generate_scenario(seed, cfg)
     xy = np.array([[120.0, 130.0], [380.0, 200.0], [250.0, 400.0]])
     xy, a, proc, _ = complete_solution(s, xy, equal_split=True)
-    bw_se = allocate_constrained_bandwidth(s, xy, a, proc, aodt_first=False)
-    bw_af = allocate_constrained_bandwidth(s, xy, a, proc, aodt_first=True)
-    r_se = evaluate(s, xy, a, proc, bw_se)
-    r_af = evaluate(s, xy, a, proc, bw_af)
+    bw = allocate_constrained_bandwidth(s, xy, a, proc)
+    r = evaluate(s, xy, a, proc, bw)
     return {
         "seed": seed,
-        "se_sum_rate_mbps": r_se.sum_rate / 1e6,
-        "aodt_first_sum_rate_mbps": r_af.sum_rate / 1e6,
-        "se_aodt_mean": float(np.mean(r_se.aodt)),
-        "aodt_first_aodt_mean": float(np.mean(r_af.aodt)),
-        "se_aodt_excess": r_se.aodt_excess,
-        "aodt_first_aodt_excess": r_af.aodt_excess,
+        "se_sum_rate_mbps": r.sum_rate / 1e6,
+        "aodt_first_sum_rate_mbps": r.sum_rate / 1e6,
+        "se_aodt_mean": float(np.mean(r.aodt)),
+        "aodt_first_aodt_mean": float(np.mean(r.aodt)),
+        "se_aodt_excess": r.aodt_excess,
+        "aodt_first_aodt_excess": r.aodt_excess,
         "equal_split_mbps": evaluate(s, xy, a, proc, equal_bandwidth(a, s.cfg)).sum_rate / 1e6,
     }
 

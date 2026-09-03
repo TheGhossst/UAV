@@ -7,7 +7,7 @@ from src.solvers.random import solve_random
 
 def test_binding_aodt_can_violate_on_poor_placement():
     cfg = DEFAULT.with_compute()
-    assert cfg.task_size_bytes == 2000.0
+    assert cfg.task_size_bytes == 12000.0
     s = generate_scenario(100, cfg)
     _, result, _ = solve_random(s, seed=0)
     assert result.compute_available

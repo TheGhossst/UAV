@@ -56,6 +56,54 @@ def uplink_rate(bandwidth: np.ndarray, l_avg: np.ndarray, cfg: SimConfig = DEFAU
     return bandwidth * np.log2(1.0 + snr)
 
 
+def spectral_efficiency(
+    iot_xy: np.ndarray,
+    uav_xy: np.ndarray,
+    cfg: SimConfig = DEFAULT,
+) -> np.ndarray:
+    """Eq. (6) at B_ij = 1: SE_ij = log2(1 + SNR(q_j)), shape (I, J)."""
+    i, j = iot_xy.shape[0], uav_xy.shape[0]
+    return link_metrics(iot_xy, uav_xy, np.ones((i, j)), cfg)["rates"]
+
+
+def spectral_efficiency_grad(
+    iot_xy: np.ndarray,
+    uav_xy: np.ndarray,
+    cfg: SimConfig = DEFAULT,
+    eps: float = 1e-3,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """First-order Taylor data for Eqs. (3)–(6): SE and ∂SE_ij/∂(x_j, y_j).
+
+    Finite differences of the channel only. This is not a gradient of
+    ``evaluate()`` (no association, bandwidth LP, or penalty).
+    """
+    se0 = spectral_efficiency(iot_xy, uav_xy, cfg)
+    n_uav = uav_xy.shape[0]
+    g_x = np.zeros_like(se0)
+    g_y = np.zeros_like(se0)
+    for u in range(n_uav):
+        for ax, out in ((0, g_x), (1, g_y)):
+            limit = cfg.area_x if ax == 0 else cfg.area_y
+            x0 = uav_xy[u, ax]
+            plus = uav_xy.copy()
+            plus[u, ax] = np.clip(x0 + eps, 0.0, limit)
+            minus = uav_xy.copy()
+            minus[u, ax] = np.clip(x0 - eps, 0.0, limit)
+            d_plus = plus[u, ax] - x0
+            d_minus = x0 - minus[u, ax]
+            if d_plus > 1e-14 and d_minus > 1e-14:
+                se_p = spectral_efficiency(iot_xy, plus, cfg)
+                se_m = spectral_efficiency(iot_xy, minus, cfg)
+                out[:, u] = (se_p[:, u] - se_m[:, u]) / (plus[u, ax] - minus[u, ax])
+            elif d_plus > 1e-14:
+                se_p = spectral_efficiency(iot_xy, plus, cfg)
+                out[:, u] = (se_p[:, u] - se0[:, u]) / d_plus
+            elif d_minus > 1e-14:
+                se_m = spectral_efficiency(iot_xy, minus, cfg)
+                out[:, u] = (se0[:, u] - se_m[:, u]) / d_minus
+    return se0, g_x, g_y
+
+
 def link_metrics(
     iot_xy: np.ndarray,
     uav_xy: np.ndarray,

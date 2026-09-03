@@ -23,6 +23,12 @@ METHODS = ("random", "kmeans", "pso", "sca", "td3")
 TRAIN_SEEDS = tuple(range(200, 220))  # disjoint from eval seeds 100-119
 
 
+def _methods(args) -> tuple[str, ...]:
+    if getattr(args, "skip_td3", False):
+        return tuple(m for m in METHODS if m != "td3")
+    return METHODS
+
+
 def _solve(name, scenario, seed, args, n_uav=None, td3_agent=None):
     if name == "random":
         return solve_random(scenario, seed=seed, n_uav=n_uav)
@@ -237,12 +243,13 @@ def _get_td3_agent(cfg: SimConfig, n_uav: int, args, cache: dict):
 
 def run_fixed(cfg: SimConfig, args, seeds: tuple[int, ...], n_uav: int, cache: dict) -> list[dict]:
     cfg_j = replace(cfg, num_uav=n_uav)
-    agent = _get_td3_agent(cfg_j, n_uav, args, cache)
+    methods = _methods(args)
+    agent = None if "td3" not in methods else _get_td3_agent(cfg_j, n_uav, args, cache)
     rows = []
-    jobs = Counter(f"AoDT  I={cfg.num_iot} J={n_uav}", len(seeds) * len(METHODS))
+    jobs = Counter(f"AoDT  I={cfg.num_iot} J={n_uav}", len(seeds) * len(methods))
     for seed in seeds:
         scenario = generate_scenario(seed, cfg_j)
-        for name in METHODS:
+        for name in methods:
             _xy, result, rt = _solve(
                 name, scenario, seed, args, n_uav=n_uav, td3_agent=agent if name == "td3" else None
             )
@@ -294,15 +301,16 @@ def run_aodt_comparison(cfg: SimConfig, args):
 
     i_rows = []
     iots = (10, 16, 20, 24, 32)
-    jobs = Counter("AoDT  vs I  (J=3)", len(iots) * len(seeds) * len(METHODS))
+    methods = _methods(args)
+    jobs = Counter("AoDT  vs I  (J=3)", len(iots) * len(seeds) * len(methods))
     for n in iots:
         k = cfg.num_processes
         per = n // k
         cfg_i = replace(cfg, num_iot=n, iots_per_process=per, num_uav=3)
-        agent = _get_td3_agent(cfg_i, 3, args, cache)
+        agent = None if "td3" not in methods else _get_td3_agent(cfg_i, 3, args, cache)
         for seed in seeds:
             scenario = generate_scenario(seed, cfg_i)
-            for name in METHODS:
+            for name in methods:
                 _xy, result, rt = _solve(
                     name, scenario, seed, args, n_uav=3, td3_agent=agent if name == "td3" else None
                 )
@@ -332,8 +340,9 @@ def run_aodt_comparison(cfg: SimConfig, args):
         "task_cycles": cfg.task_cycles,
         "aodt_threshold": cfg.aodt_threshold,
         "n_eval_seeds": len(seeds),
-        "td3_train_seeds": list(TRAIN_SEEDS),
-        "td3_steps": args.td3_steps,
+        "td3_skipped": bool(getattr(args, "skip_td3", False)),
+        "td3_train_seeds": list(TRAIN_SEEDS) if not getattr(args, "skip_td3", False) else None,
+        "td3_steps": args.td3_steps if not getattr(args, "skip_td3", False) else None,
         "pso": "joint",
         "positions": "positions_default.csv / positions_vs_uav.csv / positions_vs_iot.csv (one row per UAV)",
         "note": "S_i and L are experimental (not Table II). Proposed method not included.",

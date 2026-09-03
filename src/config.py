@@ -51,7 +51,7 @@ LOS_ANGLE_UNIT: Literal["rad", "deg"] = "deg"
 # link sits so far into the high-SNR regime that moving a UAV barely changes
 # log2(1 + SNR) -- which is why all methods bunch together under that reading.
 #
-# The "calibrated" profile changes three things and nothing else:
+# The "calibrated" profile changes two radio knobs and nothing else:
 #   * noise_power = sigma, i.e. Table II's "noise power 10 x 10^-3 W" is used
 #     directly as the sigma^2 of Eq. (6) instead of being squared. This is the
 #     literal reading of the table label and it puts the links in the low-SNR
@@ -59,8 +59,7 @@ LOS_ANGLE_UNIT: Literal["rad", "deg"] = "deg"
 #   * b_sys is fitted (one free scale knob) so the J sweep spans the published
 #     3-9 Mbps range. Sum rate is exactly linear in b_sys, so this only sets the
 #     y-axis scale; it cannot change any ranking.
-#   * max_bw_share caps how much of a pool one link may take, see
-#     repair.link_bandwidth_cap.
+# max_bw_share is None: Problem (P) has no per-link cap (constraint 26 is M→∞).
 # Constraint (27) stays system-wide as written in the paper; bandwidth_scope =
 # "per_uav" is available for the alternative reading where each UAV owns a band.
 #
@@ -90,7 +89,7 @@ RADIO_PROFILES: dict[str, RadioProfile] = {
         b_sys=8.8e6,
         noise_power=SIGMA,
         bandwidth_scope="system",
-        max_bw_share=0.25,
+        max_bw_share=None,
     ),
 }
 
@@ -118,9 +117,9 @@ TASK_CYCLES: Optional[float] = None
 # Chosen so AoDT can bind at T_k = 2.8 s given Table II rates (kbps-scale):
 # S_i = 2000 bytes => 16000 bits; D = 1.6 s at R_min so AoDT ≈ 2.1 s can be feasible,
 # while weak links (r << R_min) still violate T_k = 2.8 s.
-EXPERIMENTAL_TASK_SIZE_BYTES = 2000.0
+EXPERIMENTAL_TASK_SIZE_BYTES = 12000.0
 # L = 2e6 cycles => mu = 100 requests/s at f_j = 2e8 (stable for 10 IoTs at λ=2).
-EXPERIMENTAL_TASK_CYCLES = 2e6
+EXPERIMENTAL_TASK_CYCLES = 3.75e6
 
 # --- Seeds ---
 DEV_SCENARIO_SEEDS = (100, 101, 102, 103, 104)

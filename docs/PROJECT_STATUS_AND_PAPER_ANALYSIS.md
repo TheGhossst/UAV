@@ -1,7 +1,7 @@
 # UAV-Aided Digital Twin: Project Status, Fresh Runs, and Paper Analysis
 
 <!-- AUTO:meta -->
-**Last auto-refresh:** 2026-08-31 19:33  
+**Last auto-refresh:** 2026-09-01 16:07  
 **Repository:** `C:\code\UAV`  
 **Paper PDF:** `docs/A_UAV-Aided_Digital_Twin_Framework_for_IoT_Networks_With_High_Accuracy_and_Synchronization.pdf`  
 Measured tables below marked `AUTO` are rewritten from CSVs when you run `python -m src.main` (compare / sweeps / aodt-compare / solvers) or `python -m src.status_sync`.
@@ -9,7 +9,7 @@ Measured tables below marked `AUTO` are rewritten from CSVs when you run `python
 
 This document has two parts that must not be mixed up.
 
-- **Part A (English)** is an audit of *this* Python reconstruction: what is implemented, what is not, and numbers obtained by actually running the test suite, every solver mode, comparisons, TD3 training, AoDT comparison, radio calibration, and paper-style parameter sweeps (J, I from `aodt-compare` with TD3; λ, \(T_k\), \(f_j\) from a 20-seed constraint sweep without per-cell TD3 retraining).
+- **Part A (English)** is an audit of *this* Python reconstruction: what is implemented, what is not, and numbers obtained by actually running the test suite, solver comparisons (Random / K-means / PSO / SCA), AoDT comparison, radio calibration, and paper-style parameter sweeps. **Latest batch (1 September 2026) skips TD3** (`--skip-td3` / no `--with-td3`) because per-cell training is slow and unstable on this branch; TD3 code remains in `src/solvers/td3.py` for ad-hoc runs.
 - **Part B (Chinese)** is a paper-analysis of Khalaf, Itani, and Sharafeddine, *IEEE Transactions on Network and Service Management*, vol. 23, pp. 3013–3025, 2026. Every numerical claim in Part B is taken from the IEEE PDF (or, where noted, from arXiv:2504.15967v1 / the September 2025 AUB M.S. thesis). Nothing in Part B is invented from this repo’s outputs.
 
 **Machine used for the Part A runs:** Python 3.11.9, PyTorch 2.11.0+cu128, NVIDIA GeForce RTX 5070 Laptop GPU
@@ -23,22 +23,22 @@ Absolute rates in Part A always name the radio profile. **`calibrated` is not Ta
 The reconstruction is a working common evaluator for Problem (P) with Random, K-means, placement PSO, joint PSO, a Python SCA surrogate, and TD3. The proposed/novel method is still `NotImplementedError`.
 
 <!-- AUTO:snapshot -->
-Last auto-refresh **2026-08-31 19:33**. Test functions currently in `tests/`: **71**.
+Last auto-refresh **2026-09-01 16:07**. Test functions currently in `tests/`: **101**.
 
 Rankings below are recomputed from the newest matching CSVs under `results/`. Absolute rates use the **calibrated** radio unless a table says `table2`.
 
-- `compare --paper-runs` (20 seeds, placement PSO): **PSO** lead: PSO 7.588 > SCA 7.143 > TD3 6.512 > K-means 6.429 > Random 3.812 Mbps
-- `compare` 5-seed (placement PSO): **PSO** lead: PSO 7.681 > SCA 7.374 > K-means 6.739 > TD3 6.739 > Random 5.007 Mbps
-- `aodt-compare` default I=10 J=3 (joint PSO, pooled TD3): **SCA** lead: SCA 7.143 > TD3 6.512 > K-means 6.429 > PSO-joint 4.959 > Random 3.812 Mbps
+- `compare --paper-runs` (20 seeds, placement PSO): **PSO** lead: PSO 7.508 > SCA 7.080 > K-means 4.547 > Random 2.925 Mbps
+- `compare` 5-seed (placement PSO): **PSO** lead: PSO 7.644 > SCA 7.210 > K-means 4.781 > Random 3.279 Mbps
+- `aodt-compare` default I=10 J=3 (joint PSO, no TD3): **SCA** lead: SCA 7.080 > PSO-joint 4.566 > K-means 4.547 > Random 2.925 Mbps
 <!-- /AUTO:snapshot -->
 
-The IEEE paper’s Fig. 6 at five UAVs quotes SCA ≈ **8.8 Mbps**, TD3 ≈ **7 Mbps**, K-means ≈ **5.6 Mbps**, random ≈ **3.4 Mbps**. This repo’s AoDT J-sweep at five UAVs is SCA **8.025**, TD3 **7.665**, K-means **7.811**, random **6.116**. The SCA-over-TD3-over-random order matches the paper; K-means is much stronger here because every method shares the same bandwidth LP and per-link cap.
+The IEEE paper’s Fig. 6 at five UAVs quotes SCA ≈ **8.8 Mbps**, TD3 ≈ **7 Mbps**, K-means ≈ **5.6 Mbps**, random ≈ **3.4 Mbps**. This repo’s AoDT J-sweep at five UAVs (**no TD3**, 1 September 2026) is SCA **7.939**, joint PSO **6.522**, K-means **6.357**, random **4.238** Mbps. SCA still leads; K-means is closer to SCA here than in the August TD3-inclusive batch because feasibility/AoDT binding changed on this branch.
 
 The IEEE **abstract** says TD3 “consistently proved to be superior as compared to the baseline solutions.” The IEEE **body** (pp. 3022–3024) says SCA outperforms TD3 on every sum-rate figure, with TD3 second. That contradiction is in the paper, not in this repo.
 
-Paper-style axes: **J and I** (Figs. 6–7 analogues) come from `aodt-compare` with pooled TD3. **λ, \(T_k\), \(f_j\)** (Figs. 8–10 analogues) come from a 20-seed `--compute` sweep of Random / K-means / placement PSO / SCA (no per-cell TD3) in `results/run_20260831/sweeps_constraints/`. Full per-cell TD3 retraining for **all** sweep axes (including λ, \(T_k\), \(f_j\)) finished in `results/run_20260831/sweeps/` on 31 August 2026 (~6 h wall time on RTX 5070).
+Paper-style axes: **J and I** (Figs. 6–7 analogues) come from `aodt-compare --skip-td3`. **λ, \(T_k\), \(f_j\)** (Figs. 8–10 analogues) come from `--mode sweeps --paper-runs --compute` (no TD3) in `results/run_20260901/sweeps/`. An earlier 31 August TD3-inclusive batch remains under `results/run_20260831/` for reference only.
 
-Eval-time k-means RNG for TD3 was aligned with `solve_kmeans` (`docs/td3_fidelity_notes.md`). The 31 August batch under `results/run_20260831/` is the canonical Part A run set; AUTO tables prefer those CSVs when present.
+The 1 September batch under `results/run_20260901/` is the canonical Part A run set; AUTO tables prefer those CSVs when you pass `--results results/run_20260901` to `python -m src.status_sync`.
 
 ---
 
@@ -104,7 +104,7 @@ This run’s calibration script reproduced that split (see §6).
 
 <!-- AUTO:tests -->
 Command: `python -m pytest -v --tb=short`  
-Collected test functions in `tests/test_*.py`: **71**. Re-run pytest locally to confirm they still pass; this cell counts definitions, not a live pytest session.
+Collected test functions in `tests/test_*.py`: **101**. Re-run pytest locally to confirm they still pass; this cell counts definitions, not a live pytest session.
 <!-- /AUTO:tests -->
 
 | File | What it pins |
@@ -148,81 +148,77 @@ Turning compute on **raised placement-PSO** from 5.612 to 7.925 Mbps on the same
 
 ---
 
-## 4. Method comparison (fresh, 31 August 2026)
+## 4. Method comparison (fresh, 1 September 2026, **no TD3**)
 
-Output directory: `results/run_20260831/`.
+Output directory: `results/run_20260901/`. Wall time **~18 min** total for the full no-TD3 audit.
 
-### 4.1 Dev set: 5 seeds (100–104), calibrated, `--compute --with-td3`
+### 4.1 Dev set: 5 seeds (100–104), calibrated, `--compute` (no TD3)
 
-Each TD3 column is **one trained policy per seed**, then greedy eval (~35 s/seed). Paper column is the IEEE Fig. 6 read at **J=3** (approximate; paper protocol is 20 runs).
+Paper column is the IEEE Fig. 6 read at **J=3** (approximate; paper protocol is 20 runs).
 
 <!-- AUTO:compare_5 -->
 | Method | Repo (Mbps) | Paper Fig. 6 at J=3 (Mbps) | Feasible fraction | AoDT mean (s) | QoS | Runtime (s) | Std (bit/s) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Random | 5.007 | ~3 | 0.80 | 2.474 | 0.20 | 0.002 | 1.85e+06 |
-| K-means | 6.739 | ~4 | 1.00 | 2.390 | 0.00 | 0.001 | 7.30e+05 |
-| PSO (placement) | 7.681 | n/a | 1.00 | 2.360 | 0.00 | 0.612 | 2.26e+05 |
-| SCA | 7.374 | ~7.1 | 1.00 | 2.390 | 0.00 | 0.046 | 3.07e+05 |
-| TD3 | 6.739 | ~5.8 | 1.00 | 2.390 | 0.00 | 42.091 | 7.30e+05 |
+| Random | 3.279 | ~3 | 0.00 | 8.951 | 0.60 | 0.001 | 1.19e+06 |
+| K-means | 4.781 | ~4 | 0.80 | 1.821 | 0.00 | 0.001 | 8.63e+05 |
+| PSO (placement) | 7.644 | n/a | 1.00 | 2.800 | 0.00 | 1.356 | 2.25e+05 |
+| SCA | 7.210 | ~7.1 | 1.00 | 2.800 | 0.00 | 0.086 | 3.28e+05 |
 | proposed | — | n/a | — | — | — | — | — |
 
 _Paper protocol is 20 runs; this table is the 5-seed dev set. Paper column is still the Fig. 6 J=3 read._
-_Source: `results/run_20260831/compare_5seed/compare_raw.csv` (mtime 2026-08-31 13:37). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/compare_5seed/compare_raw.csv` (mtime 2026-09-01 15:47). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:compare_5 -->
 
-### 4.2 Paper set: 20 seeds (100–119), calibrated, `--compute --with-td3`
+### 4.2 Paper set: 20 seeds (100–119), calibrated, `--compute` (no TD3)
 
 This is the protocol the paper states for plotted points (“average of 20 different random runs”, IEEE p. 3021). Paper column: Fig. 6 at J=3 (approximate figure read). PSO is not a paper method.
 
 <!-- AUTO:compare_20 -->
 | Method | Repo (Mbps) | Paper Fig. 6 at J=3 (Mbps) | Feasible fraction | AoDT mean (s) | QoS | Runtime (s) | Std (bit/s) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Random | 3.812 | ~3 | 0.40 | 2.902 | 0.85 | 0.001 | 1.92e+06 |
-| K-means | 6.429 | ~4 | 1.00 | 2.375 | 0.00 | 0.001 | 6.90e+05 |
-| PSO (placement) | 7.588 | n/a | 1.00 | 2.420 | 0.00 | 0.591 | 3.08e+05 |
-| SCA | 7.143 | ~7.1 | 1.00 | 2.375 | 0.00 | 0.040 | 4.79e+05 |
-| TD3 | 6.512 | ~5.8 | 1.00 | 2.375 | 0.00 | 39.197 | 6.82e+05 |
+| Random | 2.925 | ~3 | 0.00 | 21.519 | 1.70 | 0.000 | 9.17e+05 |
+| K-means | 4.547 | ~4 | 0.65 | 2.103 | 0.00 | 0.001 | 6.39e+05 |
+| PSO (placement) | 7.508 | n/a | 1.00 | 2.800 | 0.00 | 1.413 | 3.99e+05 |
+| SCA | 7.080 | ~7.1 | 1.00 | 2.800 | 0.00 | 0.078 | 7.09e+05 |
 | proposed | — | n/a | — | — | — | — | — |
 
-_Source: `results/run_20260831/compare_20seed/compare_raw_20runs.csv` (mtime 2026-08-31 13:50). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/compare_20seed/compare_raw_20runs.csv` (mtime 2026-09-01 15:48). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:compare_20 -->
 
 On this reconstruction, **placement PSO beats SCA** on the 20-seed mean. That is allowed: the repo SCA is not the paper’s CVX solver, and PSO searches the same true evaluator SCA linearises. IEEE Fig. 6 has no PSO column.
 
-### 4.3 Literal Table II radio, 5 seeds, `--radio-profile table2 --compute --with-td3`
+### 4.3 Literal Table II radio, 5 seeds, `--radio-profile table2 --compute` (no TD3)
 
 <!-- AUTO:compare_table2 -->
 | Method | Repo (Mbps) | Paper Figs. 6–10 | Feasible | AoDT mean (s) | QoS | Runtime (s) |
 |---|---:|---|---:|---:|---:|---:|
-| Random | 0.083 | not comparable | 0.00 | 47.960 | 2.00 | 0.002 |
-| K-means | 0.099 | not comparable | 0.40 | 2.846 | 0.60 | 0.001 |
-| PSO | 0.109 | not comparable | 0.80 | 2.474 | 0.20 | 0.526 |
-| SCA | 0.100 | not comparable | 0.40 | 2.730 | 0.60 | 0.042 |
-| TD3 | 0.100 | not comparable | 0.60 | 2.816 | 0.40 | 30.276 |
+| Random | 0.083 | not comparable | 0.00 | 49.705 | 5.60 | 0.001 |
+| K-means | 0.105 | not comparable | 0.00 | 16.113 | 3.40 | 0.001 |
+| PSO | 0.118 | not comparable | 0.00 | 29.347 | 8.00 | 1.410 |
+| SCA | 0.117 | not comparable | 0.00 | 45.476 | 8.00 | 0.036 |
 
 Literal Table II radio sits in a **~0.08–0.11 Mbps** band. IEEE Figs. 6–10 are several Mbps; do not compare those paper numbers to this table.
-_Source: `results/run_20260831/table2_5seed/compare_raw.csv` (mtime 2026-08-31 13:53). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/table2_5seed/compare_raw.csv` (mtime 2026-09-01 15:48). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:compare_table2 -->
 
 ---
 
 ## 5. AoDT comparison (fresh)
 
-Command: `python -m src.main --mode aodt-compare --particles 20 --iters 100 --td3-steps 7000 --out results/run_20260831`  
-Always forces `--compute`. PSO is **joint**. TD3 is **one policy per (I, J)** trained on seeds **200–219**, then greedy-evaluated on 100–119. Wall time: **427 s** (31 August 2026 run).
+Command: `python -m src.main --mode aodt-compare --skip-td3 --particles 20 --iters 100 --out results/run_20260901`  
+Always forces `--compute`. PSO is **joint**. TD3 **skipped**. Wall time: **~295 s** (1 September 2026 run).
 
 ### 5.1 Default I=10, J=3
 
 <!-- AUTO:aodt_default -->
 | Method | Repo raw (Mbps) | Paper Fig. 6 at J=3 (Mbps) | Feasible frac | AoDT mean (s) | QoS | AoDT viol | Runtime (s) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Random | 3.812 | ~3 | 0.40 | 2.902 | 0.85 | 0.40 | 0.000 |
-| K-means | 6.429 | ~4 | 1.00 | 2.375 | 0.00 | 0.00 | 0.000 |
-| PSO joint | 4.959 | n/a | 1.00 | 1.008 | 0.00 | 0.00 | 0.529 |
-| SCA | 7.143 | ~7.1 | 1.00 | 2.375 | 0.00 | 0.00 | 0.036 |
-| TD3 | 6.512 | ~5.8 | 1.00 | 2.375 | 0.00 | 0.00 | 0.095 |
+| Random | 2.925 | ~3 | 0.00 | 21.519 | 1.70 | 1.55 | 0.001 |
+| K-means | 4.547 | ~4 | 0.65 | 2.103 | 0.00 | 0.35 | 0.001 |
+| PSO joint | 4.566 | n/a | 1.00 | 1.338 | 0.00 | 0.00 | 1.404 |
+| SCA | 7.080 | ~7.1 | 1.00 | 2.800 | 0.00 | 0.00 | 0.076 |
 
-_Source: `results/run_20260831/aodt/raw_default.csv` (mtime 2026-08-31 13:54). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/aodt/raw_default.csv` (mtime 2026-09-01 15:49). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:aodt_default -->
 
 Joint PSO’s extra discrete variables hurt the sum-rate mean relative to placement PSO in §4.2, but it records the **lowest AoDT**.
@@ -232,52 +228,51 @@ Joint PSO’s extra discrete variables hurt the sum-rate mean relative to placem
 Values are mean raw sum rate in Mbps over 20 seeds. Paper columns are IEEE Fig. 6 reads (J=5 printed; J=3 approximate).
 
 <!-- AUTO:aodt_vs_j -->
-| J | Random | K-means | PSO | SCA | TD3 | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 0.431 | 2.417 | 0.945 | 2.720 | 2.196 | — | — | — | — |
-| 2 | 2.169 | 4.882 | 3.071 | 5.945 | 4.855 | — | — | — | — |
-| 3 | 3.812 | 6.429 | 4.959 | 7.143 | 6.512 | ~7.1 | ~5.8 | ~4 | ~3 |
-| 4 | 5.194 | 7.218 | 5.790 | 7.592 | 7.218 | — | — | — | — |
-| 5 | 6.116 | 7.811 | 6.619 | 8.025 | 7.811 | ~8.8 | ~7 | ~5.6 | ~3.4 |
+| J | Random | K-means | PSO | SCA | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1.283 | 1.540 | 1.405 | 0.365 | — | — | — | — |
+| 2 | 2.112 | 3.049 | 2.285 | 3.829 | — | — | — | — |
+| 3 | 2.925 | 4.547 | 4.566 | 7.080 | ~7.1 | ~5.8 | ~4 | ~3 |
+| 4 | 3.378 | 5.711 | 5.561 | 7.831 | — | — | — | — |
+| 5 | 4.238 | 6.357 | 6.522 | 7.939 | ~8.8 | ~7 | ~5.6 | ~3.4 |
 
 Paper quotes **J=5** in the IEEE text. J=3 paper cells are the audit’s Fig. 6 read (not a printed table).
-_Source: `results/run_20260831/aodt/summary_vs_uav.csv` (mtime 2026-08-31 13:57). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/aodt/summary_vs_uav.csv` (mtime 2026-09-01 15:51). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:aodt_vs_j -->
 
 ### 5.3 Versus number of IoTs I (J=3) — paper Fig. 7 analogue
 
 <!-- AUTO:aodt_vs_i -->
-| I | Random | K-means | PSO | SCA | TD3 | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 10 | 3.812 | 6.429 | 4.959 | 7.143 | 6.512 | — | — | — | — |
-| 16 | 2.626 | 6.279 | 4.079 | 6.987 | 6.299 | — | — | — | — |
-| 20 | 2.456 | 6.374 | 4.084 | 7.006 | 6.231 | — | — | — | — |
-| 24 | 1.985 | 6.455 | 3.773 | 7.022 | 6.455 | — | — | — | — |
-| 32 | 1.505 | 6.087 | 3.345 | 6.582 | 6.087 | ~14 | ~11.6 | ~7.8 | ~5.2 |
+| I | Random | K-means | PSO | SCA | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 10 | 2.925 | 4.547 | 4.566 | 7.080 | — | — | — | — |
+| 16 | 2.812 | 4.074 | 3.734 | 5.142 | — | — | — | — |
+| 20 | 2.787 | 4.152 | 3.349 | 4.738 | — | — | — | — |
+| 24 | 2.725 | 4.099 | 2.945 | 4.219 | — | — | — | — |
+| 32 | 2.662 | 3.909 | 2.735 | 2.587 | ~14 | ~11.6 | ~7.8 | ~5.2 |
 
 Paper quotes **I=32** (Fig. 7). A shared `B_sys` simplex does not make this repo’s sum rate grow with I.
-_Source: `results/run_20260831/aodt/summary_vs_iot.csv` (mtime 2026-08-31 14:00). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/aodt/summary_vs_iot.csv` (mtime 2026-09-01 15:53). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:aodt_vs_i -->
 
 ### 5.4 Placement geometry (I=10, J=3, seeds 100–119)
 
-From `results/run_20260831/aodt/placement_analysis.md` (Hungarian match to K-means centroids):
+From `results/run_20260901/aodt/placement_analysis.md` (Hungarian match to K-means centroids):
 
 | Method | Mean UAV spread (m) | Distance to IoT centroids (m) | Feasible-placement rate | Sum rate (bit/s) |
 |---|---:|---:|---:|---:|
-| Random | 279.1 | 166.3 | 0.40 | 3 811 600.9 |
-| K-means | 297.3 | 0.0 | 1.00 | 6 428 858.5 |
-| PSO joint | 297.7 | 84.0 | 1.00 | 4 958 536.8 |
-| SCA | 296.9 | 32.1 | 1.00 | 7 142 784.6 |
-| TD3 | 299.7 | 116.4 | 1.00 | 6 707 865.4 |
+| Random | 279.1 | 166.3 | 0.00 | 2 924 969.2 |
+| K-means | 297.3 | 0.0 | 0.65 | 4 546 955.1 |
+| PSO joint | 300.9 | 82.1 | 1.00 | 4 565 591.9 |
+| SCA | 305.0 | 22.5 | 1.00 | 7 079 590.7 |
 
-SCA stays close to the IoT centroids (32 m); TD3 sits farther (116 m) but still fully feasible.
+SCA stays close to the IoT centroids (23 m); joint PSO is farther (82 m) but fully feasible on all seeds.
 
 Figures written from the same CSVs:
 
-![Raw sum rate vs J](../results/run_20260831/aodt/fig_raw_vs_uav.png)
+![Raw sum rate vs J](../results/run_20260901/aodt/fig_raw_vs_uav.png)
 
-![Raw sum rate vs I](../results/run_20260831/aodt/fig_raw_vs_iot.png)
+![Raw sum rate vs I](../results/run_20260901/aodt/fig_raw_vs_iot.png)
 
 ---
 
@@ -311,101 +306,93 @@ Matches `docs/calibration.md`.
 Command:
 
 ```bash
-python -m src.main --mode sweeps --paper-runs --compute --with-td3 --particles 20 --iters 100 --td3-steps 7000 --out results/run_20260831/sweeps
+python -m src.main --mode sweeps --paper-runs --compute --particles 20 --iters 100 --out results/run_20260901/sweeps
 ```
 
-This is the job in `todo.md`. It trains one 7000-step TD3 policy **per scenario seed per sweep cell**.
+No TD3. Trains nothing; runs Random / K-means / placement PSO / SCA on every sweep cell.
 
 ### 7.1 Default comparison (finished)
 
-Same 20 seeds and placement PSO as §4.2. File: `results/run_20260831/sweeps/comparison_table.md`.
+Same 20 seeds and placement PSO as §4.2. File: `results/run_20260901/sweeps/comparison_table.md`.
 
 <!-- AUTO:sweeps_default -->
 | Method | Repo (Mbps) | Paper Fig. 6 at J=3 (Mbps) | Feasible fraction | AoDT mean (s) | QoS | Runtime (s) | Std (bit/s) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Random | 3.812 | ~3 | 0.40 | 2.902 | 0.85 | 0.001 | 1.92e+06 |
-| K-means | 6.429 | ~4 | 1.00 | 2.375 | 0.00 | 0.000 | 6.90e+05 |
-| PSO (placement) | 7.588 | n/a | 1.00 | 2.420 | 0.00 | 0.535 | 3.08e+05 |
-| SCA | 7.143 | ~7.1 | 1.00 | 2.375 | 0.00 | 0.037 | 4.79e+05 |
-| TD3 | 6.512 | ~5.8 | 1.00 | 2.375 | 0.00 | 30.658 | 6.82e+05 |
+| Random | 2.925 | ~3 | 0.00 | 21.519 | 1.70 | 0.001 | 9.17e+05 |
+| K-means | 4.547 | ~4 | 0.65 | 2.103 | 0.00 | 0.001 | 6.39e+05 |
+| PSO (placement) | 7.508 | n/a | 1.00 | 2.800 | 0.00 | 1.275 | 3.99e+05 |
+| SCA | 7.080 | ~7.1 | 1.00 | 2.800 | 0.00 | 0.078 | 7.09e+05 |
 | proposed | — | n/a | — | — | — | — | — |
 
-_Source: `results/run_20260831/sweeps/raw_default_comparison.csv` (mtime 2026-08-31 14:14). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/sweeps/raw_default_comparison.csv` (mtime 2026-09-01 15:54). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:sweeps_default -->
 
-PSO seed-100 convergence CSV: `results/run_20260831/sweeps/pso_convergence.csv` (fitness rises from 6.760 Mbps at iter 0 to 7.294 Mbps by iter 2 on that seed, then continues).
+PSO seed-100 convergence CSV: `results/run_20260901/sweeps/pso_convergence.csv`.
 
-### 7.2 J and I with TD3 (finished via `aodt-compare`)
+### 7.2 J and I sweeps (no TD3)
 
-Those axes are §5.2–5.3. They already include TD3 (one policy per \((I,J)\), trained on seeds 200–219). Placement-PSO + per-seed TD3 J/I CSVs from `--mode sweeps --with-td3` are in `results/run_20260831/sweeps/sumrate_vs_{uav,iot}.csv`.
+Axes are §5.2–5.3 (AoDT compare) plus placement-PSO per-cell CSVs in `results/run_20260901/sweeps/sumrate_vs_{uav,iot}.csv`.
 
-### 7.3 λ, \(T_k\), \(f_j\) without per-cell TD3 (finished)
+### 7.3 λ, \(T_k\), \(f_j\) sweeps (no TD3, finished)
 
-Command (20 seeds 100–119, calibrated, `--compute`, placement PSO, no TD3):
-
-```bash
-# equivalent of sweeps Fig.8–10 only
-python -c "… sweep_lambda / sweep_aodt / sweep_cpu …"
-```
-
-Output: `results/run_20260831/sweeps_constraints/`. Wall time **191 s** (31 August 2026).
+Same command as §7.1 (`--mode sweeps --paper-runs --compute`). Outputs under `results/run_20260901/sweeps/`. Wall time included in the **~18 min** full audit.
 
 **Fig. 8 analogue — task arrival rate \(\lambda\) (Mbps, 20-seed mean).** Paper at \(\lambda=3.5\): TD3 ≈ 7.3, K-means ≈ 5.3, random ≈ 4.2.
 
 <!-- AUTO:sweeps_lambda -->
 | $\lambda$ | Random | K-means | PSO | SCA | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 3.788 | 6.425 | 7.464 | 7.034 | — | — | — | — |
-| 1.5 | 3.812 | 6.429 | 7.587 | 7.143 | — | — | — | — |
-| 2 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 2.5 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 3 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 3.5 | 3.812 | 6.429 | 7.588 | 7.143 | 8.9 (arXiv) | ~7.3 | ~5.3 | ~4.2 |
+| 1 | 2.925 | 4.547 | 7.245 | 6.741 | — | — | — | — |
+| 1.5 | 2.925 | 4.547 | 7.443 | 6.986 | — | — | — | — |
+| 2 | 2.925 | 4.547 | 7.508 | 7.080 | — | — | — | — |
+| 2.5 | 2.925 | 4.547 | 7.507 | 7.148 | — | — | — | — |
+| 3 | 2.925 | 4.547 | 7.558 | 7.169 | — | — | — | — |
+| 3.5 | 2.925 | 4.547 | 7.589 | 7.190 | 8.9 (arXiv) | ~7.3 | ~5.3 | ~4.2 |
 
 Paper quote is at $\lambda=3.5$. SCA 8.9 Mbps is the arXiv (no-TD3) optimized line.
-_Source: `results/run_20260831/sweeps_constraints/sumrate_vs_lambda.csv` (mtime 2026-08-31 14:01). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/sweeps/sumrate_vs_lambda.csv` (mtime 2026-09-01 16:01). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:sweeps_lambda -->
 
-![Sum rate vs λ](../results/run_20260831/sweeps_constraints/fig8_sumrate_vs_lambda.png)
+![Sum rate vs λ](../results/run_20260901/sweeps/fig8_sumrate_vs_lambda.png)
 
 **Fig. 9 analogue — AoDT threshold \(T_k\) (Mbps).** Paper at \(T_k=3\) s: TD3 ≈ 6, K-means ≈ 4.4, random ≈ 3.2 (SCA highest; arXiv without TD3 wrote optimized ≈ 7.8).
 
 <!-- AUTO:sweeps_tk -->
 | $T_k$ (s) | Random | K-means | PSO | SCA | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.8 | 2.199 | 4.630 | 5.106 | 4.866 | — | — | — | — |
-| 1.2 | 2.625 | 6.080 | 7.125 | 6.614 | — | — | — | — |
-| 1.6 | 3.199 | 6.311 | 7.424 | 6.893 | — | — | — | — |
-| 2 | 3.632 | 6.399 | 7.479 | 6.993 | — | — | — | — |
-| 2.4 | 3.804 | 6.428 | 7.522 | 7.140 | — | — | — | — |
-| 2.8 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 3 | 3.812 | 6.429 | 7.588 | 7.143 | 7.8 (arXiv) | ~6 | ~4.4 | ~3.2 |
+| 0.8 | 2.925 | 4.547 | 4.273 | 3.966 | — | — | — | — |
+| 1.2 | 2.925 | 4.547 | 5.293 | 4.204 | — | — | — | — |
+| 1.6 | 2.925 | 4.547 | 6.598 | 5.741 | — | — | — | — |
+| 2 | 2.925 | 4.547 | 7.053 | 6.413 | — | — | — | — |
+| 2.4 | 2.925 | 4.547 | 7.346 | 6.825 | — | — | — | — |
+| 2.8 | 2.925 | 4.547 | 7.508 | 7.080 | — | — | — | — |
+| 3 | 2.925 | 4.547 | 7.568 | 7.184 | 7.8 (arXiv) | ~6 | ~4.4 | ~3.2 |
 
 Paper quote is at $T_k=3$ s. SCA 7.8 Mbps is the arXiv optimized line.
-_Source: `results/run_20260831/sweeps_constraints/sumrate_vs_aodt.csv` (mtime 2026-08-31 14:02). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/sweeps/sumrate_vs_aodt.csv` (mtime 2026-09-01 16:03). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:sweeps_tk -->
 
-![Sum rate vs \(T_k\)](../results/run_20260831/sweeps_constraints/fig9_sumrate_vs_aodt.png)
+![Sum rate vs \(T_k\)](../results/run_20260901/sweeps/fig9_sumrate_vs_aodt.png)
 
 **Fig. 10 analogue — UAV CPU \(f_j\) (Mbps).** Paper at 250 MHz: SCA ≈ 7.5, TD3 ≈ 6.7, baselines **< 4.5**.
 
 <!-- AUTO:sweeps_cpu -->
 | $f_j$ (Hz) | Random | K-means | PSO | SCA | Paper SCA | Paper TD3 | Paper K-means | Paper Random |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1.0e+08 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 1.5e+08 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 2.0e+08 | 3.812 | 6.429 | 7.588 | 7.143 | — | — | — | — |
-| 2.5e+08 | 3.812 | 6.429 | 7.588 | 7.143 | ~7.5 | ~6.7 | <4.5 | <4.5 |
+| 1.0e+08 | 2.925 | 4.547 | 7.483 | 7.029 | — | — | — | — |
+| 1.5e+08 | 2.925 | 4.547 | 7.499 | 7.063 | — | — | — | — |
+| 2.0e+08 | 2.925 | 4.547 | 7.508 | 7.080 | — | — | — | — |
+| 2.5e+08 | 2.925 | 4.547 | 7.506 | 7.089 | ~7.5 | ~6.7 | <4.5 | <4.5 |
 
 Paper quote is at 250 MHz: SCA ~7.5, TD3 ~6.7, baselines <4.5.
-_Source: `results/run_20260831/sweeps_constraints/sumrate_vs_cpu.csv` (mtime 2026-08-31 14:03). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
+_Source: `results/run_20260901/sweeps/sumrate_vs_cpu.csv` (mtime 2026-09-01 16:05). Paper columns are IEEE TNSM 2026 §VII figure reads (approximate). PSO is not in the paper._
 <!-- /AUTO:sweeps_cpu -->
 
-![Sum rate vs \(f_j\)](../results/run_20260831/sweeps_constraints/fig10_sumrate_vs_cpu.png)
+![Sum rate vs \(f_j\)](../results/run_20260901/sweeps/fig10_sumrate_vs_cpu.png)
 
-### 7.4 Full per-cell TD3 sweep (finished)
+### 7.4 TD3 sweeps (skipped)
 
-`--mode sweeps --paper-runs --with-td3` retrains 7000-step TD3 **once per seed per cell** on all axes (default, J, I, λ, \(T_k\), \(f_j\)). Outputs: `results/run_20260831/sweeps/sumrate_vs_{uav,iot,lambda,aodt,cpu}.csv` plus `meta.json` (20 seeds, all five methods). Wall time **~5 h 27 min** on RTX 5070 (14:03–19:30, 31 August 2026). Default comparison matches §4.2. J/I TD3 with pooled training remains in §5; λ/\(T_k\)/\(f_j\) **without** per-cell TD3 (paper-style constraint axes) stays in §7.3.
+Per-cell TD3 retraining (`--with-td3`) is **not** part of the 1 September batch. Prior TD3-inclusive outputs remain under `results/run_20260831/sweeps/` (~5.5 h on RTX 5070, 31 August 2026) if needed.
 
 ---
 
@@ -440,7 +427,7 @@ _Source: `results/run_20260831/sweeps_constraints/sumrate_vs_cpu.csv` (mtime 202
 | Reconstruct TD3 | Structure done; hyperparameters not fully specified in the paper |
 | Design/justify novelty | **Not done** |
 | Validate numerical output vs paper Mbps | **Partial** on `calibrated` only; **fails** on literal Table II |
-| Final 20-run experiments | Compare + AoDT **done**; J/I with TD3 **done**; λ/\(T_k\)/\(f_j\) without TD3 **done**; full per-cell TD3 sweep **done** (31 August 2026, `results/run_20260831/sweeps/`) |
+| Final 20-run experiments | Compare + AoDT + sweeps **done without TD3** (1 September 2026, `results/run_20260901/`). TD3 per-cell sweeps archived under `results/run_20260831/sweeps/` only. |
 
 ---
 
@@ -449,18 +436,18 @@ _Source: `results/run_20260831/sweeps_constraints/sumrate_vs_cpu.csv` (mtime 202
 ## AUTO artifact index
 
 <!-- AUTO:artifacts -->
-- tests collected (by `def test_`): **71**
-- refresh: 2026-08-31 19:33
-- compare 20-seed: `results/run_20260831/compare_20seed/compare_raw_20runs.csv`
-- compare 5-seed: `results/run_20260831/compare_5seed/compare_raw.csv`
-- table2 compare: `results/run_20260831/table2_5seed/compare_raw.csv`
-- aodt default: `results/run_20260831/aodt/raw_default.csv`
-- aodt vs J: `results/run_20260831/aodt/summary_vs_uav.csv`
-- aodt vs I: `results/run_20260831/aodt/summary_vs_iot.csv`
-- sweeps default comparison: `results/run_20260831/sweeps/raw_default_comparison.csv`
-- λ sweep: `results/run_20260831/sweeps_constraints/sumrate_vs_lambda.csv`
-- $T_k$ sweep: `results/run_20260831/sweeps_constraints/sumrate_vs_aodt.csv`
-- $f_j$ sweep: `results/run_20260831/sweeps_constraints/sumrate_vs_cpu.csv`
+- tests collected (by `def test_`): **101**
+- refresh: 2026-09-01 16:07
+- compare 20-seed: `results/run_20260901/compare_20seed/compare_raw_20runs.csv`
+- compare 5-seed: `results/run_20260901/compare_5seed/compare_raw.csv`
+- table2 compare: `results/run_20260901/table2_5seed/compare_raw.csv`
+- aodt default: `results/run_20260901/aodt/raw_default.csv`
+- aodt vs J: `results/run_20260901/aodt/summary_vs_uav.csv`
+- aodt vs I: `results/run_20260901/aodt/summary_vs_iot.csv`
+- sweeps default comparison: `results/run_20260901/sweeps/raw_default_comparison.csv`
+- λ sweep: `results/run_20260901/sweeps/sumrate_vs_lambda.csv`
+- $T_k$ sweep: `results/run_20260901/sweeps/sumrate_vs_aodt.csv`
+- $f_j$ sweep: `results/run_20260901/sweeps/sumrate_vs_cpu.csv`
 <!-- /AUTO:artifacts -->
 
 ---
@@ -724,16 +711,15 @@ $$
 
 ```text
 python -m pytest -v --tb=short
-python -m src.status_sync                       # refresh AUTO tables from newest results/
-python -m scripts.run_full_audit.ps1            # or run steps below individually
-python -m src.main --mode compare --with-td3 --compute --out results/run_20260831/compare_5seed
-python -m src.main --mode compare --paper-runs --with-td3 --compute --out results/run_20260831/compare_20seed
-python -m src.main --mode compare --radio-profile table2 --with-td3 --compute --out results/run_20260831/table2_5seed
-python -m src.main --mode aodt-compare --particles 20 --iters 100 --td3-steps 7000 --out results/run_20260831
-python -m src.main --mode sweeps --paper-runs --compute --with-td3 --out results/run_20260831/sweeps
-  # per-cell TD3 on all axes; ~5.5 h on RTX 5070
-# constraint axes only (no TD3), 20 seeds:
-#   sweep_lambda, sweep_aodt, sweep_cpu → results/run_20260831/sweeps_constraints/
+python -m src.status_sync --results results/run_20260901
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit_no_td3.ps1
+# or step-by-step (no TD3):
+python -m src.main --mode compare --compute --out results/run_20260901/compare_5seed
+python -m src.main --mode compare --paper-runs --compute --out results/run_20260901/compare_20seed
+python -m src.main --mode compare --radio-profile table2 --compute --out results/run_20260901/table2_5seed
+python -m src.main --mode aodt-compare --skip-td3 --particles 20 --iters 100 --out results/run_20260901
+python -m src.main --mode sweeps --paper-runs --compute --out results/run_20260901/sweeps
+python -m scripts.calibrate --methods random kmeans sca --js 1 3 5
 ```
 
-Raw tables and logs: `results/run_20260831/`. IEEE page renders used in Part B: `docs/report_figures/`. AoDT plots: `results/run_20260831/aodt/fig_*.png`. Constraint plots: `results/run_20260831/sweeps_constraints/fig{8,9,10}_*.png`. Full TD3 sweep plots: `results/run_20260831/sweeps/fig*.png`.
+Raw tables and logs: `results/run_20260901/`. AoDT plots: `results/run_20260901/aodt/fig_*.png`. Sweep plots: `results/run_20260901/sweeps/fig*.png`. Prior TD3 batch: `results/run_20260831/`.
