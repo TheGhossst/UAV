@@ -91,6 +91,18 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 
 - `results/campaign_*.json` — per-axis points, per-method mean/std Mbps,
   feasible fraction, per-seed rates
 - `results/campaign_*.csv` — flat table for plots
+- Paired writeup stats (same seed, champion vs baseline):
+
+```text
+python scripts/paired_winrate.py results/campaign_20260904_cap25.json
+```
+
+  Writes `*_paired.json` / `*_paired.csv`. Quote lines are
+  `SCA wins by X+/-Y Mbps vs <baseline>, p<..., N/20 seeds`.
+  `+/-Y` is the sample std of the 20 paired deltas. Primary p is
+  Wilcoxon signed-rank. `uavs J=3` is the unique default scenario.
+  The script flags lambda/CPU (and other) rows that are identical
+  per-seed copies; do not pool those with J=3.
 
 Published score is always Python `evaluate()`.
 
