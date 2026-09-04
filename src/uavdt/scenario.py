@@ -9,7 +9,10 @@ from uavdt.models import PhysicalProcess, Scenario
 
 
 def process_groups(cfg: SimConfig) -> tuple[PhysicalProcess, ...]:
-    """N_1 = IoTs 0..4, N_2 = IoTs 5..9 (IoT_1–5 and IoT_6–10)."""
+    """Equal contiguous groups of size `iots_per_process`.
+
+    Default Table II split: N_1 = IoTs 0..4, N_2 = IoTs 5..9.
+    """
     groups = []
     for k in range(cfg.num_processes):
         start = k * cfg.iots_per_process

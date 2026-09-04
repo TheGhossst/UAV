@@ -518,5 +518,7 @@ Problem (P) as written:
   not a paper requirement).
 - Paper Table II 20 kHz is infeasible here and cannot produce the
   published 7–14 Mbps; headline `B_sys` is 2.4 MHz / 8.8 MHz (§4.1).
-- No 20-seed campaign in this milestone.
+- SCA solver is **frozen**. Characterization vs `J`, `I`, `λ`, `T_k`,
+  CPU, and Random/K-means/PSO lives in `docs/EXPERIMENTS.md`.
+- No 20-seed campaign committed as a final figure pack yet.
 - TD3 is out of scope.

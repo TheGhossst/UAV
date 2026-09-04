@@ -16,6 +16,11 @@ from uavdt.config import (
     SimConfig,
 )
 from uavdt.experiments import run_one, run_seeds
+from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign
+from uavdt.experiments.grids import AXES
+from uavdt.experiments.methods import METHODS
+from uavdt.experiments.spot import spot_validate_sca
+from uavdt.placement.pso import PSOSettings
 from uavdt.sca import SCASettings, solve_sca
 from uavdt.sca.algorithm import write_history
 from uavdt.sca.debug import print_human_table, run_sca_seq_debug
@@ -262,6 +267,62 @@ def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_methods(raw: str) -> tuple[str, ...]:
+    names = tuple(x.strip().lower() for x in raw.split(",") if x.strip())
+    for n in names:
+        if n not in METHODS:
+            raise ValueError(f"unknown method {n!r}; expected {METHODS}")
+    return names
+
+
+def _parse_axes(raw: str) -> tuple[str, ...]:
+    if raw.strip().lower() == "all":
+        return AXES
+    names = tuple(x.strip().lower() for x in raw.split(",") if x.strip())
+    for n in names:
+        if n not in AXES:
+            raise ValueError(f"unknown axis {n!r}; expected {AXES} or all")
+    return names
+
+
+def cmd_campaign(args: argparse.Namespace) -> int:
+    cfg = _cfg_from_args(args)
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+    settings = CampaignSettings(
+        n_runs=int(args.n_runs),
+        seed_start=int(args.seed_start),
+        methods=_parse_methods(args.methods),
+        sca_settings=SCASettings(
+            max_iterations=int(args.max_iterations),
+            epsilon=float(args.epsilon),
+            step_size_m=float(args.step_size),
+            solver=solver,
+        ),
+        pso_settings=PSOSettings(),
+    )
+    payload = run_campaign(_parse_axes(args.axis), cfg, settings)
+    out = write_campaign(payload, args.out)
+    print(f"wrote {out}")
+    print(f"wrote {out.with_suffix('.csv')}")
+    return 0
+
+
+def cmd_spot_validate(args: argparse.Namespace) -> int:
+    cfg = _cfg_from_args(args)
+    payload = spot_validate_sca(
+        int(args.seed),
+        cfg,
+        max_iterations=int(args.max_iterations),
+        step_size_m=float(args.step_size),
+    )
+    print(json.dumps(payload, indent=2))
+    if payload.get("agreement") == "objective_mismatch":
+        return 2
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="uavdt",
@@ -321,6 +382,47 @@ def build_parser() -> argparse.ArgumentParser:
     )
     dbg.add_argument("--out-json", type=str, default="results/sca_seq_debug.json")
     dbg.set_defaults(func=cmd_sca_seq_debug)
+
+    camp = sub.add_parser(
+        "campaign",
+        help="§VII-style sweeps: J, I, λ, T_k, CPU; methods random/kmeans/pso/sca",
+    )
+    _add_shared(camp)
+    camp.add_argument(
+        "--axis",
+        type=str,
+        default="all",
+        help="uavs,iots,lambda,aodt,cpu or all (paper Figs. 6–10 axes)",
+    )
+    camp.add_argument(
+        "--methods",
+        type=str,
+        default="random,kmeans,pso,sca",
+        help="Comma-separated: random,kmeans,pso,sca",
+    )
+    camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
+    camp.add_argument("--seed-start", type=int, default=1)
+    camp.add_argument("--max-iterations", type=int, default=30)
+    camp.add_argument("--epsilon", type=float, default=1e-4)
+    camp.add_argument("--step-size", type=float, default=20.0)
+    camp.add_argument(
+        "--solver",
+        type=str,
+        default="cvxpy",
+        help="SCA backend: cvxpy (campaign default) or matlab/MOSEK",
+    )
+    camp.add_argument("--out", type=str, default="results/campaign.json")
+    camp.set_defaults(func=cmd_campaign)
+
+    sp = sub.add_parser(
+        "spot-validate",
+        help="CVXPY vs MATLAB CVX/MOSEK spot-check of frozen SCA",
+    )
+    _add_shared(sp)
+    sp.add_argument("--seed", type=int, default=1)
+    sp.add_argument("--max-iterations", type=int, default=12)
+    sp.add_argument("--step-size", type=float, default=20.0)
+    sp.set_defaults(func=cmd_spot_validate)
     return p
 
 
