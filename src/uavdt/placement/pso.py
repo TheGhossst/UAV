@@ -55,7 +55,7 @@ def _repair_xy(
 def _fitness_equal_share(
     scenario: Scenario, xy: np.ndarray, rng: np.random.Generator
 ) -> float:
-    """Fast inner fitness: nearest-a, process-b, equal B_ij, true evaluate().
+    """Fast inner fitness: nearest-a, CPU-stable b, equal B_ij, true evaluate().
 
     IMPLEMENTATION CHOICE: the PSO search uses equal-share bandwidth so
     each particle is cheap. The campaign then re-scores the returned

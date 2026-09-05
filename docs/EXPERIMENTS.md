@@ -16,7 +16,7 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | Core physics (`channel`, `computation`, `evaluator`, `constraints`) | Frozen |
 | AoDT Eq. (17) scoring | Frozen (Problem (P) score) |
 | AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
-| SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen |
+| SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py`: if majority-of-association \(b_{ij}\) violates (24) and \(J\ge K\), pick a feasible process→UAV map; \(b\) stays frozen after that |
 | New work | Baselines, sweeps, reporting |
 
 ---
@@ -115,6 +115,14 @@ python scripts/paired_winrate.py results/campaign_20260904_cap25.json
   Wilcoxon signed-rank. `uavs J=3` is the unique default scenario.
   The script flags lambda/CPU (and other) rows that are identical
   per-seed copies; do not pool those with J=3.
+
+After the constraint-(24) init repair (`cpu_stable_processing`), re-run
+only I=28, I=32, and `f_j=0.5e8` (other campaign rows are unchanged):
+
+```text
+python scripts/rerun_init_repair_points.py
+python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+```
 
 Published score is always Python `evaluate()` (Eq. (17) AoDT). Fig. 11
 and `aodt-compare` add FCFS / FCFS-P / LCFS-S simulations beside that

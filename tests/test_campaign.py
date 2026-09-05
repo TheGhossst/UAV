@@ -72,3 +72,19 @@ def test_campaign_uavs_smoke(tmp_path):
     _ = UAV_COUNTS
     _ = tmp_path
     _ = run_campaign
+
+
+def test_replace_points_swaps_matching_rows_only():
+    from uavdt.experiments.campaign import replace_points
+
+    payload = {
+        "points": [
+            {"axis": "iots", "x": 24.0, "v": "old24"},
+            {"axis": "iots", "x": 28.0, "v": "old28"},
+        ]
+    }
+    merged = replace_points(
+        payload, [{"axis": "iots", "x": 28.0, "v": "new28"}]
+    )
+    assert merged["points"][0]["v"] == "old24"
+    assert merged["points"][1]["v"] == "new28"

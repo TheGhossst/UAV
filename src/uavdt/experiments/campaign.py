@@ -126,6 +126,21 @@ def run_campaign(
     }
 
 
+def replace_points(payload: dict, new_points: list[dict]) -> dict:
+    """Swap in re-run rows matched by (axis, x). Other points stay untouched."""
+    by_key = {(p["axis"], float(p["x"])): p for p in new_points}
+    out = dict(payload)
+    pts = []
+    for old in payload["points"]:
+        key = (old["axis"], float(old["x"]))
+        pts.append(by_key.pop(key, old))
+    if by_key:
+        missing = ", ".join(f"{a} x={x:g}" for a, x in by_key)
+        raise ValueError(f"no matching campaign rows for {missing}")
+    out["points"] = pts
+    return out
+
+
 def write_campaign(payload: dict, path: str | Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

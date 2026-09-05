@@ -426,9 +426,14 @@ Altitude \(H=100\) is fixed. Box: \(x_j,y_j\in[0,100]\).
 ### 6.2 Variables — IMPLEMENTATION CHOICE
 
 Problem (P) is a MINLP. **This implementation freezes \(a_{ij}\) and
-\(b_{ij}\) after initialization** (nearest UAV, process-consistent
+\(b_{ij}\) after initialization** (nearest UAV, then majority-of-association
 processing). That is **not** a paper requirement. Constraint (23)
 remains satisfied. Discrete association/processing are not solved here.
+If the majority vote would violate queue stability (24) and \(J\ge K\),
+initialization enumerates process→UAV maps (capped; campaign \(K=2\) is
+tiny) and keeps a feasible one closest to the vote; \(b_{ij}\) is still
+frozen after that. Nearest \(a_{ij}\) is not rematched, so a process can
+still be split across UAVs and incur \(T_{\mathrm{u2u}}\) on some IoTs.
 
 ### 6.3 Sequential phases — IMPLEMENTATION CHOICE
 

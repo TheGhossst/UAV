@@ -70,6 +70,49 @@ def test_sca_tiny_instance_moves_toward_the_iot_cluster():
             assert row.aodt_violations == 0
 
 
+def test_initialize_sca_i32_does_not_fail_cpu_stability():
+    from uavdt.computation import queue_unstable
+    from uavdt.experiments.grids import config_for_counts
+
+    cfg = config_for_counts(32, 3, SimConfig(b_sys_hz=8.8e6, max_bw_share=0.25))
+    sc = generate_scenario(seed=1, cfg=cfg)
+    uav, alloc = initialize_sca(sc, 1)
+    b = alloc.hard_processing()
+    assigned = [int(np.argmax(b[p.iot_indices][0])) for p in sc.processes]
+    assert assigned[0] != assigned[1]
+    assert not np.any(queue_unstable(b, sc.lambdas_per_s, sc.cfg.service_rate_per_s))
+
+
+def test_tk08_bandwidth_lp_feasible_with_process_cohesive_association():
+    from dataclasses import replace
+
+    from uavdt.experiments.grids import config_for_counts
+    from uavdt.models import Allocation
+    from uavdt.placement.kmeans import place_kmeans
+    from uavdt.resources import nearest_association, process_consistent_processing
+
+    cfg = replace(
+        config_for_counts(10, 3, SimConfig(b_sys_hz=8.8e6, max_bw_share=0.25)),
+        aodt_threshold_s=0.8,
+    )
+    sc = generate_scenario(seed=1, cfg=cfg)
+    uav = place_kmeans(sc, 1)
+    a = np.zeros((10, 3), dtype=float)
+    for proc in sc.processes:
+        members = proc.iot_indices
+        centroid = sc.iot_xyz_m[members].mean(axis=0, keepdims=True)
+        j_star = int(np.argmin(np.linalg.norm(centroid - uav, axis=1)))
+        a[members, j_star] = 1.0
+    b = process_consistent_processing(sc, a)
+    res = solve_bandwidth_at_fixed_q(sc, uav, a, b)
+    assert not res.infeasible
+    ev = evaluate(sc, uav, Allocation(a, b, res.bandwidth_hz))
+    assert ev.feasible
+    near = nearest_association(sc.iot_xyz_m, uav)
+    res_near = solve_bandwidth_at_fixed_q(sc, uav, near, process_consistent_processing(sc, near))
+    assert res_near.infeasible
+
+
 def test_sca_output_constraints_on_main_scenario():
     cfg = SimConfig(b_sys_hz=2.4e6)
     snapshot = (

@@ -8,7 +8,7 @@ from uavdt.computation import offered_load, queue_unstable, service_rate_per_s
 from uavdt.config import SimConfig
 from uavdt.models import Allocation, Scenario
 from uavdt.placement.kmeans import place_kmeans
-from uavdt.resources import nearest_association, process_consistent_processing
+from uavdt.resources import cpu_stable_processing, nearest_association
 from uavdt.sca.linearize import spectral_efficiency
 
 
@@ -56,15 +56,22 @@ def qos_floor_bandwidth(
 
 
 def initialize_sca(scenario: Scenario, seed: int) -> tuple[np.ndarray, Allocation]:
-    """K-means UAVs (seeded), nearest association, process-consistent processing.
+    """K-means UAVs (seeded), nearest association, CPU-stable processing.
 
     IMPLEMENTATION CHOICE: Algorithm 1 does not specify the initial geometry.
     K-means is the paper's named placement initialization baseline (§VII).
+    a_ij and b_ij are frozen after this step. If majority-of-association
+    would put two processes on one UAV and violate (24),
+    cpu_stable_processing picks a feasible process→UAV map when one exists.
+    Nearest-a is not rematched: it can split N_k across UAVs so some IoTs
+    forward (T_u2u). At T_k = 0.8 s that already makes the AoDT slack
+    negative even though a no-forwarding a_ij at the same q is feasible
+    (see docs/RESULTS.md §2.4). Changing a here would move the campaign.
     """
     cfg = scenario.cfg
     uav = place_kmeans(scenario, seed)
     assoc = nearest_association(scenario.iot_xyz_m, uav)
-    proc = process_consistent_processing(scenario, assoc)
+    proc = cpu_stable_processing(scenario, assoc)
     mu = service_rate_per_s(cfg)
     if np.any(queue_unstable(proc, scenario.lambdas_per_s, mu)):
         rho = offered_load(proc, scenario.lambdas_per_s, mu)

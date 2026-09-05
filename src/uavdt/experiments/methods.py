@@ -14,7 +14,7 @@ from uavdt.models import Allocation, Scenario
 from uavdt.placement.kmeans import place_kmeans
 from uavdt.placement.pso import PSOSettings, place_pso
 from uavdt.placement.random import place_random
-from uavdt.resources import nearest_association, process_consistent_processing
+from uavdt.resources import cpu_stable_processing, nearest_association
 from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
 from uavdt.sca.settings import SCASettings
 
@@ -45,13 +45,16 @@ class MethodRun:
 
 
 def _alloc_at_positions(scenario: Scenario, uav: np.ndarray) -> Allocation:
-    """Nearest a_ij, process-consistent b_ij, exact frozen-q bandwidth LP.
+    """Nearest a_ij, CPU-stable b_ij, exact frozen-q bandwidth LP.
 
     IMPLEMENTATION CHOICE: placement baselines get the same B LP as SCA's
     bandwidth step so the comparison is positions, not a hidden B policy.
+    cpu_stable_processing is the same helper SCA uses at init, so I=28/32
+    / low-CPU (24) collisions are repaired for random, k-means, and PSO
+    too — not only SCA.
     """
     a = nearest_association(scenario.iot_xyz_m, uav)
-    b = process_consistent_processing(scenario, a)
+    b = cpu_stable_processing(scenario, a)
     res = solve_bandwidth_at_fixed_q(
         scenario, uav, a, b, SCASettings(solver=None)
     )
