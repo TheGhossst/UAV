@@ -12,8 +12,10 @@ from uavdt.channel import (
     link_metrics,
     los_probability,
     path_loss_los_nlos_db,
+    per_link_hz_for_target_rate,
     received_power_w,
     snr,
+    sum_rate_ceiling_bit_per_s,
     uplink_rate_bit_per_s,
 )
 from uavdt.config import SimConfig
@@ -102,6 +104,34 @@ def test_rate_scales_linearly_with_bandwidth():
     m1 = link_metrics(iot, uav, np.array([[20_000.0]]), cfg)
     m2 = link_metrics(iot, uav, np.array([[2_400_000.0]]), cfg)
     np.testing.assert_allclose(m2["rates_bit_per_s"], m1["rates_bit_per_s"] * (2.4e6 / 2e4))
+
+
+def test_sum_rate_ceiling_eq6_constraint27():
+    b_sys = 20_000.0
+    snr_max = 1.0e15
+    cap = sum_rate_ceiling_bit_per_s(b_sys, snr_max)
+    np.testing.assert_allclose(cap, b_sys * np.log2(1.0 + snr_max))
+    assert cap < 1.0e6
+    assert cap > 0.9e6
+    bw = np.array([[8_000.0, 2_000.0], [7_000.0, 3_000.0]])
+    assert bw.sum() == b_sys
+    snr_lin = np.array([[snr_max, 10.0], [1.0, 0.25]])
+    rates = uplink_rate_bit_per_s(bw, snr_lin)
+    assert float(rates.sum()) <= cap + 1e-6
+    equal = uplink_rate_bit_per_s(np.array([[b_sys]]), np.array([[snr_max]]))
+    np.testing.assert_allclose(float(equal.item()), cap)
+
+
+def test_per_link_hz_inverts_eq6_equal_split():
+    n = 10
+    snr_lin = 1.03
+    b_i = 800_000.0
+    rate = n * b_i * np.log2(1.0 + snr_lin)
+    back = per_link_hz_for_target_rate(rate, n, snr_lin)
+    np.testing.assert_allclose(back, b_i)
+    need = per_link_hz_for_target_rate(8.8e6, 10, snr_lin)
+    assert need / 20_000.0 > 20.0
+    assert need / 20_000.0 < 80.0
 
 
 def test_p_los_in_unit_interval():

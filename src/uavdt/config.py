@@ -39,11 +39,12 @@ ENV_B = 0.16
 AREA_X_M = 100.0
 AREA_Y_M = 100.0
 
-# Bandwidth experiments (Hz). Table II lists 20_000 Hz. That paper value
-# is infeasible here (QoS/AoDT floors need ~102 kHz) and cannot produce
-# the paper's 7–14 Mbps plots (Eq. (6) bounds 20 kHz at ~0.13 Mbps).
+# Bandwidth experiments (Hz). Table II lists B_sys = 20_000 Hz (row text:
+# "Minimum bandwidth allocation"). Constraint (27) uses that symbol as a
+# sum ceiling. Under that reading, Eq. (6)+(27) bound 20 kHz at
+# B_sys·log2(1+SNR_max) — even SNR_max=1e15 is ~1 Mbps, not 7–14 Mbps.
 # Headline results: 2.4 MHz and 8.8 MHz, each with and without a 25%
-# per-link cap. 20 kHz is kept only as a diagnostic of Table II.
+# per-link cap. 20 kHz is kept as a Table II diagnostic.
 BANDWIDTH_PRESETS: dict[str, float] = {
     "20khz": 20_000.0,
     "2.4mhz": 2_400_000.0,
@@ -142,6 +143,12 @@ class SimConfig:
 
     def with_bandwidth_hz(self, b_sys_hz: float) -> "SimConfig":
         return replace(self, b_sys_hz=float(b_sys_hz))
+
+    def with_square_area_m(self, side_m: float) -> "SimConfig":
+        side = float(side_m)
+        if side <= 0.0:
+            raise ValueError("area side must be positive")
+        return replace(self, area_x_m=side, area_y_m=side)
 
 
 DEFAULT = SimConfig()

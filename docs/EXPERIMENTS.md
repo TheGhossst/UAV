@@ -25,7 +25,10 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 
 Each plotted point is the mean of **20** random runs. This reproduction
 uses 100 × 100 m and a feasible `B_sys` (see `docs/REPRODUCTION.md` §4.1).
-Do not chase the paper’s 7–14 Mbps numbers.
+Do not chase the paper’s 7–14 Mbps numbers. The 20 kHz Table II value,
+read as the (27) cap, is bounded by `B_sys · log2(1+SNR_max)` at
+**0.997 Mbps** even at `SNR_max = 10^15`; a control at 500 × 500 m is
+also 0% feasible (`scripts/check_bsys_20khz.py`).
 
 | Figure | Axis | Held fixed | Caption / text |
 | --- | --- | --- | --- |
@@ -46,8 +49,8 @@ scope for this campaign.
 | Item | Label | Notes |
 | --- | --- | --- |
 | Axes and 20-run rule | PAPER | Tick lists below when the PDF omits them |
-| Area 100 × 100 m | Intentional modification | Paper 500 × 500 m |
-| `B_sys` 8.8 MHz (headline) | Intentional modification | Table II 20 kHz is infeasible here |
+| Area 100 × 100 m | Intentional modification | Paper 500 × 500 m; 20 kHz also checked at 500 m |
+| `B_sys` 8.8 MHz (headline) | Intentional modification | Table II 20 kHz as (27) cap is infeasible (ceiling 0.997 Mbps) |
 | 25% per-link cap | EXTERNAL PARAMETER | Not Problem (P) |
 | `S_i`, `L` | EXTERNAL PARAMETER | Settled: 12,000 bytes, `L=3.75×10⁶` |
 | PSO | EXTERNAL | Extra baseline, not in the paper |
@@ -76,6 +79,9 @@ f_j:   0.5e8, 1.0e8, 1.5e8, 2.0e8, 2.5e8   cycles/s
 $env:PYTHONPATH="src"
 
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --n-runs 5 --solver cvxpy --out results/campaign_8.8mhz.json
+
+python scripts/check_bsys_20khz.py
+python -m uavdt evaluate --seed 1 --bandwidth 20000 --area-m 500 --placement kmeans
 
 python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 5 --out results/campaign_8.8mhz_cap25_uavs.json
 

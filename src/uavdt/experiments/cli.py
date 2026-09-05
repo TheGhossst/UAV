@@ -34,7 +34,14 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
     task_bits = args.task_size_bits
     if args.task_size_bytes is not None:
         task_bits = args.task_size_bytes * 8.0
+    area = args.area_m
+    if area is None:
+        area_x, area_y = DEFAULT.area_x_m, DEFAULT.area_y_m
+    else:
+        area_x = area_y = float(area)
     return SimConfig(
+        area_x_m=float(area_x),
+        area_y_m=float(area_y),
         b_sys_hz=float(b_hz),
         task_size_bits=float(task_bits),
         task_cycles=float(args.task_cycles),
@@ -89,6 +96,15 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         ),
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
+    p.add_argument(
+        "--area-m",
+        type=float,
+        default=None,
+        help=(
+            "Square field side in metres. Default 100 (this reproduction). "
+            "Paper §VII uses 500."
+        ),
+    )
     p.add_argument("--placement", choices=("random", "kmeans"), default="random")
     p.add_argument(
         "--download-time",

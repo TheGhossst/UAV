@@ -1,12 +1,24 @@
 # Current results — Khalaf et al. (IEEE TNSM, 2026) reproduction
 
 This document records **our** experimental outcomes on the fresh `uavdt` simulator.
-It does **not** compare Mbps figures to the paper’s §VII plots. Table II’s
-`B_sys = 20 kHz` is infeasible under the stated model; the paper’s 7–14 Mbps
-curves are treated as **not credible** outputs of that parameter set (see audit
-below).
+It does **not** compare Mbps figures to the paper’s §VII plots.
 
-**Area:** **100 × 100 m** (guide requirement; paper text uses 500 × 500 m).
+**Lead finding:** Eq. (6) plus constraint (27) give, for any powers, path
+losses, or noise figures,
+
+\[
+\sum_{i,j} B_{ij}\log_2(1+\mathrm{SNR}_{ij})
+\le B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}_{\max}).
+\]
+
+If Table II’s `B_sys = 20{,}000` Hz is the sum cap in (27), then even
+`SNR_max = 10^{15}` (essentially noiseless, `\log_2(1+\mathrm{SNR})\approx 49.83`)
+caps the whole system at **0.997 Mbps**, not 7–14 Mbps. That one-line ceiling
+does not use `a`, `b`, `\eta_{\mathrm{LoS/NLoS}}`, `\sigma`, field size, or this
+simulator. See §0.
+
+**Area:** headline campaigns use **100 × 100 m**; the 20 kHz check was also
+run at the paper’s **500 × 500 m** field (same 0% feasible conclusion; §0.3).
 **Seeds:** 20 consecutive seeds per sweep point (`seed_start = 1`).
 **Methods:** SCA, random, k-means, PSO (PSO is external, not in the paper).
 **Score:** Python `evaluate()` on every method. Placement baselines are
@@ -18,20 +30,129 @@ Ledger for how to re-run: `docs/EXPERIMENTS.md`. Parameter ledger:
 
 ---
 
+## 0. Eq. (6) + constraint (27): the 20 kHz ceiling
+
+### 0.1 Model-free bound (lead with this)
+
+Constraint (27) is `\sum_{i,j} B_{ij} \le B_{\mathrm{sys}}`. Eq. (6) is
+`r_{ij} = B_{ij}\log_2(1+\mathrm{SNR}_{ij})`. The objective (20) is the sum of
+associated rates, which cannot exceed the sum of all `r_{ij}`. Therefore
+
+```text
+R_sum  ≤  Σ B_ij · log2(1+SNR_ij)  ≤  B_sys · log2(1+SNR_max)
+```
+
+for **any** choice of `p_i`, path loss, and noise. With `B_sys = 20{,}000` Hz:
+
+| `SNR_max` | `\log_2(1+\mathrm{SNR})` | Ceiling |
+| ---: | ---: | ---: |
+| 1 | 1.00 | 0.020 Mbps |
+| `10^3` | 9.97 | 0.199 Mbps |
+| `10^6` | 19.93 | 0.399 Mbps |
+| `10^{15}` (absurdly generous) | 49.83 | **0.997 Mbps** |
+
+Figs. 6–10 sit at **7–14 Mbps**, seven to fourteen times above even the
+noiseless fantasy. Helper: `uavdt.channel.sum_rate_ceiling_bit_per_s`.
+Re-run: `python scripts/check_bsys_20khz.py`.
+
+### 0.2 Table II label vs constraint (27) — closed, as a fork
+
+Table II’s row text is literally **“Minimum bandwidth allocation,
+`B_sys`, 20{,}000 Hz”**, in parallel with the previous row (“Minimum data
+rate, `R_min`”). Constraint (27) and the paragraph that explains it are a
+**ceiling on total uplink bandwidth**: “the total uplink bandwidth of the
+system does not exceed the available system bandwidth of value `B_sys`.”
+Problem (P) contains **no** constraint `B_{ij} \ge B_{\mathrm{sys}}` or
+`\sum B_{ij} \ge B_{\mathrm{sys}}`. The only occurrence of the symbol
+`B_sys` in the program is the sum cap (27). The paper never states a second
+bandwidth number.
+
+What the paper’s own Fig. 6–10 axes do to each reading:
+
+| Reading | What 20 kHz is | What Figs. 6–10 do to it |
+| --- | --- | --- |
+| **A — mathematics of (27) governs** (adopted here) | Sum cap `\sum B_{ij} \le 20` kHz | **Ruled out.** Y-axis is 7–14 Mbps; §0.1 caps any SNR at 0.997 Mbps. Fig. 7 also *grows* with `I` (SCA “exceeding approximately 14 Mbps for 32 devices”), which a 20 kHz shared pool cannot do. |
+| **B — table English governs** | A per-link or per-device **floor**, not the (27) cap | **Not ruled out by shape.** Linear-in-`I` growth is what a per-link allocation looks like. The (27) cap is then **undisclosed**. On the *written* radio the stated 20 kHz floor is tens of times too small (next paragraph). |
+
+We adopt **Reading A** because (i) Table II is the parameter table for the
+symbols in Problem (P), (ii) those symbols appear in (27) only as a sum
+ceiling, (iii) the explanatory sentence of (27) says “available system
+bandwidth,” and (iv) “Minimum” on that row is the same adjective as `R_min`,
+which **is** a floor (constraint 25) — a table-editing collision, not a second
+constraint. Reading B is named so a critic cannot say the table English was
+ignored.
+
+**Reading B magnitude (not a rounding error).** Invert Eq. (6) under an equal
+per-link split, `B_i = R / (I \log_2(1+\mathrm{SNR}))`, using the control’s
+observed `\mathrm{SNR}_{\max}\approx 1.03` (best-case: the *smallest* `B_i`
+that can hit the published Mbps). Helper:
+`uavdt.channel.per_link_hz_for_target_rate`.
+
+| Published anchor (paper text) | `I` | `B_i` needed | vs stated 20 kHz | Implied `\sum B` |
+| --- | ---: | ---: | ---: | ---: |
+| Fig. 6 SCA ~8.8 Mbps (`J = 5`) | 10 | **862 kHz** | **43×** | 8.62 MHz (431×) |
+| Figs. 6–10 band, 7 Mbps at `I = 10` | 10 | 685 kHz | 34× | 6.85 MHz (343×) |
+| Fig. 7 SCA ~14 Mbps | 32 | 428 kHz | 21× | 13.7 MHz (685×) |
+
+At a fantasy `\mathrm{SNR}=10^{15}` the stated 20 kHz *floor* would suffice
+(`B_i` drops to 9–18 kHz). That is why Reading B is not a physical
+impossibility in the same parameter-free sense as Reading A. It *is* an
+unstated parameter **21–43×** the table row on the radio Table II actually
+writes (`\mathrm{SNR}\approx 1`), or a hidden (27) cap of **~7–14 MHz**
+(hundreds of times 20 kHz as a pool). Neither is a units typo of 20{,}000 Hz.
+
+### 0.3 Control: paper 500 × 500 m field, still 20 kHz
+
+A critic can object that the infeasible 20 kHz result was obtained on a
+**100 × 100 m** field, so two things were changed at once. The bound in §0.1
+does not depend on area. The simulator check does not either, in the
+direction that would help the paper: at 500 × 500 m the zenith SNR is the
+same (`H = 100` m) and typical links are worse.
+
+Default point `I=10`, `J=3`, 20 seeds, random and k-means with the same
+frozen-`q` bandwidth LP as the campaign (`results/check_bsys_20khz.json`).
+
+**Mechanism of the realized rate.** At 20 kHz the QoS bandwidth LP is
+infeasible (`R_{\min}=10` kbps on ten links needs ~102 kHz). Evaluate then
+falls back to **equal-share** `B_{\mathrm{sys}}/I = 2` kHz per associated
+link, so
+
+```text
+R_sum          = B_sys · mean_associated_SE     (what we report)
+best-link dump = B_sys · max_SE                 (geometry ceiling)
+```
+
+Max SNR is set by a UAV over an IoT at `H = 100` m, so `max_SE` (and the
+dump ceiling) is **area-independent**. Mean SE is not: a 500 m field has
+longer associated links.
+
+| Field | Max SNR | Mean associated SE | Best-link dump | Equal-share pred. | Random / k-means realized | Feasible |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 100 × 100 m | 1.03 | 0.97 | 0.020 Mbps | 0.019 Mbps | 0.019 / 0.020 Mbps | **0%** |
+| 500 × 500 m (paper) | 1.03 | 0.64 | 0.020 Mbps | 0.013 Mbps | 0.012 / 0.013 Mbps | **0%** |
+
+The 500 m drop (0.020 → 0.013 Mbps) is equal-share averaging over worse
+links, **not** a different SNR regime for the §0.1 bound. Dumping the whole
+20 kHz pool on the best link would still be ~0.020 Mbps on both fields.
+Area is not a confounder for the 0%-feasible conclusion.
+
+---
+
 ## Audit paragraph (paper §VII vs this implementation)
 
-We implemented the Khalaf–Itani–Sharafeddine UAV-aided digital-twin IoT model
+The 20 kHz finding does not wait on the simulator: **Eq. (6) + (27) already
+cap Table II `B_sys` at 0.997 Mbps even at `SNR=10^{15}`** (§0). We then
+implemented the Khalaf–Itani–Sharafeddine UAV-aided digital-twin IoT model
 (Eqs. (1)–(6), (11), (13), (16)–(17), Problem (P)) in a **100 × 100 m** field
 with faithful Table II radio/compute parameters except bandwidth and two
 external task quantities (`S_i`, `L`) needed to evaluate upload delay and
-service rate. Under **Table II `B_sys = 20 kHz`**, every method fails QoS and
-AoDT on every sweep point: feasible fraction **0%**, sum rate stuck at
-**~0.02 Mbps** (the hard bandwidth ceiling). That outcome is expected: the
-model’s minimum-rate and AoDT floors require far more spectrum than 20 kHz can
-provide, and Shannon-style bounds forbid multi-Mbps throughput at that
-bandwidth. We therefore **do not treat the paper’s Fig. 6–10 Mbps curves as a
-reproduction target**; they are inconsistent with the paper’s own equations
-and Table II when evaluated faithfully. For **feasible** bandwidths (2.4 MHz and
+service rate, and repeated the 20 kHz check at **500 × 500 m**. Under
+**Table II `B_sys = 20 kHz` as the (27) cap**, every method fails QoS and
+AoDT: feasible fraction **0%**, sum rate **~0.02 Mbps** at 100 m and
+**~0.012–0.013 Mbps** at 500 m — matching the written channel’s
+`SNR\approx 1` ceiling, not a solver artifact. We therefore **do not treat
+the paper’s Fig. 6–10 Mbps curves as a reproduction target**. For **feasible**
+bandwidths (2.4 MHz and
 8.8 MHz), behaviour is internally coherent: at 8.8 MHz **without** a per-link
 cap, all methods saturate near **~8.98 Mbps** (leftover spectrum piles onto the
 best link); with a **25% per-link cap** (external parameter, not Problem (P)),
@@ -63,7 +184,8 @@ The hetero−slow gap **grew** under settled `S_i`/`L` (see §8.1).
 
 | File | `B_sys` | Per-link cap | `n_runs` | Role |
 | --- | --- | --- | --- | --- |
-| `results/campaign_20khz.json` | 20 kHz | none | 20 | Table II diagnostic (infeasible) |
+| `results/check_bsys_20khz.json` | 20 kHz | none | 20 | Model-free ceiling + 100 m vs **500 m** control |
+| `results/campaign_20khz.json` | 20 kHz | none | 20 | Table II diagnostic, 100 m, all axes (infeasible) |
 | `results/campaign_20khz_cap25.json` | 20 kHz | 25% | 20 | Same, capped |
 | `results/campaign_2.4mhz.json` | 2.4 MHz | none | 20 | Mid-bandwidth, saturated |
 | `results/campaign_2.4mhz_cap25.json` | 2.4 MHz | 25% | 20 | Mid-bandwidth, differentiated |
@@ -74,6 +196,7 @@ The hetero−slow gap **grew** under settled `S_i`/`L` (see §8.1).
 
 Supporting artifacts:
 
+- `results/check_bsys_20khz.json` — Eq. (6)+(27) ceilings; 20 kHz at 100 m and 500 m
 - `results/campaign_8.8mhz_cap25_si12k_paired.json` / `.csv` — paired SCA vs baselines
 - `results/campaign_8.8mhz_cap25_si12k_losses.json` — loss-seed forensics (J = 3)
 - `results/campaign_20260904_cap25_paired.json` / `.csv` — paired stats (old `S_i`/`L`)
@@ -98,33 +221,33 @@ Unless noted, this is **I = 10**, **J = 3**, **λ = 2/s**, **T_k = 2.8 s**,
 
 ### 1.1 20 kHz (Table II value)
 
+The argument to lead with is §0.1, not this campaign table. The 100 × 100 m
+sweep is a confirmation that the solver agrees with the one-line bound.
+
 | Observation | Value |
 | --- | --- |
-| Feasible fraction (all methods, all points) | **0%** |
-| Typical sum rate | **~0.019–0.020 Mbps** |
+| Model-free ceiling (`SNR_max=10^{15}`) | **0.997 Mbps** |
+| Written-channel ceiling (observed `SNR\approx 1.03`) | **0.020 Mbps** |
+| Feasible fraction (all methods, all points, 100 m) | **0%** |
+| Typical sum rate (100 m) | **~0.019–0.020 Mbps** |
+| Typical sum rate (500 m control) | **~0.012–0.013 Mbps** |
 | Cap vs no-cap | **No difference** |
 
-**Interpretation:** Total spectrum is the bottleneck. QoS (`R_min = 10 kbps`
-per active link) and AoDT cannot be met simultaneously. This is the strongest
-single check that §VII Mbps plots are not produced by this model + Table II.
+**Interpretation:** If 20 kHz is the (27) cap, total spectrum is the bottleneck
+and 7–14 Mbps is impossible without trusting the simulator. QoS
+(`R_min = 10` kbps per active link) also fails: meeting it on ten associated
+links needs on the order of **~102 kHz** at 100 m (`∑_i R_min / SE_{ij}`),
+and more at 500 m where SE is worse. AoDT cannot be met either. `S_i` / `L`
+do not enter the §0.1 bound.
 
 **`S_i` / `L` defaults (settled):** `S_i = 12{,}000` bytes (`96{,}000` bit),
 `L = 3.75\times10^6` cycles/task (`\mu \approx 53.3` /s). Not in Table II.
 Prior placeholder runs used `10{,}000` bit and `L=10^6`; see §10. The primary
 campaign `campaign_8.8mhz_cap25_si12k.json` uses the settled values.
 
-1. **Shannon ceiling (Eq. 6):** at 20 kHz the whole system is bounded at
-   **~0.13 Mbps**, independent of `S_i` and `L`. That alone rules out 7–14 Mbps.
-2. **QoS floor (Eq. 25):** meeting `R_min` on ten associated links needs on the
-   order of **~102 kHz** total (`∑_i R_min / SE_ij` at a typical geometry) —
-   also independent of `S_i`/`L`.
-3. **Empirical:** `campaign_20khz*.json` — 0% feasible at the defaults above.
-
 `S_i` only enters upload delay (Eq. 11) and thus the AoDT bandwidth floor; making
-`S_i` smaller could ease AoDT but would not relax the QoS or Shannon limits.
-`L` only scales `μ_j`; it does not enter the radio model. A formal grid over
-`S_i` and `L` is still **open** if we want to quote a feasible `(S_i, L)` region
-at 20 kHz, but none is expected while (1)–(2) hold.
+`S_i` smaller could ease AoDT but would not relax the QoS floor or the §0.1
+Shannon cap. `L` only scales `μ_j`; it does not enter the radio model.
 
 ### 1.2 2.4 MHz
 
@@ -329,7 +452,7 @@ Campaign SCA uses CVXPY; MATLAB path is validated for the frozen SCA core.
 | Check | Result |
 | --- | --- |
 | Unit tests (90) | Pass |
-| 20 kHz infeasible | Yes — 0% feasible, ~0.02 Mbps (independent of `S_i`/`L`; see §1.1) |
+| 20 kHz infeasible | Yes — 0% at 100 m and 500 m; model-free cap 0.997 Mbps (§0) |
 | Rates ≤ bandwidth ceiling | Yes — ~8.98 Mbps at 8.8 MHz, ~2.45 at 2.4 MHz |
 | SCA best on feasible points (mean) | Yes |
 | λ / CPU vary slightly when feasible | Yes — &lt; 0.03 Mbps (AoDT binds at T_k) |
@@ -350,7 +473,7 @@ that gap is **expected and documented**, not a failure of this repo.
 
 | Item | Status |
 | --- | --- |
-| Area 100 × 100 m | **By design** (guide); not changed to 500 × 500 m |
+| Area 100 × 100 m (headline campaigns) | **By design** (guide). 20 kHz diagnostic also run at paper 500 × 500 m (§0.3) |
 | TD3 (Algorithm 2) | Not implemented |
 | Paper Mbps targets | Explicitly not pursued |
 | Eq. (17) implementation | **Resolved** — coded as published; unit tests + Fig. 11 sensibility |
@@ -365,10 +488,7 @@ that gap is **expected and documented**, not a failure of this repo.
 ## 7. Suggested writeup sentences (copy-ready)
 
 **Audit (short):**  
-*Under faithful implementation of the Khalaf et al. model with Table II parameters
-in a 100 × 100 m field, B_sys = 20 kHz yields 0% feasible deployments and
-~0.02 Mbps sum rate; the paper’s multi-Mbps §VII curves are incompatible with
-this parameter set. At feasible bandwidths, SCA outperforms k-means and PSO under
+*Eq. (6) and constraint (27) imply \(R_{\mathrm{sum}}\le B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}_{\max})\). With \(B_{\mathrm{sys}}=20\,\mathrm{kHz}\) this is at most 0.997 Mbps even at \(\mathrm{SNR}=10^{15}\), so Figs. 6–10 (7–14 Mbps, and Fig. 7 increasing with \(I\)) rule out reading Table II’s 20 kHz as the (27) sum cap. If the table’s “Minimum bandwidth allocation” is instead a per-link floor, matching Fig. 6’s 8.8 Mbps at \(I=10\) on the written channel (\(\mathrm{SNR}\approx 1.03\)) needs ~862 kHz per link — **43×** the stated 20 kHz — or an undisclosed (27) cap of ~8.6 MHz. Under the cap reading, 20 kHz is 0% feasible at both 100 × 100 m and 500 × 500 m. At feasible bandwidths, SCA outperforms k-means and PSO under
 a 25% per-link cap (paired Wilcoxon, FDR q &lt; 0.05 on 25/25 and 24/25 unique
 points respectively); the advantage over random is limited to low UAV counts and
 high IoT density and is **not** significant at the default J = 3 configuration
@@ -379,6 +499,9 @@ high IoT density and is **not** significant at the default J = 3 configuration
 winning 20/20 and 19/20 paired seeds respectively (p &lt; 0.001); vs random
 (8.928 Mbps) the gain is 0.019 ± 0.042 Mbps with 15/20 wins (Wilcoxon p = 0.123,
 Bonferroni-adjusted p = 0.369).*
+
+**Comment to authors / editor (Table II \(B_{\mathrm{sys}}\)):**  
+*Eq. (6) and constraint (27) imply that the sum rate cannot exceed \(B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}_{\max})\). Table II lists \(B_{\mathrm{sys}}=20{,}000\) Hz. Even at \(\mathrm{SNR}=10^{15}\) that ceiling is 0.997 Mbps, while Figs. 6–10 report 7–14 Mbps (Fig. 6: SCA ~8.8 Mbps at five UAVs; Fig. 7: SCA ~14 Mbps at 32 IoTs). Those axes rule out using 20 kHz as the total uplink cap in (27). Table II’s row text is “Minimum bandwidth allocation.” If 20 kHz was intended as a per-link floor rather than the (27) cap, the manuscript does not state the value (27) actually used; matching the published 8.8 Mbps at \(I=10\) on the Table II radio (\(\mathrm{SNR}\approx 1\)) would require on the order of 860 kHz per associated link (about 40× the tabulated 20 kHz), i.e. a system pool of several MHz. Could the authors confirm whether Table II’s 20 kHz is the (27) sum cap, a per-link floor, or a typographical error (for example MHz written as Hz)?*
 
 **Eq. (17) vs Fig. 11 narrative:**  
 *The paper states heterogeneous within-group arrival rates should lie between

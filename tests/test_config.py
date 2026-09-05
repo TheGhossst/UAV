@@ -22,6 +22,31 @@ def test_task_size_bytes_is_times_eight():
     assert cfg.max_bw_share is None
 
 
+def test_area_m_cli_sets_square_field():
+    parser = build_parser()
+    args = parser.parse_args(
+        ["evaluate", "--bandwidth", "20000", "--area-m", "500"]
+    )
+    cfg = _cfg_from_args(args)
+    assert cfg.area_x_m == 500.0
+    assert cfg.area_y_m == 500.0
+    assert cfg.b_sys_hz == 20_000.0
+
+
+def test_area_default_is_reproduction_100m():
+    parser = build_parser()
+    args = parser.parse_args(["evaluate", "--bandwidth", "20000"])
+    cfg = _cfg_from_args(args)
+    assert cfg.area_x_m == 100.0
+    assert cfg.area_y_m == 100.0
+
+
+def test_square_area_helper():
+    cfg = SimConfig().with_square_area_m(500.0)
+    assert cfg.area_x_m == 500.0
+    assert cfg.area_y_m == 500.0
+
+
 def test_max_bw_share_cli():
     parser = build_parser()
     args = parser.parse_args(["sca", "--max-bw-share", "0.25", "--bandwidth-preset", "8.8mhz"])

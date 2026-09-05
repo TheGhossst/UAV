@@ -112,10 +112,12 @@ def run_campaign(
         "methods": list(settings.methods),
         "note": (
             "Paper averages 20 runs per point. This file's n_runs is the "
-            "campaign setting. Area is 100×100 m. Headline B_sys is this "
-            "reproduction's experiment parameter, not Table II 20 kHz. "
-            "PSO is EXTERNAL (not a paper baseline). Placement methods "
-            "are re-scored with the frozen-q bandwidth LP."
+            f"campaign setting. Area is {cfg.area_x_m:g}×{cfg.area_y_m:g} m "
+            "(paper §VII is 500×500 m; this reproduction's default is "
+            "100×100 m). Headline B_sys is this reproduction's experiment "
+            "parameter, not Table II 20 kHz. PSO is EXTERNAL (not a paper "
+            "baseline). Placement methods are re-scored with the frozen-q "
+            "bandwidth LP."
         ),
         "b_sys_hz": cfg.b_sys_hz,
         "max_bw_share": cfg.max_bw_share,

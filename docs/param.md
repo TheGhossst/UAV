@@ -20,7 +20,7 @@
 | UAVs                        | `J`        | `3`         | UAVs            | Main experiment | Three UAVs are used in several fixed-UAV experiments; the paper also varies UAV count. |
 | UAV altitude                | `H`        | `100`       | m               | Table II        | UAV position is `(x_j, y_j, H)`.                                                       |
 | Minimum data rate           | `R_min`    | `10,000`    | bit/s           | Table II        | Minimum IoT-UAV communication rate.                                                    |
-| Total system bandwidth      | `B_sys`    | `20,000`    | Hz              | Table II        | Total uplink bandwidth available to the system.                                        |
+| Minimum bandwidth allocation | `B_sys`    | `20,000`    | Hz              | Table II        | Table row text is “Minimum.” Constraint (27) uses `B_sys` as a **sum ceiling** (`Σ B_ij ≤ B_sys`). No second bandwidth value is stated. |
 | Minimum UAV separation      | `theta`    | `10`        | m               | Table II        | Minimum distance between any two UAVs.                                                 |
 | UAV-to-UAV forwarding time  | `T_u2u`    | `0.3`       | s               | Table II        | Time for forwarding a task from an associated UAV to another processing UAV.           |
 | Carrier frequency           | `f_c`      | `1 × 10^6`  | Hz              | Table II        | Carrier frequency in the G2A path-loss model.                                          |
@@ -344,7 +344,7 @@ considering computation, AoDT, bandwidth, and system constraints.
 | Constraint      | Parameter | Value        | Meaning                         |
 | --------------- | --------- | ------------ | ------------------------------- |
 | QoS             | `R_min`   | 10,000 bit/s | Minimum rate                    |
-| Bandwidth       | `B_sys`   | 20,000 Hz    | Total available bandwidth       |
+| Bandwidth       | `B_sys`   | 20,000 Hz    | Table II: “Minimum bandwidth allocation.” (27): sum cap. |
 | UAV separation  | `theta`   | 10 m         | Minimum UAV distance            |
 | AoDT            | `T_k`     | 2.8 s        | Maximum process AoDT            |
 | UAV height      | `H`       | 100 m        | Fixed altitude                  |
@@ -511,8 +511,9 @@ The exact seed values are **not specified by the paper**.
 
 > **Note.** This is the literal Table II extraction and is what
 > `--radio-profile table2` runs. It is *not* the shipped default: `B_SYS =
-> 20_000` with `NOISE_POWER = SIGMA ** 2` bounds the sum rate of this channel at
-> ~0.13 Mbps, which cannot produce the Mbps-scale Figs. 6-10. `src/config.py`
+> 20_000` with `NOISE_POWER = SIGMA ** 2` is bounded by Eq. (6)+(27) at
+> 0.997 Mbps even for `SNR_max = 10^15`, and at ~0.02 Mbps on the written
+> channel (`SNR≈1`), which cannot produce the Mbps-scale Figs. 6-10. `src/config.py`
 > defaults to the `calibrated` profile instead; see `docs/calibration.md` for the
 > three knobs that differ and why.
 
@@ -571,9 +572,10 @@ Before claiming reproduction, verify:
 - [ ] Table II parameters are entered exactly.
 - [ ] `sigma = 0.01` is kept separate from `noise_power`.
 - [ ] The radio profile in use is named next to any absolute rate, because the
-      literal Table II reading bounds the system at ~0.13 Mbps and the published
-      Mbps figures are not a literal evaluation of Eq. (6) under it
-      (`docs/calibration.md`).
+      literal Table II `B_sys = 20` kHz, read as the (27) cap, is bounded by
+      Eq. (6)+(27) at 0.997 Mbps even at `SNR=10^15`; the published Mbps
+      figures are not a literal evaluation of Eq. (6) under that cap
+      (`docs/RESULTS.md` §0).
 - [ ] IoT coordinates are generated inside `500 × 500 m²`.
 - [ ] UAV height is fixed at `100 m`.
 - [ ] Distance equation is implemented exactly.

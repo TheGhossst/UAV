@@ -79,6 +79,45 @@ def uplink_rate_bit_per_s(
     return bandwidth_hz * np.log2(1.0 + np.maximum(snr_lin, 0.0))
 
 
+def sum_rate_ceiling_bit_per_s(b_sys_hz: float, snr_max: float) -> float:
+    """Eq. (6) + constraint (27): R_sum ≤ B_sys · log2(1 + SNR_max).
+
+    Any feasible allocation has Σ B_ij ≤ B_sys and each SNR_ij ≤ snr_max,
+    so the sum rate cannot exceed this regardless of path loss, noise,
+    transmit power, or field size.
+    """
+    if b_sys_hz <= 0.0:
+        raise ValueError("b_sys_hz must be positive")
+    if snr_max < 0.0:
+        raise ValueError("snr_max must be >= 0")
+    return float(b_sys_hz) * float(np.log2(1.0 + snr_max))
+
+
+def per_link_hz_for_target_rate(
+    rate_bit_per_s: float,
+    n_links: int,
+    snr: float,
+) -> float:
+    """Equal per-link B that yields ``rate`` under Eq. (6).
+
+    Invert ``R = n_links · B_i · log2(1+SNR)``. This is the Reading B
+    magnitude: if Table II's 20 kHz is a per-link floor and each of
+    ``n_links`` associated devices gets that much (or more), this is the
+    B_i the published Mbps would require at the given SNR. Best-case
+    (smallest B_i) uses the largest plausible SNR.
+    """
+    if rate_bit_per_s <= 0.0:
+        raise ValueError("rate_bit_per_s must be positive")
+    if n_links <= 0:
+        raise ValueError("n_links must be positive")
+    if snr < 0.0:
+        raise ValueError("snr must be >= 0")
+    se = float(np.log2(1.0 + snr))
+    if se <= 0.0:
+        return float("inf")
+    return float(rate_bit_per_s) / (float(n_links) * se)
+
+
 def link_metrics(
     iot_xyz_m: np.ndarray,
     uav_xyz_m: np.ndarray,

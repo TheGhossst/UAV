@@ -107,7 +107,7 @@ Unit tests cover:
 6. Received power `p_i · 10^(-L_avg/10)`
 7. SNR of Eq. (6) (`σ² = σ·σ`); no interference (orthogonal channels)
 8. `B_sys` vs `B_ij`; sum constraint; unassociated `B_ij = 0`
-9. Rate Eq. (6); rate ∝ `B_ij`; three bandwidth presets
+9. Rate Eq. (6); rate ∝ `B_ij`; three bandwidth presets; Eq. (6)+(27) sum-rate ceiling
 10. Poisson arrivals at rate `λ_i` (sampler + mean rate)
 11. `μ_j = f_j / L`
 12. `λ_total,j`, `ρ_j`, stability `ρ_j < 1`
@@ -148,7 +148,7 @@ Seeds are explicit. A CLI path can average 20 runs later.
 | `p_i` | 0.2 W | Table II |
 | `a` | 9.61 | Table II |
 | `b` | 0.16 | Table II |
-| Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | See §4.1: Table II 20 kHz is **infeasible** here; headline runs are 2.4 MHz and 8.8 MHz |
+| Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | See §4.1: Table II 20 kHz as the (27) cap is **infeasible** (0.997 Mbps model-free ceiling); headline runs are 2.4 MHz and 8.8 MHz |
 | Per-link cap `max_bw_share` | `None` or `0.25` | **EXTERNAL PARAMETER**, not Problem (P) / Table II |
 | `S_i` (task size) | 12,000 bytes (`96,000` bit) | **EXTERNAL** — settled experimental choice |
 | `L` (cycles/task) | `3.75×10⁶` | **EXTERNAL** — settled experimental choice (`μ ≈ 53.3` /s) |
@@ -260,6 +260,7 @@ R_{\mathrm{sum}}=\sum_{i=1}^{I}\sum_{j=1}^{J}a_{ij}r_{ij}.
 | Base of `20 log` in Eqs. (1)–(2) | Implemented as \(\log_{10}\) (dB). |
 | Units of \(\arcsin(H/d)\) in Eq. (4) | Default **radians** (as written). `los_angle_unit="deg"` is an optional Al-Hourani-style reading, not the default. |
 | Table II “Noise power, σ = 10×10^{-3} W” vs Eq. (6) `σ²` | Config stores `sigma=0.01`. Eq. (6) uses `noise_power = sigma**2`. |
+| Table II “Minimum bandwidth allocation, `B_sys` = 20{,}000 Hz” vs constraint (27) | **(27) is a sum ceiling** (`∑ B_{ij} ≤ B_sys`); the table adjective is “Minimum.” Same symbol, no second bandwidth number, no min-bandwidth constraint in Problem (P). Simulator uses 20 kHz as the (27) cap (Reading A). The alternative is that (27)’s cap is **undisclosed** (Reading B). See §4.1. |
 | How `B_ij` is chosen (only `∑ B_ij ≤ B_sys` is written) | `B_ij` is an explicit matrix. Placement-only runs may use **equal split** among associated links; that is not claimed as the paper’s optimizer. |
 | Default `a_ij` / `b_ij` when only positions are given | Nearest-UAV association; one processing UAV per process (constraint (23)). Evaluation convention. |
 | `μ` in Eq. (17) has no UAV index | Use `μ_j` of the unique processing UAV of process `k` (constraint (23)). |
@@ -292,19 +293,42 @@ No other communication parameters are replaced to chase figure Mbps.
 
 ### 4.1 Paper 20 kHz / 7–14 Mbps vs this model — documented substitution
 
-**PAPER:** Table II lists `B_sys = 20,000 Hz`. Figs. 6–10 report
-sum-rate on the order of **7–14 Mbps**.
+**PAPER:** Table II lists `B_sys = 20,000 Hz` under the row text
+“Minimum bandwidth allocation.” Constraint (27) is
+`∑_{i,j} B_{ij} ≤ B_{\mathrm{sys}}`, explained as a cap on total uplink
+bandwidth. Figs. 6–10 report sum-rate on the order of **7–14 Mbps**.
+
+**Model-free (lead with this).** Eq. (6) + (27) imply
+`R_{\mathrm{sum}} \le B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}_{\max})`
+for any path loss, power, or noise. With `B_{\mathrm{sys}} = 20` kHz as
+that cap, `SNR_{\max} = 10^{15}` still gives only **0.997 Mbps**. The
+7–14 Mbps plots are about **7–14×** that fantasy ceiling. The bound does
+not depend on `a`, `b`, `η`, `σ`, area, or this simulator.
+
+**Table II vs (27).** The table says “Minimum”; (27) is a maximum. We
+treat 20 kHz as the (27) cap (same symbol, only bandwidth number, no
+floor constraint in Problem (P)). Figs. 6–10 **rule out Reading A**:
+7–14 Mbps and Fig. 7’s growth with `I` cannot occur under a 20 kHz
+sum cap (ceiling 0.997 Mbps at `SNR=10^{15}`). If the table English is
+instead a per-link floor (Reading B), Fig. 7’s slope is the right
+*shape*, but matching Fig. 6’s 8.8 Mbps at `I=10` on the written
+channel needs **~862 kHz/link (43×** the stated 20 kHz), and Fig. 7’s
+14 Mbps at `I=32` needs **~428 kHz/link (21×)**. The number (27)
+actually used is then **not in the paper**, and it is not a rounding
+of 20{,}000 Hz. Details: `docs/RESULTS.md` §0.2.
 
 **This reproduction (DERIVED from Eqs. (1)–(6), (25), (31)):**
 
-- At 20 kHz, Eq. (6) with `σ²` Shannon-bounds the whole system at
-  **~0.13 Mbps**. 7–14 Mbps is about **50–100×** that bound. The
-  written channel plus Table II bandwidth **cannot** produce the
-  plotted Mbps. That is a scale/unit/model inconsistency (or
-  non-reproducible reported figures), **not** a solver bug.
+- Written-channel `SNR_{\max}\approx 1.03` tightens the ceiling to
+  **~0.020 Mbps**. 20 kHz campaigns sit on that line.
 - Under this reproduction’s QoS/AoDT floors, a typical 100 × 100 m
   start needs on the order of **~102 kHz** of total bandwidth
   (`∑_i R_min / SE_ij`). **20 kHz is infeasible.**
+- The same 20 kHz check at the paper’s **500 × 500 m** field is also
+  **0% feasible**. Realized rates drop (~0.020 → ~0.013 Mbps) because
+  the infeasible QoS LP falls back to equal-share `B_sys/I`, so
+  `R_sum = B_sys · mean_SE`; max SNR (best-link dump ~0.020 Mbps) is
+  unchanged. Area is not a confounder (`scripts/check_bsys_20khz.py`).
 - **Headline results are therefore reported at 2.4 MHz and 8.8 MHz**,
   each with `max_bw_share = None` and `max_bw_share = 0.25`. The
   20 kHz preset remains in the CLI only as a Table II diagnostic.
@@ -338,6 +362,8 @@ from `results/` when a campaign is run.
 pip install -r requirements.txt
 python -m pytest
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --placement random
+python -m uavdt evaluate --seed 1 --bandwidth 20000 --area-m 500 --placement kmeans
+python scripts/check_bsys_20khz.py
 python -m uavdt evaluate --bandwidth-preset 2.4mhz --placement kmeans
 python -m uavdt evaluate --bandwidth-preset 8.8mhz --seed 1
 python -m uavdt multi-seed --n-runs 5 --bandwidth 20000 --placement random
@@ -519,8 +545,9 @@ Problem (P) as written:
   is an implementation choice, not unpublished paper text.
 - Association/processing are not re-optimized (**IMPLEMENTATION CHOICE**,
   not a paper requirement).
-- Paper Table II 20 kHz is infeasible here and cannot produce the
-  published 7–14 Mbps; headline `B_sys` is 2.4 MHz / 8.8 MHz (§4.1).
+- Paper Table II 20 kHz, read as the (27) cap, cannot produce the
+  published 7–14 Mbps (model-free ceiling 0.997 Mbps at `SNR=10^{15}`);
+  headline `B_sys` is 2.4 MHz / 8.8 MHz (§4.1).
 - SCA solver is **frozen**. Characterization vs `J`, `I`, `λ`, `T_k`,
   CPU, and Random/K-means/PSO lives in `docs/EXPERIMENTS.md`.
 - Fig. 11 heterogeneous-λ AoDT check: `python -m uavdt fig11`.

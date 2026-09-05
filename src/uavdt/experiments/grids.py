@@ -1,8 +1,8 @@
 """Paper §VII sweep axes. Grids are DERIVED from figure captions.
 
 Exact tick lists are IMPLEMENTATION CHOICE where the PDF does not print
-them. Headline B_sys is this reproduction's 8.8 MHz (paper 20 kHz is
-infeasible here).
+them. Headline B_sys is this reproduction's 8.8 MHz (paper 20 kHz as the
+(27) cap is infeasible; model-free ceiling 0.997 Mbps at SNR_max=1e15).
 """
 
 from __future__ import annotations
