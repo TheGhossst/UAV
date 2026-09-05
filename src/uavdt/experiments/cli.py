@@ -42,6 +42,7 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
         aodt_threshold_s=float(args.aodt_threshold),
         los_angle_unit=args.los_angle_unit,
         max_bw_share=args.max_bw_share,
+        download_time_s=float(args.download_time),
     )
 
 
@@ -89,6 +90,12 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
     p.add_argument("--placement", choices=("random", "kmeans"), default="random")
+    p.add_argument(
+        "--download-time",
+        type=float,
+        default=0.0,
+        help="Eq. (12) UAV→BS download Z (s). Paper neglects this; default 0.",
+    )
 
 
 def _print_eval(seed: int, cfg: SimConfig, uav, result, *, verbose: bool) -> None:
@@ -105,6 +112,7 @@ def _print_eval(seed: int, cfg: SimConfig, uav, result, *, verbose: bool) -> Non
     print(f"sum_rate_Mbps        {result.sum_rate_mbps:.6g}")
     print(f"AoDT_s               {np_list(result.aodt_s)}")
     print(f"AoDT <= T_k          {np_list(result.aodt_satisfied)}")
+    print(f"Z_download_s         {cfg.download_time_s:g}  (Eq. 12; paper 0)")
     print(f"rho                  {np_list(result.rho)}")
     print(f"feasible             {result.feasible}")
     print(
@@ -323,6 +331,89 @@ def cmd_spot_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_aodt_compare(args: argparse.Namespace) -> int:
+    from uavdt.aodt import average_aodt_eq15_s, average_aodt_fcfs_closed_s
+    from uavdt.aodt_sim import DISCIPLINES, compare_closed_and_sim
+    from uavdt.evaluator import evaluate
+    from uavdt.experiments.fig11 import lambdas_for_pattern
+    from uavdt.placement.kmeans import place_kmeans
+    from uavdt.placement.random import place_random
+
+    cfg = _cfg_from_args(args)
+    lam = None
+    if args.lambda_pattern is not None:
+        lam = lambdas_for_pattern(cfg, args.lambda_pattern)
+    scenario = generate_scenario(args.seed, cfg, lambdas_per_s=lam)
+    if args.placement == "kmeans":
+        uav = place_kmeans(scenario, args.seed)
+    else:
+        uav = place_random(cfg.num_uav, args.seed, cfg)
+    ev = evaluate(scenario, uav)
+    a = ev.extras["association"]
+    b = ev.extras["processing"]
+    mu_vec = np.full(uav.shape[0], ev.mu_per_s)
+    cmp = compare_closed_and_sim(
+        scenario,
+        a,
+        b,
+        ev.rates_bit_per_s,
+        mu_vec,
+        disciplines=DISCIPLINES,
+        horizon_s=float(args.horizon),
+        warmup_s=float(args.warmup),
+        seed=args.seed,
+        queue_scope=args.queue_scope,
+    )
+    eq15 = average_aodt_eq15_s(scenario, a, b, ev.rates_bit_per_s, mu_vec)
+    fcfs_c = average_aodt_fcfs_closed_s(scenario, a, b, ev.rates_bit_per_s, mu_vec)
+    print("AoDT closed forms vs event-driven queues")
+    print(f"seed                 {args.seed}")
+    print(f"placement            {args.placement}")
+    print(f"lambda_pattern       {args.lambda_pattern or 'uniform cfg.lambda_i'}")
+    print(f"queue_scope          {args.queue_scope}")
+    print(f"Z_download_s         {cfg.download_time_s:g}")
+    print(f"eq17_s               {np_list(ev.aodt_s)}  (Problem P)")
+    print(f"eq15_s               {np_list(eq15)}")
+    print(f"fcfs_closed_s        {np_list(fcfs_c)}")
+    print(f"feasible             {ev.feasible}")
+    for d in DISCIPLINES:
+        row = cmp["sim"][d]
+        print(
+            f"sim_{d:7s}          max={row['mean_max_process_age_s']:.6g}  "
+            f"mean_src={row['mean_source_age_flat_s']:.6g}  "
+            f"per_process={row['mean_process_age_s']}  "
+            f"delivered={row['n_delivered']} dropped={row['n_dropped']}"
+        )
+    return 0
+
+
+def cmd_fig11(args: argparse.Namespace) -> int:
+    from uavdt.experiments.fig11 import run_fig11, sensibility_checks, write_fig11
+
+    cfg = _cfg_from_args(args)
+    payload = run_fig11(
+        cfg,
+        n_runs=int(args.n_runs),
+        seed_start=int(args.seed_start),
+        horizon_s=float(args.horizon),
+        warmup_s=float(args.warmup),
+    )
+    report = sensibility_checks(payload)
+    payload["sensibility"] = report
+    out = write_fig11(payload, args.out)
+    print(f"wrote {out}")
+    print(f"wrote {out.with_suffix('.csv')}")
+    print(f"sensibility          {report['n_pass']}/{report['n_checks']} pass")
+    for chk in report["checks"]:
+        flag = "ok" if chk["ok"] else "FAIL"
+        line = f"  [{flag}] {chk['name']}"
+        try:
+            print(line)
+        except UnicodeEncodeError:
+            print(line.encode("ascii", "replace").decode("ascii"))
+    return 0 if report["all_ok"] else 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="uavdt",
@@ -423,6 +514,40 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--max-iterations", type=int, default=12)
     sp.add_argument("--step-size", type=float, default=20.0)
     sp.set_defaults(func=cmd_spot_validate)
+
+    ac = sub.add_parser(
+        "aodt-compare",
+        help="Eqs. (14)–(17) vs FCFS / FCFS-P / LCFS-S event simulation",
+    )
+    _add_shared(ac)
+    ac.add_argument("--seed", type=int, default=1)
+    ac.add_argument("--horizon", type=float, default=120.0)
+    ac.add_argument("--warmup", type=float, default=24.0)
+    ac.add_argument(
+        "--queue-scope",
+        choices=("process", "uav"),
+        default="process",
+        help="process: Eq. (17) isolation; uav: share server (constraint 24)",
+    )
+    ac.add_argument(
+        "--lambda-pattern",
+        choices=("uniform_fast", "uniform_slow", "heterogeneous"),
+        default=None,
+        help="Fig. 11 arrival pattern; default is uniform cfg.lambda_i",
+    )
+    ac.set_defaults(func=cmd_aodt_compare)
+
+    f11 = sub.add_parser(
+        "fig11",
+        help="Fig. 11 uniform-fast / slow / heterogeneous λ vs J (AoDT check)",
+    )
+    _add_shared(f11)
+    f11.add_argument("--n-runs", type=int, default=20, help="Paper uses 20")
+    f11.add_argument("--seed-start", type=int, default=1)
+    f11.add_argument("--horizon", type=float, default=80.0)
+    f11.add_argument("--warmup", type=float, default=16.0)
+    f11.add_argument("--out", type=str, default="results/fig11.json")
+    f11.set_defaults(func=cmd_fig11)
     return p
 
 

@@ -13,7 +13,9 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 
 | Surface | Status |
 | --- | --- |
-| Core physics (`channel`, `computation`, `aodt`, `evaluator`, `constraints`) | Frozen |
+| Core physics (`channel`, `computation`, `evaluator`, `constraints`) | Frozen |
+| AoDT Eq. (17) scoring | Frozen (Problem (P) score) |
+| AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen |
 | New work | Baselines, sweeps, reporting |
 
@@ -32,6 +34,7 @@ Do not chase the paper’s 7–14 Mbps numbers.
 | Fig. 8 | Task arrival `λ` from 1 to 3.5 /s | `I = 10`, `J = 3` | Sum rate vs arrival rate |
 | Fig. 9 | AoDT threshold `T_k` from 0.8 s to 3 s | `I = 10`, `J = 3` | Sum rate vs AoDT threshold |
 | Fig. 10 | UAV CPU; text quotes 250 MHz | `I = 10`, `J = 3` | Sum rate vs computational capacity |
+| Fig. 11 | UAV count `J` with three λ patterns | `I = 10` | Uniform fast / slow / heterogeneous λ |
 
 Paper methods: **SCA**, **TD3**, **k-means**, **random**. TD3 is out of
 scope for this campaign.
@@ -46,7 +49,7 @@ scope for this campaign.
 | Area 100 × 100 m | Intentional modification | Paper 500 × 500 m |
 | `B_sys` 8.8 MHz (headline) | Intentional modification | Table II 20 kHz is infeasible here |
 | 25% per-link cap | EXTERNAL PARAMETER | Not Problem (P) |
-| `S_i`, `L` | EXTERNAL PARAMETER | Not Table II |
+| `S_i`, `L` | EXTERNAL PARAMETER | Settled: 12,000 bytes, `L=3.75×10⁶` |
 | PSO | EXTERNAL | Extra baseline, not in the paper |
 | Equal `|N_k|` when `I` grows | IMPLEMENTATION CHOICE | Keep `K = 2`, `I` even |
 | Placement baselines + frozen-`q` bandwidth LP | IMPLEMENTATION CHOICE | Same B LP as SCA’s bandwidth step so the comparison is placement |
@@ -78,6 +81,9 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth
 
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25
+
+python -m uavdt aodt-compare --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --placement kmeans
+python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --out results/fig11_8.8mhz_cap25.json
 ```
 
 `--solver matlab` on `campaign` runs frozen SCA in MATLAB CVX+MOSEK
@@ -104,7 +110,11 @@ python scripts/paired_winrate.py results/campaign_20260904_cap25.json
   The script flags lambda/CPU (and other) rows that are identical
   per-seed copies; do not pool those with J=3.
 
-Published score is always Python `evaluate()`.
+Published score is always Python `evaluate()` (Eq. (17) AoDT). Fig. 11
+and `aodt-compare` add FCFS / FCFS-P / LCFS-S simulations beside that
+score; they do not replace it.
+
+Full analysis, audit paragraph, and tables: **`docs/RESULTS.md`**.
 
 ---
 

@@ -81,13 +81,14 @@ src/uavdt/
     scenario.py        100×100 field, groups N_k
     channel.py         Eqs. (1)–(6)
     computation.py     Poisson + M/M/1, Eqs. (7)–(9)
-    aodt.py            Eqs. (11), (13), (16), (17)
+    aodt.py            Eqs. (10)–(17) closed forms; Problem (P) uses (17)
+    aodt_sim.py        FCFS, FCFS-P, LCFS-S event queues
     resources.py       a_ij, b_ij, B_ij helpers
     constraints.py     Problem (P) checks
     evaluator.py       one evaluation of a deployment
     placement/         random (θ), k-means
     experiments/       CLI, multi-seed metrics
-tests/                 unit tests for the 17 validation items
+tests/                 unit tests for the validation items in §0.9
 docs/REPRODUCTION.md   this file
 ```
 
@@ -111,10 +112,12 @@ Unit tests cover:
 11. `μ_j = f_j / L`
 12. `λ_total,j`, `ρ_j`, stability `ρ_j < 1`
 13. Upload `D_i` Eq. (11), including `T_u2u`
-14. Queueing term inside Eq. (17) (not FCFS sojourn)
+14. Queueing term inside Eq. (17) (not FCFS sojourn); Eq. (14)–(15) LCFS-S forms
 15. Process AoDT Eq. (17), **not** a per-IoT average
 16. `AoDT_k ≤ T_k` and the rest of the checked constraints
 17. Sum rate `∑_i ∑_j a_ij r_ij`
+18. Instantaneous age Eq. (10) and neglected download Eq. (12) (`Z=0`)
+19. FCFS / FCFS-P / LCFS-S event queues vs closed forms; Fig. 11 λ patterns
 
 Seeds are explicit. A CLI path can average 20 runs later.
 
@@ -147,8 +150,8 @@ Seeds are explicit. A CLI path can average 20 runs later.
 | `b` | 0.16 | Table II |
 | Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | See §4.1: Table II 20 kHz is **infeasible** here; headline runs are 2.4 MHz and 8.8 MHz |
 | Per-link cap `max_bw_share` | `None` or `0.25` | **EXTERNAL PARAMETER**, not Problem (P) / Table II |
-| `S_i` (task size) | External (`task_size_bits`) | **Not specified** in Table II |
-| `L` (cycles/task) | External (`task_cycles`) | **Not specified** in Table II |
+| `S_i` (task size) | 12,000 bytes (`96,000` bit) | **EXTERNAL** — settled experimental choice |
+| `L` (cycles/task) | `3.75×10⁶` | **EXTERNAL** — settled experimental choice (`μ ≈ 53.3` /s) |
 
 Internal units are SI: m, Hz, W, bit/s, cycles/s, s. kHz/MHz/Mbps are
 display only.
@@ -520,5 +523,5 @@ Problem (P) as written:
   published 7–14 Mbps; headline `B_sys` is 2.4 MHz / 8.8 MHz (§4.1).
 - SCA solver is **frozen**. Characterization vs `J`, `I`, `λ`, `T_k`,
   CPU, and Random/K-means/PSO lives in `docs/EXPERIMENTS.md`.
-- No 20-seed campaign committed as a final figure pack yet.
-- TD3 is out of scope.
+- Fig. 11 heterogeneous-λ AoDT check: `python -m uavdt fig11`.
+- TD3 (Algorithm 2) is out of scope.

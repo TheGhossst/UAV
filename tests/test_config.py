@@ -28,6 +28,7 @@ def test_max_bw_share_cli():
     cfg = _cfg_from_args(args)
     assert cfg.max_bw_share == 0.25
     assert abs(cfg.link_bandwidth_cap_hz - 0.25 * 8_800_000.0) < 1e-6
+    assert cfg.download_time_s == 0.0
     sca_parser = None
     for action in parser._actions:
         choices = getattr(action, "choices", None)

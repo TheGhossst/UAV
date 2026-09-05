@@ -17,6 +17,7 @@ TD3 is not in this milestone.
 See `docs/REPRODUCTION.md` §4.1 for the 20 kHz substitution, and
 `docs/EXPERIMENTS.md` for the frozen-SCA experimental campaign
 (Figs. 6–10 axes, Random/K-means/PSO, CVX/MOSEK spot-check).
+**Current results and audit:** `docs/RESULTS.md`.
 
 ```text
 pip install -r requirements.txt
@@ -30,4 +31,6 @@ python -m uavdt sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --sol
 python -m uavdt sca-seq-debug --seed 1 --bandwidth-preset 2.4mhz --solver matlab
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --n-runs 5 --solver cvxpy
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
+python -m uavdt aodt-compare --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --placement kmeans
+python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20
 ```

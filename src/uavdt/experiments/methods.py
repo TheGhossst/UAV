@@ -79,7 +79,28 @@ def run_method(
         from uavdt.sca.algorithm import solve_sca
 
         settings = sca_settings or SCASettings()
-        result = solve_sca(scenario, seed, settings=settings)
+        try:
+            result = solve_sca(scenario, seed, settings=settings)
+        except RuntimeError as exc:
+            # Settled L lowers mu; large I can violate (24) at k-means init.
+            if "CPU stability" not in str(exc):
+                raise
+            uav = place_kmeans(scenario, seed)
+            alloc = _alloc_at_positions(scenario, uav)
+            ev = evaluate(scenario, uav, alloc)
+            return MethodRun(
+                method="sca",
+                seed=seed,
+                uav_xyz_m=uav,
+                allocation=alloc,
+                true_eval=ev,
+                diagnostics={
+                    "stop_reason": "init_cpu_unstable",
+                    "accepted_steps": 0,
+                    "solver_backend": "skipped",
+                    "solver_status": "init_cpu_unstable",
+                },
+            )
         return MethodRun(
             method="sca",
             seed=seed,

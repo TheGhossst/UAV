@@ -50,10 +50,12 @@ BANDWIDTH_PRESETS: dict[str, float] = {
     "8.8mhz": 8_800_000.0,
 }
 
-# --- External (not in Table II). Execution defaults only. ---
-# Needed to evaluate D_i = S_i / r_ij and mu_j = f_j / L.
-EXTERNAL_TASK_SIZE_BITS = 10_000.0
-EXTERNAL_TASK_CYCLES = 1.0e6
+# --- External (not in Table II). Settled experimental choices. ---
+# Paper labels S_i in bytes (Eq. 11); store bits so D = S/r is in seconds.
+# S_i = 12_000 bytes, L = 3.75e6 cycles/task (μ = f_j/L ≈ 53.3 /s).
+EXTERNAL_TASK_SIZE_BYTES = 12_000.0
+EXTERNAL_TASK_SIZE_BITS = EXTERNAL_TASK_SIZE_BYTES * 8.0  # 96_000 bit
+EXTERNAL_TASK_CYCLES = 3.75e6
 
 PAPER_N_RUNS = 20
 
@@ -95,6 +97,9 @@ class SimConfig:
     # 0.25 is an EXTERNAL PARAMETER (experimental restriction), not in
     # Problem (P) and not in Table II.
     max_bw_share: float | None = None
+    # Eq. (12) UAV→BS download Z_l. Paper neglects this (processed payload
+    # is small); default 0 keeps Problem (P) / Eq. (17) unchanged.
+    download_time_s: float = 0.0
 
     def __post_init__(self) -> None:
         if self.num_iot != self.num_processes * self.iots_per_process:
@@ -112,6 +117,8 @@ class SimConfig:
             raise ValueError("los_angle_unit must be 'rad' or 'deg'")
         if self.max_bw_share is not None and not (0.0 < self.max_bw_share <= 1.0):
             raise ValueError("max_bw_share must be in (0, 1] or None")
+        if self.download_time_s < 0.0:
+            raise ValueError("download_time_s must be >= 0")
 
     @property
     def noise_power_w(self) -> float:
