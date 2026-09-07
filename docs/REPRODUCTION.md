@@ -65,8 +65,9 @@ Do **not** carry these forward from the old tree:
 
 ### 0.4 Equations implemented (core milestone)
 
-See §2. SCA (Alg. 1) and TD3 (Alg. 2) are **out of scope** for this
-milestone.
+See §2. **SCA (Algorithm 1)** is implemented in `src/uavdt/sca/` (CVXPY
+default; MATLAB CVX+MOSEK spot-validated). **TD3 (Algorithm 2)** remains
+**out of scope** for this milestone.
 
 ### 0.5–0.7 Parameters, unspecified values, ambiguities
 
@@ -86,14 +87,15 @@ src/uavdt/
     resources.py       a_ij, b_ij, B_ij helpers
     constraints.py     Problem (P) checks
     evaluator.py       one evaluation of a deployment
-    placement/         random (θ), k-means
-    experiments/       CLI, multi-seed metrics
+    placement/         random (θ), k-means, PSO (external)
+    sca/               Algorithm 1 SCA (CVXPY + MATLAB bridge)
+    experiments/       CLI, campaigns, Fig. 11, spot-validate
 tests/                 unit tests for the validation items in §0.9
 docs/REPRODUCTION.md   this file
 ```
 
-SCA and TD3 directories are intentionally absent until the core is
-validated.
+TD3 is intentionally absent. SCA was added after the core model passed
+the validation plan in §0.9.
 
 ### 0.9 Validation / test plan
 

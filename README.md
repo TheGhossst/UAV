@@ -21,6 +21,7 @@ Algorithm 1 SCA, and §VII-style experimental campaigns.
 - **NumPy** (required)
 - **CVXPY** (required for `sca`, `campaign`, `spot-validate` with the default CVXPY backend)
 - **pytest** (for tests)
+- **matplotlib** (optional; only for `scripts/plot_paper_figures.py` — install via `requirements-dev.txt`)
 - **MATLAB R2026a + CVX + MOSEK** (optional; only needed when `--solver matlab` is used)
 
 ---
@@ -35,6 +36,8 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pip install -e .
+# optional: paper-style figures
+pip install -r requirements-dev.txt
 ```
 
 ```bash
@@ -43,6 +46,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .
+# optional: paper-style figures
+pip install -r requirements-dev.txt
 ```
 
 `pip install -e .` registers the `uavdt` console script. If you skip it, set

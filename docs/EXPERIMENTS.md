@@ -130,6 +130,31 @@ score; they do not replace it.
 
 Full analysis, audit paragraph, and tables: **`docs/RESULTS.md`**.
 
+**Figures:** `pip install -r requirements-dev.txt` then
+`python scripts/plot_paper_figures.py` → `results/figures/`.
+
+**Paper field (500 × 500 m):** headline comparison at 8.8 MHz, 25% cap:
+
+```text
+python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
+```
+
+20 kHz area control (both fields): `python scripts/check_bsys_20khz.py`.
+
+### Bandwidth configuration screen (optional)
+
+Scripts used to justify the headline **8.8 MHz / 25% cap** choice. Outputs
+land in `results/` (gitignored). Not required to reproduce the primary campaign.
+
+| Script | Role |
+| --- | --- |
+| `scripts/sweep_bandwidth_screen.py` | Rank `(B_sys, max_bw_share)` at J=3 |
+| `scripts/compare_bw_configs.py` | Side-by-side preset comparison |
+| `scripts/analyze_nocap_8p8mhz.py` | No-cap vs cap25 saturation check |
+| `scripts/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
+| `scripts/bw_cap_by_j_grid.py` | Cap × J table with FDR |
+| `scripts/bw_threshold_refine.py` | Refine cap threshold near 25% |
+
 ---
 
 ## First pass on disk (n_runs = 5, 8.8 MHz, no per-link cap)

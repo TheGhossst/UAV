@@ -6,8 +6,9 @@
 | --- | --- |
 | **Scope** | Our experimental outcomes on the fresh `uavdt` simulator |
 | **Not in scope** | Numeric comparison of Mbps figures to the paper’s §VII plots |
-| **Last full regeneration** | 2026-09-05 |
-| **Primary campaign** | `results/campaign_8.8mhz_cap25_si12k.json` |
+| **Last full regeneration** | 2026-09-07 (500 m campaign); primary 100 m campaign 2026-09-05 |
+| **Primary campaign** | `results/campaign_8.8mhz_cap25_si12k.json` (100 m) |
+| **Paper-field campaign** | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m) |
 | **Related docs** | [`EXPERIMENTS.md`](EXPERIMENTS.md) · [`REPRODUCTION.md`](REPRODUCTION.md) · [`param.md`](param.md) |
 
 ---
@@ -24,10 +25,11 @@
 8. [Solver validation](#4-solver-validation)
 9. [Sensibility checklist](#5-sensibility-checklist)
 10. [Known limitations](#6-known-limitations-this-milestone)
-11. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
-12. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
-13. [How to regenerate](#9-how-to-regenerate)
-14. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
+11. [Paper field 500 m](#26-paper-field-500--500-m-88-mhz-25-cap)
+12. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
+13. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
+14. [How to regenerate](#9-how-to-regenerate)
+15. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
 
 ---
 
@@ -46,7 +48,7 @@
 
 | Parameter | Value |
 | --- | --- |
-| **Area** | **100 × 100 m** (headline); 20 kHz check also at paper **500 × 500 m** ([§0.3](#03-control-paper-500--500-m-field-still-20-khz)) |
+| **Area** | **100 × 100 m** (headline); full **500 × 500 m** cap25 campaign ([§2.6](#26-paper-field-500--500-m-88-mhz-25-cap)); 20 kHz check at both fields ([§0.3](#03-control-paper-500--500-m-field-still-20-khz)) |
 | **Seeds** | 20 consecutive seeds per sweep point (`seed_start = 1`) |
 | **Methods** | SCA, random, k-means, PSO *(PSO is external, not in the paper)* |
 | **Score** | Python `evaluate()` on every method; placement baselines re-scored with the same frozen-geometry bandwidth LP as SCA’s B step |
@@ -54,21 +56,25 @@
 
 ### Headline result @ J = 3 (8.8 MHz, 25% cap)
 
-| Method | Mean sum rate | Feasible |
-| --- | ---: | ---: |
-| **SCA** | **8.946 Mbps** | 100% |
-| Random | 8.928 Mbps | 100% |
-| PSO | 8.905 Mbps | 100% |
-| K-means | 8.901 Mbps | 100% |
+| Field | SCA | Random | K-means | PSO | Feasible |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **100 × 100 m** (primary) | **8.946** | 8.928 | 8.901 | 8.905 | 100% |
+| **500 × 500 m** (paper) | **8.300** | 7.947 | 7.474 | 8.122 | 100% |
 
-### Last regeneration (2026-09-05)
+At 500 m, longer links lower mean spectral efficiency; SCA’s edge over k-means and PSO **widens** (~0.35–0.83 Mbps vs ~0.04 Mbps at 100 m). See [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap).
+
+### Last regeneration
+
+**2026-09-07** — paper-field campaign `campaign_8.8mhz_cap25_si12k_500m.json` (~12 min).
+
+**2026-09-05** — primary 100 m campaign and analysis:
 
 - `pytest` **108/108**
 - `scripts/check_bsys_20khz.py`
 - Primary campaign `campaign_8.8mhz_cap25_si12k.json` (all axes, 20 seeds, CVXPY)
 - `scripts/rerun_init_repair_points.py`; paired/losses analysis
 - `fig11_8.8mhz_cap25_si12k.json`; spot-validate (8.8 MHz no cap + cap 25%)
-- Full bandwidth preset sweep: `scripts/run_all_bandwidth_campaigns.ps1` (refreshes `campaign_20khz*.json`, `campaign_2.4mhz*.json`, `campaign_8.8mhz_n20.json`, `campaign_8.8mhz_cap25_n20.json`)
+- Full bandwidth preset sweep: `scripts/run_all_bandwidth_campaigns.ps1`
 
 ---
 
@@ -200,7 +206,8 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/campaign_2.4mhz.json` | 2.4 MHz | none | 20 | Mid-bandwidth, saturated |
 | `results/campaign_2.4mhz_cap25.json` | 2.4 MHz | 25% | 20 | Mid-bandwidth, differentiated |
 | `results/campaign_8.8mhz_n20.json` | 8.8 MHz | none | 20 | Headline, saturated (2026-09-05 refresh) |
-| **`results/campaign_8.8mhz_cap25_si12k.json`** | **8.8 MHz** | **25%** | **20** | **Primary comparison config** (settled `S_i`/`L`) |
+| **`results/campaign_8.8mhz_cap25_si12k.json`** | **8.8 MHz** | **25%** | **20** | **Primary comparison** (100 × 100 m, settled `S_i`/`L`) |
+| `results/campaign_8.8mhz_cap25_si12k_500m.json` | 8.8 MHz | 25% | 20 | **Paper field** (500 × 500 m, same config; 2026-09-07) |
 | `results/campaign_8.8mhz_cap25_n20.json` | 8.8 MHz | 25% | 20 | Same config as si12k; output of `run_all_bandwidth_campaigns.ps1` |
 
 ### Superseded
@@ -380,6 +387,43 @@ Campaign Mbps means are `mean(all 20 seeds)` — `campaign._summarize` does not 
 | 1.5 – 2.5 | 8.946 – 8.947 | 100% |
 
 **Analysis:** At f_j = 0.5×10⁸, μ ≈ 13.3 /s; splitting groups (10/s each) is feasible. After init repair, **20/20 seeds are feasible** and the comm score sits on the default plateau. **Do not pool CPU rows with J = 3 in meta-analyses.**
+
+### 2.6 Paper field 500 × 500 m (8.8 MHz, 25% cap)
+
+**Source:** `campaign_8.8mhz_cap25_si12k_500m.json` (2026-09-07, 20 seeds, same `S_i`/`L` and axes as §2).
+
+Same configuration as the 100 m headline campaign, but IoTs and UAVs are placed in the paper’s **500 × 500 m** field. Zenith max SNR is unchanged (`H = 100` m); mean link quality is worse, so sum rates drop ~0.6–0.7 Mbps at J = 3.
+
+#### Default point — J = 3, I = 10
+
+| Method | 100 m (§2) | 500 m | Δ (500 − 100) |
+| --- | ---: | ---: | ---: |
+| **SCA** | 8.946 | **8.300** | −0.646 |
+| PSO | 8.905 | 8.122 | −0.783 |
+| Random | 8.928 | 7.947 | −0.981 |
+| K-means | 8.901 | 7.474 | −1.427 |
+
+All methods **100% feasible** at J = 3 on both fields.
+
+#### Fig. 6 analogue — UAV count J (I = 10)
+
+| J | SCA (500 m) | Random | K-means | PSO |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 6.030 | 4.980 | 4.580 | 6.020 |
+| 2 | 7.490 | 6.760 | 6.170 | 7.520 |
+| 3 | 8.300 | 7.947 | 7.474 | 8.122 |
+| 4 | 8.580 | 8.480 | 8.110 | 8.410 |
+| 5 | 8.760 | 8.670 | 8.530 | 8.610 |
+
+**Analysis**
+
+- SCA leads at every J; the gap vs k-means is **largest at J = 3** (~0.83 Mbps) where placement and bandwidth allocation matter most on a large field.
+- At J = 1, PSO nearly matches SCA (~6.02 vs 6.03 Mbps); k-means lags (~4.58 Mbps).
+- I = 32: random drops to **95%** feasible (one seed fails QoS/AoDT); SCA/k-means/PSO stay 100%.
+- T_k = 0.8 s remains **0% feasible** for all methods (same frozen-init artefact as §2.4).
+- Method ranking is unchanged: **SCA > PSO ≈ random > k-means** at 500 m, with larger separations than at 100 m.
+
+Plot: `python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m`
 
 ---
 
@@ -621,6 +665,10 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 
 python scripts/compare_sca_cvxpy_matlab.py
 python scripts/analyze_campaigns.py
 python scripts/plot_paper_figures.py
+
+# Paper field (500 × 500 m) — same config as primary
+python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
+python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m
 ```
 
 Full bandwidth preset sweep (long): `scripts/run_all_bandwidth_campaigns.ps1`

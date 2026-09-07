@@ -567,33 +567,40 @@ TASK_CYCLES = None
 
 ## 15. Reproduction Checklist
 
-Before claiming reproduction, verify:
+Before claiming reproduction, verify. This milestone uses a **100 × 100 m**
+headline field (intentional modification; paper §VII uses 500 × 500 m). A
+20 kHz control and optional 8.8 MHz cap25 campaign at 500 m are documented in
+`docs/RESULTS.md`.
 
-- [ ] Table II parameters are entered exactly.
-- [ ] `sigma = 0.01` is kept separate from `noise_power`.
-- [ ] The radio profile in use is named next to any absolute rate, because the
-      literal Table II `B_sys = 20` kHz, read as the (27) cap, is bounded by
-      Eq. (6)+(27) at 0.997 Mbps even at `SNR=10^15`; the published Mbps
-      figures are not a literal evaluation of Eq. (6) under that cap
-      (`docs/RESULTS.md` §0).
-- [ ] IoT coordinates are generated inside `500 × 500 m²`.
-- [ ] UAV height is fixed at `100 m`.
-- [ ] Distance equation is implemented exactly.
-- [ ] LoS probability is implemented exactly.
-- [ ] LoS and NLoS path loss are implemented exactly.
-- [ ] Average path loss is implemented exactly.
-- [ ] Rate equation is implemented exactly.
-- [ ] Total bandwidth constraint is enforced.
-- [ ] `R_min = 10,000 bit/s` is enforced.
-- [ ] AoDT is calculated using Eq. (17).
-- [ ] AoDT threshold is `2.8 s`.
-- [ ] CPU stability is enforced once `L` is resolved.
-- [ ] Missing `S_i` and `L` are not silently guessed.
-- [ ] Random/K-means/PSO/SCA/TD3 use the same evaluator.
-- [ ] Multiple random runs are used.
-- [ ] Mean and standard deviation are reported.
-- [ ] Runtime is reported.
-- [ ] Convergence curves are saved.
+### Core model (this repo — done)
+
+- [x] Table II parameters are entered exactly (except documented substitutions).
+- [x] `sigma = 0.01` is kept separate from `noise_power` (`σ²` in Eq. (6)).
+- [x] The radio profile in use is named next to any absolute rate; Table II
+      20 kHz as the (27) cap is bounded by Eq. (6)+(27) at 0.997 Mbps even at
+      `SNR=10^15` (`docs/RESULTS.md` §0).
+- [x] IoT coordinates are generated inside the configured field (**100 × 100 m**
+      default; `--area-m 500` for paper-field runs).
+- [x] UAV height is fixed at `100 m`.
+- [x] Distance, LoS, path loss, rate, and bandwidth constraint (27) implemented.
+- [x] `R_min = 10,000 bit/s` is enforced.
+- [x] AoDT is calculated using Eq. (17); threshold `T_k = 2.8 s`.
+- [x] CPU stability (24) enforced; `S_i` / `L` are external, labeled in config.
+- [x] Random, k-means, PSO, and SCA use the same `evaluate()` scorer.
+- [x] Campaigns use **20 runs** per point; mean and std reported in JSON/CSV.
+
+### Algorithms
+
+- [x] SCA (Algorithm 1) — `src/uavdt/sca/`, CVXPY campaigns, MATLAB spot-check.
+- [ ] TD3 (Algorithm 2) — **not implemented** (out of scope).
+
+### Reporting & artifacts
+
+- [x] Paired statistics and FDR documented (`docs/RESULTS.md` §3).
+- [x] Paper-style figures from campaign JSON (`scripts/plot_paper_figures.py`).
+- [ ] Runtime reported in every published table (optional for writeup).
+- [ ] SCA convergence curves saved for every campaign seed (available via
+      `python -m uavdt sca --history-json …`; not bundled in campaign JSON).
 
 ---
 
