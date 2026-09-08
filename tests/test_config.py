@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from uavdt.config import EXTERNAL_TASK_CYCLES, EXTERNAL_TASK_SIZE_BITS, SimConfig
+from uavdt.config import (
+    EXTERNAL_TASK_CYCLES,
+    EXTERNAL_TASK_SIZE_BITS,
+    PRIMARY_MAX_BW_SHARE,
+    SENSITIVITY_MAX_BW_SHARE,
+    SimConfig,
+)
 from uavdt.experiments.cli import build_parser, _cfg_from_args
 
 
@@ -10,6 +16,12 @@ def test_external_defaults_are_not_hidden():
     cfg = SimConfig()
     assert cfg.task_size_bits == EXTERNAL_TASK_SIZE_BITS
     assert cfg.task_cycles == EXTERNAL_TASK_CYCLES
+
+
+def test_bw_share_experimental_roles():
+    assert PRIMARY_MAX_BW_SHARE == 0.25
+    assert SENSITIVITY_MAX_BW_SHARE == 0.15
+    assert SimConfig().max_bw_share is None
 
 
 def test_task_size_bytes_is_times_eight():
@@ -64,3 +76,5 @@ def test_max_bw_share_cli():
     help_text = sca_parser.format_help()
     assert "EXTERNAL PARAMETER" in help_text
     assert "Problem (P)" in help_text
+    assert "primary" in help_text
+    assert "sensitivity" in help_text

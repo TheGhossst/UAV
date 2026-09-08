@@ -16,8 +16,8 @@ default scenario — do not pool those rows. The script marks them.
 
 Usage:
 
-    python scripts/paired_winrate.py results/campaign_20260904_cap25.json
-    python scripts/paired_winrate.py results/campaign_2.4mhz_cap25.json --champion sca
+    python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+    python scripts/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json --champion sca
 """
 
 from __future__ import annotations
@@ -628,7 +628,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "json_path",
         nargs="?",
-        default="results/campaign_20260904_cap25.json",
+        default="results/campaign_8.8mhz_cap25_si12k.json",
         help="Campaign JSON with per_seed_Mbps / seeds",
     )
     p.add_argument("--champion", default="sca")

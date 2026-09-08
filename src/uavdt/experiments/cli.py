@@ -13,6 +13,8 @@ from uavdt.config import (
     DEFAULT,
     EXTERNAL_TASK_CYCLES,
     EXTERNAL_TASK_SIZE_BITS,
+    PRIMARY_MAX_BW_SHARE,
+    SENSITIVITY_MAX_BW_SHARE,
     SimConfig,
 )
 from uavdt.experiments import run_one, run_seeds
@@ -92,7 +94,9 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         default=None,
         help=(
             "EXTERNAL PARAMETER: optional per-link cap as a fraction of "
-            "B_sys (e.g. 0.25). Not in Problem (P) or Table II."
+            f"B_sys (e.g. {PRIMARY_MAX_BW_SHARE:g} primary, "
+            f"{SENSITIVITY_MAX_BW_SHARE:g} tighter-cap sensitivity). "
+            "Not in Problem (P) or Table II."
         ),
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")

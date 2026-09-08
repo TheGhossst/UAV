@@ -51,7 +51,8 @@ scope for this campaign.
 | Axes and 20-run rule | PAPER | Tick lists below when the PDF omits them |
 | Area 100 × 100 m | Intentional modification | Paper 500 × 500 m; 20 kHz also checked at 500 m |
 | `B_sys` 8.8 MHz (headline) | Intentional modification | Table II 20 kHz as (27) cap is infeasible (ceiling 0.997 Mbps) |
-| 25% per-link cap | EXTERNAL PARAMETER | Not Problem (P) |
+| 25% per-link cap | EXTERNAL PARAMETER | **Primary** leftover-dump stress test (2.20 MHz/link) |
+| 15% per-link cap | EXTERNAL PARAMETER | Tighter-cap **sensitivity** kept for experiments (1.32 MHz/link) |
 | `S_i`, `L` | EXTERNAL PARAMETER | Settled: 12,000 bytes, `L=3.75×10⁶` |
 | PSO | EXTERNAL | Extra baseline, not in the paper |
 | Equal `|N_k|` when `I` grows | IMPLEMENTATION CHOICE | Keep `K = 2`, `I` even |
@@ -89,7 +90,10 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25
 
 python -m uavdt aodt-compare --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --placement kmeans
-python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --out results/fig11_8.8mhz_cap25.json
+python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --out results/fig11_8.8mhz_cap25_si12k.json
+
+# Tighter-cap sensitivity (not the primary campaign)
+python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.15 --n-runs 5 --out results/campaign_8.8mhz_cap15_uavs.json
 ```
 
 `--solver matlab` on `campaign` runs frozen SCA in MATLAB CVX+MOSEK
@@ -106,7 +110,7 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 - Paired writeup stats (same seed, champion vs baseline):
 
 ```text
-python scripts/paired_winrate.py results/campaign_20260904_cap25.json
+python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
 ```
 
   Writes `*_paired.json` / `*_paired.csv`. Quote lines are
@@ -131,9 +135,10 @@ score; they do not replace it.
 Full analysis, audit paragraph, and tables: **`docs/RESULTS.md`**.
 
 **Figures:** `pip install -r requirements-dev.txt` then
-`python scripts/plot_paper_figures.py` → `results/figures/`.
+`python scripts/plot_paper_figures.py` → `results/figures/` (25% primary).
+Tighter-cap 15% plots: `--campaign results/campaign_8.8mhz_cap15_n20.json --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15`.
 
-**Paper field (500 × 500 m):** headline comparison at 8.8 MHz, 25% cap:
+**Paper field (500 × 500 m):** field-size test at 8.8 MHz, **25%** primary cap (15% not re-run at 500 m):
 
 ```text
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
@@ -143,14 +148,16 @@ python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.2
 
 ### Bandwidth configuration screen (optional)
 
-Scripts used to justify the headline **8.8 MHz / 25% cap** choice. Outputs
-land in `results/` (gitignored). Not required to reproduce the primary campaign.
+Scripts used to compare the primary **8.8 MHz / 25% cap** with a tighter **15%**
+sensitivity and other `(B_sys, share)` cells. Outputs land in `results/`
+(gitignored). Not required to reproduce the primary campaign.
 
 | Script | Role |
 | --- | --- |
 | `scripts/sweep_bandwidth_screen.py` | Rank `(B_sys, max_bw_share)` at J=3 |
 | `scripts/compare_bw_configs.py` | Side-by-side preset comparison |
-| `scripts/analyze_nocap_8p8mhz.py` | No-cap vs cap25 saturation check |
+| `scripts/compare_cap15_vs_cap25.py` | Primary 25% vs 15% sensitivity |
+| `scripts/analyze_nocap_8p8mhz.py` | No-cap vs 25% primary (15% still a sensitivity) |
 | `scripts/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
 | `scripts/bw_cap_by_j_grid.py` | Cap × J table with FDR |
 | `scripts/bw_threshold_refine.py` | Refine cap threshold near 25% |
@@ -168,5 +175,6 @@ At 8.8 MHz with **no** per-link cap, leftover spectrum sits on the
 highest-SE link, so mean sum rates sit near **~8.96–8.99 Mbps** for
 every method. `λ` and `f_j` do not move the communication objective
 when the point stays feasible. `T_k = 0.8 s` is infeasible for all
-four methods. Differentiation is expected to show up with
-`--max-bw-share 0.25` (EXTERNAL), which is the next campaign to run.
+four methods. A **25%** cap (`--max-bw-share 0.25`, EXTERNAL, primary) still
+lets leftover sit on a few high-SE links at default J = 3. Differentiation
+widens under `--max-bw-share 0.15` (EXTERNAL, tighter-cap sensitivity).

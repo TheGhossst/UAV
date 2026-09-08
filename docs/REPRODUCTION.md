@@ -52,8 +52,8 @@ Do **not** carry these forward from the old tree:
 
 - Default area `500 × 500 m`
 - Radio profile `calibrated` (`B_sys = 8.8 MHz` and `noise_power = σ` instead of `σ²`)
-- Unlabeled per-link cap treated as part of Problem (P) (a 25% cap
-  exists here only as an **EXTERNAL PARAMETER**, see §4.1 / §6.7)
+- Unlabeled per-link cap treated as part of Problem (P) (15% sensitivity /
+  25% primary exist here only as **EXTERNAL PARAMETER**, see §4.1 / §6.7)
 - Default LoS angle unit `deg` (Al-Hourani convention, not written in Eq. (4))
 - Silent `S_bytes × 8` without labeling it as an interpretation
 - Experimental `S_i`, `L` values presented near Table II
@@ -151,7 +151,7 @@ Seeds are explicit. A CLI path can average 20 runs later.
 | `a` | 9.61 | Table II |
 | `b` | 0.16 | Table II |
 | Bandwidth `B_sys` | 20 kHz / 2.4 MHz / 8.8 MHz | See §4.1: Table II 20 kHz as the (27) cap is **infeasible** (0.997 Mbps model-free ceiling); headline runs are 2.4 MHz and 8.8 MHz |
-| Per-link cap `max_bw_share` | `None` or `0.25` | **EXTERNAL PARAMETER**, not Problem (P) / Table II |
+| Per-link cap `max_bw_share` | `None`, `0.25` (primary), or `0.15` (sensitivity) | **EXTERNAL PARAMETER**, not Problem (P) / Table II |
 | `S_i` (task size) | 12,000 bytes (`96,000` bit) | **EXTERNAL** — settled experimental choice |
 | `L` (cycles/task) | `3.75×10⁶` | **EXTERNAL** — settled experimental choice (`μ ≈ 53.3` /s) |
 
@@ -287,7 +287,9 @@ model).
 1. Field is **100 × 100 m**, not 500 × 500 m.
 2. `B_sys` is an experiment parameter: 20 kHz (Table II diagnostic),
    2.4 MHz, or 8.8 MHz. Each of 2.4 MHz and 8.8 MHz is run **with no
-   per-link cap** and **with a 25% per-link cap**.
+   per-link cap**. Primary 8.8 MHz experiments use a **25% per-link cap**
+   (leftover-dump stress test); a **15% cap** is kept as a tighter-cap
+   sensitivity.
 3. `S_i` (`task_size_bits`) and `L` (`task_cycles`) are **EXTERNAL**
    execution defaults; Table II does not specify them.
 
@@ -332,18 +334,23 @@ of 20{,}000 Hz. Details: `docs/RESULTS.md` §0.2.
   `R_sum = B_sys · mean_SE`; max SNR (best-link dump ~0.020 Mbps) is
   unchanged. Area is not a confounder (`scripts/check_bsys_20khz.py`).
 - **Headline results are therefore reported at 2.4 MHz and 8.8 MHz**,
-  each with `max_bw_share = None` and `max_bw_share = 0.25`. The
-  20 kHz preset remains in the CLI only as a Table II diagnostic.
-  This substitution is **explicit**, not implied.
+  with `max_bw_share = None` (no per-link cap), **`0.25` (8.8 MHz
+  primary leftover-dump stress test)**, and `0.15` (tighter-cap
+  sensitivity). The 20 kHz preset
+  remains in the CLI only as a Table II diagnostic. This substitution
+  is **explicit**, not implied.
 
-**IMPLEMENTATION CHOICE / EXTERNAL:** the 25% per-link cap
-(`B_ij ≤ 0.25 B_sys`) is **not** part of Problem (P). It is an
-external experimental restriction used to stop leftover spectrum from
-collapsing onto a single highest-SE link.
+**IMPLEMENTATION CHOICE / EXTERNAL:** the per-link cap
+(`B_{ij} \le \texttt{max\_bw\_share}\, B_{\mathrm{sys}}`) is **not**
+part of Problem (P). Primary experiments use **25%** (2.20 MHz/link) as
+a leftover-dump stress test: without a per-link cap the frozen-q LP puts
+~95% of `B_sys` on the best-SE link. A **15%** cap (1.32 MHz/link) remains
+available as a tighter-cap sensitivity; it was not chosen independently of
+a cap×J search and is not the primary ranking config.
 
 ### 4.2 Cap vs uncapped arithmetic
 
-When comparing a no-cap run to a 25% cap run at the **same** `B_sys`:
+When comparing a no-cap run to a capped run at the **same** `B_sys`:
 
 ```text
 gap_vs_uncapped     = uncapped_rate - capped_rate
@@ -417,7 +424,7 @@ Objective (20): maximize \(\sum_i\sum_j a_{ij} r_{ij}\).
 | (23) | same process → same processing UAV | Held by process-consistent \(b\) |
 | (24) | \(\mu_j \ge \lambda_{\mathrm{total},j}\) | Checked at init; constant if \(b\) fixed |
 | (25) | \(r_{ij}\ge a_{ij} R_{\min}\) | Exact in \(B\) at frozen \(q\): \(B_{ij}\ge R_{\min}/\mathrm{SE}_{ij}(q)\) |
-| (26) | \(B_{ij}\le a_{ij} M\) | \(B_{ij}=0\) if \(a_{ij}=0\); **DERIVED** \(M=B_{\mathrm{sys}}\) under (27). Optional 25% cap sets \(M=0.25 B_{\mathrm{sys}}\) (**EXTERNAL PARAMETER**, not (P)). |
+| (26) | \(B_{ij}\le a_{ij} M\) | \(B_{ij}=0\) if \(a_{ij}=0\); **DERIVED** \(M=B_{\mathrm{sys}}\) under (27). Optional primary 25% cap sets \(M=0.25 B_{\mathrm{sys}}\) (**EXTERNAL PARAMETER**, not (P)); 15% is a tighter-cap sensitivity. |
 | (27) | \(\sum_{i,j} B_{ij}\le B_{\mathrm{sys}}\) | Exact linear |
 | (28) | \(\|q_j-q_l\|\ge\theta\) | True evaluator gate (not a supporting halfspace in the loop) |
 | (29) | \(\lambda_{N_k}\le\lambda_i\) | Identity if \(\lambda_{N_k}=\min\lambda_i\) |
@@ -544,7 +551,7 @@ Problem (P) as written:
 | --- | --- | --- |
 | Task size `S_i` | `task_size_bits` | Upload delay Eq. (11) |
 | Cycles/task `L` | `task_cycles` | `μ_j = f_j / L` |
-| Per-link bandwidth share | `max_bw_share` (e.g. `0.25`) | Optional `B_ij ≤ share · B_sys`. Default `None` is paper (26)–(27) only. |
+| Per-link bandwidth share | `max_bw_share` (e.g. `0.25` primary, `0.15` sensitivity) | Optional `B_ij ≤ share · B_sys`. Default `None` is paper (26)–(27) only. |
 
 ### 6.8 Known gaps vs the paper
 

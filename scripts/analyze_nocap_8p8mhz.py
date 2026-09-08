@@ -1,4 +1,4 @@
-"""Analyze 8.8 MHz no-cap campaign vs cap25 primary."""
+"""Analyze 8.8 MHz no-cap campaign vs 25% primary and 15% tighter-cap sensitivity."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 NOCAP = ROOT / "results" / "campaign_8.8mhz_n20.json"
+CAP15 = ROOT / "results" / "campaign_8.8mhz_cap15_n20.json"
 CAP25 = ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
 
 
@@ -53,27 +54,39 @@ def per_seed_spread(pt: dict, methods: tuple[str, ...] = ("sca", "random", "kmea
 
 def main() -> int:
     nc = load(NOCAP)
+    c15 = load(CAP15)
     c25 = load(CAP25)
 
     print("=" * 72)
-    print("8.8 MHz NO CAP vs CAP 25% — headline analysis")
+    print("8.8 MHz NO CAP vs CAP 25% (primary) vs CAP 15% (sensitivity)")
     print("=" * 72)
     print(f"No-cap file : {NOCAP.name}  n_runs={nc['n_runs']}")
-    print(f"Cap25 file   : {CAP25.name}")
+    print(f"Cap25 file  : {CAP25.name}  (primary)")
+    print(f"Cap15 file  : {CAP15.name}  (tighter-cap sensitivity)")
 
     pt3_nc = pt(nc, "uavs", 3)
+    pt3_15 = pt(c15, "uavs", 3)
     pt3_c = pt(c25, "uavs", 3)
     r_nc = method_row(pt3_nc)
+    r_15 = method_row(pt3_15)
     r_c = method_row(pt3_c)
 
     print("\n--- J=3, I=10 (default point) ---")
-    print(f"{'Method':<8} {'No-cap Mbps':>12} {'Cap25 Mbps':>12} {'Δ cap-nc':>10} {'nc std':>8}")
+    print(
+        f"{'Method':<8} {'No-cap':>10} {'Cap15':>10} {'Cap25':>10} "
+        f"{'15-nc':>8} {'25-nc':>8}"
+    )
     for m in ("sca", "random", "kmeans", "pso"):
         print(
-            f"{m:<8} {r_nc[m]['mbps']:12.3f} {r_c[m]['mbps']:12.3f} "
-            f"{r_c[m]['mbps'] - r_nc[m]['mbps']:+10.3f} {r_nc[m]['std']:8.3f}"
+            f"{m:<8} {r_nc[m]['mbps']:10.3f} {r_15[m]['mbps']:10.3f} "
+            f"{r_c[m]['mbps']:10.3f} "
+            f"{r_15[m]['mbps'] - r_nc[m]['mbps']:+8.3f} "
+            f"{r_c[m]['mbps'] - r_nc[m]['mbps']:+8.3f}"
         )
-    print(f"\nMethod spread (max-min mean Mbps)  no-cap: {spread_mbps(r_nc):.4f}  cap25: {spread_mbps(r_c):.4f}")
+    print(
+        f"\nMethod spread (max-min mean Mbps)  no-cap: {spread_mbps(r_nc):.4f}  "
+        f"cap15: {spread_mbps(r_15):.4f}  cap25: {spread_mbps(r_c):.4f}"
+    )
 
     seeds_spread = per_seed_spread(pt3_nc)
     import statistics
@@ -135,8 +148,13 @@ def main() -> int:
             "leftover spectrum piles on best SE links; LP hits similar sum rates."
         )
     print(
-        f"Cap25 removes {r_nc['sca']['mbps'] - r_c['sca']['mbps']:.3f} Mbps from SCA vs no-cap "
-        f"but widens method spread from {j3_sp:.3f} to {spread_mbps(r_c):.3f} Mbps."
+        f"Cap25 (primary) removes {r_nc['sca']['mbps'] - r_c['sca']['mbps']:.3f} Mbps "
+        f"from SCA vs no-cap; spread {spread_mbps(r_c):.3f} Mbps."
+    )
+    print(
+        f"Cap15 (sensitivity) removes {r_nc['sca']['mbps'] - r_15['sca']['mbps']:.3f} Mbps "
+        f"from SCA vs no-cap but widens method spread from {j3_sp:.3f} to "
+        f"{spread_mbps(r_15):.3f} Mbps."
     )
     return 0
 

@@ -43,8 +43,10 @@ AREA_Y_M = 100.0
 # "Minimum bandwidth allocation"). Constraint (27) uses that symbol as a
 # sum ceiling. Under that reading, Eq. (6)+(27) bound 20 kHz at
 # B_sys·log2(1+SNR_max) — even SNR_max=1e15 is ~1 Mbps, not 7–14 Mbps.
-# Headline results: 2.4 MHz and 8.8 MHz, each with and without a 25%
-# per-link cap. 20 kHz is kept as a Table II diagnostic.
+# Headline B_sys: 2.4 MHz and 8.8 MHz. Optional per-link caps are
+# EXTERNAL (not Problem (P)): 25% is the primary leftover-dump stress
+# test; 15% is a tighter-cap sensitivity kept for experiments. 20 kHz
+# is a Table II diagnostic.
 BANDWIDTH_PRESETS: dict[str, float] = {
     "20khz": 20_000.0,
     "2.4mhz": 2_400_000.0,
@@ -59,6 +61,11 @@ EXTERNAL_TASK_SIZE_BITS = EXTERNAL_TASK_SIZE_BYTES * 8.0  # 96_000 bit
 EXTERNAL_TASK_CYCLES = 3.75e6
 
 PAPER_N_RUNS = 20
+
+# Optional per-link B_ij caps as a fraction of B_sys. Neither is in
+# Problem (P) or Table II. CLI default remains None (paper (26)–(27) only).
+PRIMARY_MAX_BW_SHARE = 0.25
+SENSITIVITY_MAX_BW_SHARE = 0.15
 
 LosAngleUnit = Literal["rad", "deg"]
 
@@ -95,8 +102,9 @@ class SimConfig:
     task_size_bits: float = EXTERNAL_TASK_SIZE_BITS
     task_cycles: float = EXTERNAL_TASK_CYCLES
     # Per-link cap as a fraction of B_sys. None = only (26)–(27) as written.
-    # 0.25 is an EXTERNAL PARAMETER (experimental restriction), not in
-    # Problem (P) and not in Table II.
+    # PRIMARY_MAX_BW_SHARE (0.25) is the primary experimental cap;
+    # SENSITIVITY_MAX_BW_SHARE (0.15) is kept for tighter-cap experiments.
+    # Neither is in Problem (P) or Table II.
     max_bw_share: float | None = None
     # Eq. (12) UAV→BS download Z_l. Paper neglects this (processed payload
     # is small); default 0 keeps Problem (P) / Eq. (17) unchanged.

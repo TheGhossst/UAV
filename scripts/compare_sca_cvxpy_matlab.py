@@ -29,7 +29,7 @@ from uavdt.sca.matlab_bridge import matlab_available
 from uavdt.sca.settings import SCASettings
 from uavdt.scenario import generate_scenario
 
-CVXPY_CAMPAIGN = Path("results/campaign_8.8mhz_cap25_si12k.json")
+CVXPY_CAMPAIGN = Path("results/campaign_8.8mhz_cap25_si12k.json")  # saturation-test 20-seed pair
 OUT = Path("results/sca_cvxpy_vs_matlab_j3.json")
 
 

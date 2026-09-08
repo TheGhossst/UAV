@@ -16,7 +16,7 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-from uavdt.config import SimConfig
+from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig
 from uavdt.experiments.campaign import (
     CampaignSettings,
     replace_points,
@@ -52,7 +52,7 @@ def main() -> int:
     print(f"backup {backup}", flush=True)
 
     payload = json.loads(PRIMARY.read_text(encoding="utf-8"))
-    cfg = SimConfig(b_sys_hz=8.8e6, max_bw_share=0.25)
+    cfg = SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE)
     settings = CampaignSettings(
         n_runs=20,
         seed_start=1,

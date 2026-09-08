@@ -215,14 +215,15 @@ def print_report(analyses: list[dict]) -> None:
 
     for bw, caps in sorted(by_bw.items()):
         no_cap = caps.get(None)
-        cap25 = caps.get(0.25)
-        if no_cap is not None and cap25 is not None:
-            delta = no_cap - cap25
-            pct = 100 * delta / no_cap if no_cap else 0
-            print(
-                f"  {bw/1e6:g} MHz: no_cap={no_cap:.3f}, cap25={cap25:.3f}, "
-                f"delta={delta:.3f} Mbps ({pct:.1f}% reduction)"
-            )
+        for share, tag in ((0.25, "cap25"), (0.15, "cap15")):
+            capped = caps.get(share)
+            if no_cap is not None and capped is not None:
+                delta = no_cap - capped
+                pct = 100 * delta / no_cap if no_cap else 0
+                print(
+                    f"  {bw/1e6:g} MHz: no_cap={no_cap:.3f}, {tag}={capped:.3f}, "
+                    f"delta={delta:.3f} Mbps ({pct:.1f}% reduction)"
+                )
 
 
 def main() -> int:
@@ -232,7 +233,9 @@ def main() -> int:
         "results/campaign_2.4mhz.json",
         "results/campaign_2.4mhz_cap25.json",
         "results/campaign_8.8mhz_n20.json",
+        "results/campaign_8.8mhz_cap25_si12k.json",
         "results/campaign_8.8mhz_cap25_n20.json",
+        "results/campaign_8.8mhz_cap15_n20.json",
         # fallbacks
         "results/campaign_8.8mhz.json",
         "results/campaign_20260904_cap25.json",

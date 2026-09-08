@@ -141,7 +141,7 @@ def iot_layout(scenario) -> dict:
 
 
 def main() -> int:
-    path = Path(sys.argv[1] if len(sys.argv) > 1 else "results/campaign_20260904_cap25.json")
+    path = Path(sys.argv[1] if len(sys.argv) > 1 else "results/campaign_8.8mhz_cap25_si12k.json")
     payload = json.loads(path.read_text(encoding="utf-8"))
     analyzed = analyze_campaign(payload, champion="sca")
     rows = analyzed["rows"]
@@ -208,7 +208,10 @@ def main() -> int:
     cfg = config_for_counts(
         10,
         3,
-        SimConfig(b_sys_hz=8_800_000.0, max_bw_share=0.25),
+        SimConfig(
+            b_sys_hz=float(payload.get("b_sys_hz") or 8_800_000.0),
+            max_bw_share=payload.get("max_bw_share"),
+        ),
     )
     inspect_seeds = [s["seed"] for s in losses] + [
         s["seed"] for s in sorted(wins, key=lambda x: -x["delta_Mbps"])[:3]

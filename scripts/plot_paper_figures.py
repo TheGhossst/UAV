@@ -8,6 +8,7 @@ Usage (from repo root):
     pip install matplotlib
     python scripts/plot_paper_figures.py
     python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k.json
+    python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n20.json --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15
 """
 
 from __future__ import annotations
@@ -46,10 +47,22 @@ FIG11_STYLES = {
     "uniform_slow": {"color": "#2ca02c", "marker": "^"},
 }
 
-REPRO_NOTE = (
-    "Reproduction: 100×100 m, B_sys = 8.8 MHz, 25% per-link cap, "
-    "20 seeds/point. Not Table II 20 kHz."
-)
+def _repro_note(campaign: dict | None = None) -> str:
+    if campaign is None:
+        return (
+            "Reproduction: 100×100 m, B_sys = 8.8 MHz, 25% per-link cap, "
+            "20 seeds/point. Not Table II 20 kHz."
+        )
+    share = campaign.get("max_bw_share")
+    cap = "no per-link cap" if share is None else f"{float(share):.0%} per-link cap"
+    b_mhz = float(campaign.get("b_sys_hz") or 8_800_000.0) / 1e6
+    return (
+        f"Reproduction: 100×100 m, B_sys = {b_mhz:g} MHz, {cap}, "
+        "20 seeds/point. Not Table II 20 kHz."
+    )
+
+
+REPRO_NOTE = _repro_note()
 
 
 def _load(path: Path) -> dict:
@@ -267,6 +280,8 @@ def main() -> None:
 
     campaign = _load(campaign_path)
     fig11 = _load(fig11_path)
+    global REPRO_NOTE
+    REPRO_NOTE = _repro_note(campaign)
 
     written: list[Path] = []
     written.append(

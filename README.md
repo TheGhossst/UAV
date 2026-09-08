@@ -134,7 +134,7 @@ These flags are available on **every** subcommand (via `_add_shared` in the CLI)
 | `--task-cycles` | float | `3.75e6` | Computation load `L` in cycles/task (external). |
 | `--lambda-i` | float | `2.0` | Uniform task arrival rate λ (tasks/s per IoT). |
 | `--aodt-threshold` | float | `2.8` | AoDT threshold `T_k` in seconds. |
-| `--max-bw-share` | float | *(none)* | Optional per-link cap as a fraction of `B_sys` (e.g. `0.25`). **External parameter**, not in Problem (P). |
+| `--max-bw-share` | float | *(none)* | Optional per-link cap as a fraction of `B_sys` (e.g. `0.25` primary, `0.15` tighter-cap sensitivity). **External parameter**, not in Problem (P). |
 | `--los-angle-unit` | `rad` \| `deg` | `rad` | Unit for the LoS elevation angle in Eq. (4). |
 | `--area-m` | float | `100` | Square field side in metres. Paper §VII uses `500`. |
 | `--placement` | `random` \| `kmeans` | `random` | UAV placement baseline (not used by `sca`, which optimizes position). |
@@ -255,7 +255,7 @@ CPU) across placement/optimization methods.
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --n-runs 5 --solver cvxpy
 
 # Paper-faithful run count (20 seeds)
-python -m uavdt campaign --axis uavs,iots --bandwidth-preset 8.8mhz --max-bw-share 0.25 --methods random,kmeans,pso,sca --n-runs 20 --seed-start 1 --solver cvxpy --out results/campaign_8.8mhz_cap25.json
+python -m uavdt campaign --axis uavs,iots --bandwidth-preset 8.8mhz --max-bw-share 0.25 --methods random,kmeans,pso,sca --n-runs 20 --seed-start 1 --solver cvxpy --out results/campaign_8.8mhz_cap25_si12k.json
 ```
 
 | Flag | Default | Description |
@@ -368,7 +368,7 @@ python scripts/analyze_campaign.py results/campaign.json
 Paired Wilcoxon signed-rank test on per-seed Mbps deltas.
 
 ```powershell
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25.json
+python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
 python scripts/paired_winrate.py results/campaign.json --champion sca --tie-eps 1e-9
 ```
 
@@ -382,8 +382,8 @@ python scripts/paired_winrate.py results/campaign.json --champion sca --tie-eps 
 
 ### `run_all_bandwidth_campaigns.ps1` — batch campaigns
 
-Runs full §VII campaigns for all bandwidth presets (with and without 25%
-per-link cap), 20 seeds each. Requires PowerShell.
+Runs full §VII campaigns for all bandwidth presets (no cap, plus 8.8 MHz
+at 25% primary and 15% tighter-cap sensitivity), 20 seeds each. Requires PowerShell.
 
 ```powershell
 .\scripts\run_all_bandwidth_campaigns.ps1
@@ -431,6 +431,8 @@ python -m uavdt evaluate --seed 1 --bandwidth-preset 2.4mhz --placement random
 python -m uavdt sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver cvxpy
 ```
 
+Tighter-cap experiments use `--max-bw-share 0.15` and write a separate output.
+
 ### 3. Full experimental campaign (paper run count)
 
 ```powershell
@@ -442,10 +444,10 @@ python -m uavdt campaign `
   --n-runs 20 `
   --seed-start 1 `
   --solver cvxpy `
-  --out results/campaign_8.8mhz_cap25.json
+  --out results/campaign_8.8mhz_cap25_si12k.json
 
-python scripts/analyze_campaign.py results/campaign_8.8mhz_cap25.json
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25.json
+python scripts/analyze_campaign.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
 ```
 
 ### 4. Verify 20 kHz Table II infeasibility
@@ -463,8 +465,9 @@ parameters to match published Mbps figures. Under Eq. (6) and constraint (27),
 Table II's `B_sys = 20 kHz` caps the system at **~0.997 Mbps** regardless of
 SNR — not the 7–14 Mbps quoted in §VII. Headline experiments use **2.4 MHz**
 and **8.8 MHz** at **100 × 100 m**, with an optional **25% per-link bandwidth
-cap** (`--max-bw-share 0.25`) that is an external parameter, not part of
-Problem (P).
+cap** (`--max-bw-share 0.25`) as the primary leftover-dump stress test. A **15%**
+cap (`--max-bw-share 0.15`) remains in the CLI and campaign scripts as a
+tighter-cap sensitivity. Both are external parameters, not part of Problem (P).
 
 See [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) §4.1 for the full 20 kHz
 fork analysis and [`docs/RESULTS.md`](docs/RESULTS.md) for current numbers.

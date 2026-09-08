@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def main() -> int:
-    path = Path(sys.argv[1] if len(sys.argv) > 1 else "results/campaign_20260904_cap25.json")
+    path = Path(sys.argv[1] if len(sys.argv) > 1 else "results/campaign_8.8mhz_cap25_si12k.json")
     p = json.loads(path.read_text(encoding="utf-8"))
     methods = p["methods"]
     print(f"file: {path}")

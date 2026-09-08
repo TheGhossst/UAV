@@ -1,4 +1,4 @@
-# Run full campaign for all bandwidth presets (no cap + 25% cap)
+# Run full campaign for bandwidth presets (no cap + 8.8 MHz 25% primary + 15% sensitivity)
 $ErrorActionPreference = "Stop"
 $env:PYTHONPATH = "src"
 Set-Location $PSScriptRoot\..
@@ -11,7 +11,8 @@ $configs = @(
     @{ preset = "2.4mhz";  cap = $null; out = "results/campaign_2.4mhz.json" },
     @{ preset = "2.4mhz";  cap = 0.25;  out = "results/campaign_2.4mhz_cap25.json" },
     @{ preset = "8.8mhz";  cap = $null; out = "results/campaign_8.8mhz_n20.json" },
-    @{ preset = "8.8mhz";  cap = 0.25;  out = "results/campaign_8.8mhz_cap25_n20.json" }
+    @{ preset = "8.8mhz";  cap = 0.25;  out = "results/campaign_8.8mhz_cap25_n20.json" },
+    @{ preset = "8.8mhz";  cap = 0.15;  out = "results/campaign_8.8mhz_cap15_n20.json" }
 )
 
 foreach ($c in $configs) {

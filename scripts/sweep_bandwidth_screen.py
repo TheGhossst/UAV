@@ -131,8 +131,8 @@ def default_grid() -> list[ConfigSpec]:
     b_mhz = [2.4, 3.0, 4.0, 5.0, 6.0, 7.0, 8.8, 10.0, 12.0, 14.0]
     specs: list[ConfigSpec] = []
     for mhz in b_mhz:
-        specs.append(ConfigSpec(mhz * 1e6, 0.25))
-    cap_shares = [0.10, 0.15, 0.20, 0.30, 0.40, 0.50]
+        specs.append(ConfigSpec(mhz * 1e6, 0.15))
+    cap_shares = [0.10, 0.20, 0.25, 0.30, 0.40, 0.50]
     for share in cap_shares:
         specs.append(ConfigSpec(8_800_000.0, share))
     for mhz in [5.0, 6.0, 7.0]:

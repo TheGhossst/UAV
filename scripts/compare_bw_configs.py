@@ -68,9 +68,9 @@ def summarize(name: str, fp: str) -> dict:
 
 def main() -> int:
     configs = [
-        ("8.8 MHz cap=15%", "results/campaign_8.8mhz_cap15_n20.json"),
+        ("8.8 MHz cap=25% (primary)", "results/campaign_8.8mhz_cap25_si12k.json"),
+        ("8.8 MHz cap=15% (sensitivity)", "results/campaign_8.8mhz_cap15_n20.json"),
         ("8.8 MHz cap=20%", "results/campaign_8.8mhz_cap20_n20.json"),
-        ("8.8 MHz cap=25% (current)", "results/campaign_8.8mhz_cap25_si12k.json"),
         ("8.8 MHz no cap", "results/campaign_8.8mhz_n20.json"),
         ("2.4 MHz cap=25%", "results/campaign_2.4mhz_cap25.json"),
     ]
@@ -100,17 +100,21 @@ def main() -> int:
         )
 
     ref = next(r for r in rows if "cap=25%" in r["name"])
-    print("\nRecommendation check vs cap=25%:")
-    for r in rows[:2]:
-        better = (
+    print("\nVs 25% primary (SCA-best + all three paired p<0.05):")
+    for r in rows:
+        if r["name"] == ref["name"]:
+            continue
+        ok = (
             r["sca_rank"] == 1
-            and r["spread"] > ref["spread"]
             and r["vs_random"]["p"] < 0.05
             and r["vs_kmeans"]["p"] < 0.05
             and r["vs_pso"]["p"] < 0.05
-            and r["sca_best"] >= ref["sca_best"] - 1
         )
-        print(f"  {r['name']}: beats ref on separation+stats = {better}")
+        print(
+            f"  {r['name']}: ranking+stats={ok}  "
+            f"spread={r['spread']:.3f} (primary {ref['spread']:.3f})  "
+            f"p_rand={r['vs_random']['p']:.4f}"
+        )
     return 0
 
 
