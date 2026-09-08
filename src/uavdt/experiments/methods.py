@@ -1,11 +1,13 @@
 """Run one method on one scenario. All methods share evaluate().
 
 SCA code is frozen: this module only *calls* solve_sca.
+SCA-joint is a separate methodology probe (method=\"sca_joint\").
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from time import perf_counter
 
 import numpy as np
 
@@ -19,7 +21,9 @@ from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
 from uavdt.sca.settings import SCASettings
 
 
+# Headline campaign methods. sca_joint is opt-in via --methods.
 METHODS = ("random", "kmeans", "pso", "sca")
+KNOWN_METHODS = METHODS + ("sca_joint",)
 
 
 @dataclass
@@ -66,6 +70,79 @@ def _alloc_at_positions(scenario: Scenario, uav: np.ndarray) -> Allocation:
     return Allocation(a, b, res.bandwidth_hz)
 
 
+def _run_sca_family(
+    scenario: Scenario,
+    method: str,
+    seed: int,
+    sca_settings: SCASettings | None,
+) -> MethodRun:
+    settings = sca_settings or SCASettings()
+    if method == "sca":
+        from uavdt.sca.algorithm import solve_sca as solver
+    else:
+        from uavdt.sca_joint import solve_sca_joint as solver
+    t0 = perf_counter()
+    try:
+        result = solver(scenario, seed, settings=settings)
+    except RuntimeError as exc:
+        # Settled L lowers mu; large I can violate (24) at k-means init.
+        if "CPU stability" not in str(exc):
+            raise
+        uav = place_kmeans(scenario, seed)
+        alloc = _alloc_at_positions(scenario, uav)
+        ev = evaluate(scenario, uav, alloc)
+        return MethodRun(
+            method=method,
+            seed=seed,
+            uav_xyz_m=uav,
+            allocation=alloc,
+            true_eval=ev,
+            diagnostics={
+                "method": method,
+                "stop_reason": "init_cpu_unstable",
+                "accepted_steps": 0,
+                "n_iterations": 0,
+                "solver_backend": "skipped",
+                "solver_status": "init_cpu_unstable",
+                "wall_clock_s": perf_counter() - t0,
+            },
+        )
+    elapsed = perf_counter() - t0
+    diag = {
+        "method": method,
+        "stop_reason": result.diagnostics.get("stop_reason"),
+        "accepted_steps": result.diagnostics.get("accepted_steps"),
+        "n_iterations": result.n_iterations,
+        "solver_backend": result.diagnostics.get("solver_backend"),
+        "solver_status": result.solver_status,
+        "se_max_abs_diff": result.diagnostics.get("se_max_abs_diff"),
+        "wall_clock_s": elapsed,
+        "association_init_equals_final": result.diagnostics.get(
+            "association_init_equals_final"
+        ),
+        "processing_init_equals_final": result.diagnostics.get(
+            "processing_init_equals_final"
+        ),
+        "rematch_attempts": result.diagnostics.get("rematch_attempts"),
+        "rematch_accepted": result.diagnostics.get("rematch_accepted"),
+        "rematch_rejected": result.diagnostics.get("rematch_rejected"),
+        "rematch_kinds": result.diagnostics.get("rematch_kinds"),
+        "process_cohesive_candidate": result.diagnostics.get(
+            "process_cohesive_candidate"
+        ),
+        "process_cohesive_a": result.diagnostics.get("process_cohesive_a"),
+        "n_forwarding": result.diagnostics.get("n_forwarding"),
+    }
+    return MethodRun(
+        method=method,
+        seed=seed,
+        uav_xyz_m=result.uav_xyz_m,
+        allocation=result.allocation,
+        true_eval=result.true_eval,
+        diagnostics=diag,
+    )
+
+
 def run_method(
     scenario: Scenario,
     method: str,
@@ -75,49 +152,11 @@ def run_method(
     pso_settings: PSOSettings | None = None,
 ) -> MethodRun:
     name = method.lower().strip()
-    if name not in METHODS:
-        raise ValueError(f"method must be one of {METHODS}, got {method!r}")
+    if name not in KNOWN_METHODS:
+        raise ValueError(f"method must be one of {KNOWN_METHODS}, got {method!r}")
 
-    if name == "sca":
-        from uavdt.sca.algorithm import solve_sca
-
-        settings = sca_settings or SCASettings()
-        try:
-            result = solve_sca(scenario, seed, settings=settings)
-        except RuntimeError as exc:
-            # Settled L lowers mu; large I can violate (24) at k-means init.
-            if "CPU stability" not in str(exc):
-                raise
-            uav = place_kmeans(scenario, seed)
-            alloc = _alloc_at_positions(scenario, uav)
-            ev = evaluate(scenario, uav, alloc)
-            return MethodRun(
-                method="sca",
-                seed=seed,
-                uav_xyz_m=uav,
-                allocation=alloc,
-                true_eval=ev,
-                diagnostics={
-                    "stop_reason": "init_cpu_unstable",
-                    "accepted_steps": 0,
-                    "solver_backend": "skipped",
-                    "solver_status": "init_cpu_unstable",
-                },
-            )
-        return MethodRun(
-            method="sca",
-            seed=seed,
-            uav_xyz_m=result.uav_xyz_m,
-            allocation=result.allocation,
-            true_eval=result.true_eval,
-            diagnostics={
-                "stop_reason": result.diagnostics.get("stop_reason"),
-                "accepted_steps": result.diagnostics.get("accepted_steps"),
-                "solver_backend": result.diagnostics.get("solver_backend"),
-                "solver_status": result.solver_status,
-                "se_max_abs_diff": result.diagnostics.get("se_max_abs_diff"),
-            },
-        )
+    if name in {"sca", "sca_joint"}:
+        return _run_sca_family(scenario, name, seed, sca_settings)
 
     if name == "random":
         uav = place_random(scenario.cfg.num_uav, seed, scenario.cfg)

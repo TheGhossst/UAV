@@ -28,3 +28,8 @@ class SCASettings:
     # Kept only so older call sites that passed trust_region_m=0 still
     # mean "do not move UAVs". Not a joint Taylor trust region.
     trust_region_m: float | None = None
+    # SCA-joint only. Frozen SCA ignores this. When True, the discrete
+    # rematch also tries process-cohesive a_ij (N_k on one UAV) as a
+    # candidate beside best-SE. Default False keeps the recorded
+    # best-SE-only SCA-joint probe.
+    process_cohesive_candidate: bool = False

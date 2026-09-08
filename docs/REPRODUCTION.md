@@ -89,6 +89,7 @@ src/uavdt/
     evaluator.py       one evaluation of a deployment
     placement/         random (θ), k-means, PSO (external)
     sca/               Algorithm 1 SCA (CVXPY + MATLAB bridge)
+    sca_joint/         Methodology probe: SCA + discrete a_ij/b_ij re-match
     experiments/       CLI, campaigns, Fig. 11, spot-validate
 tests/                 unit tests for the validation items in §0.9
 docs/REPRODUCTION.md   this file
@@ -260,7 +261,7 @@ R_{\mathrm{sum}}=\sum_{i=1}^{I}\sum_{j=1}^{J}a_{ij}r_{ij}.
 | `S_i` (labeled bytes in the text; no Table II value) | Config `task_size_bits`. Eq. (11) is implemented as `D=S/r` with `r` in bit/s. A `--task-size-bytes` flag multiplies by 8 and **labels that conversion as an interpretation**, not as a paper equation. |
 | `L` (cycles/task) | Config `task_cycles`. Required for `μ_j`. |
 | Base of `20 log` in Eqs. (1)–(2) | Implemented as \(\log_{10}\) (dB). |
-| Units of \(\arcsin(H/d)\) in Eq. (4) | Default **radians** (as written). `los_angle_unit="deg"` is an optional Al-Hourani-style reading, not the default. |
+| Units of \(\arcsin(H/d)\) in Eq. (4) | Default **radians** (as written). `los_angle_unit="deg"` is an optional Al-Hourani-style reading, not the default. **Sensitivity (2026-09-08):** zenith SNR **1.03** (rad) vs **90.5** (deg); J = 3 seed 1 sum rate **8.91** vs **57.23** Mbps. Only radians matches §VII-scale rates. See `docs/RESULTS.md` §0.2. |
 | Table II “Noise power, σ = 10×10^{-3} W” vs Eq. (6) `σ²` | Config stores `sigma=0.01`. Eq. (6) uses `noise_power = sigma**2`. |
 | Table II “Minimum bandwidth allocation, `B_sys` = 20{,}000 Hz” vs constraint (27) | **(27) is a sum ceiling** (`∑ B_{ij} ≤ B_sys`); the table adjective is “Minimum.” Same symbol, no second bandwidth number, no min-bandwidth constraint in Problem (P). Simulator uses 20 kHz as the (27) cap (Reading A). The alternative is that (27)’s cap is **undisclosed** (Reading B). See §4.1. |
 | How `B_ij` is chosen (only `∑ B_ij ≤ B_sys` is written) | `B_ij` is an explicit matrix. Placement-only runs may use **equal split** among associated links; that is not claimed as the paper’s optimizer. |
@@ -443,48 +444,32 @@ initialization enumerates process→UAV maps (capped; campaign \(K=2\) is
 tiny) and keeps a feasible one closest to the vote; \(b_{ij}\) is still
 frozen after that. Nearest \(a_{ij}\) is not rematched, so a process can
 still be split across UAVs and incur \(T_{\mathrm{u2u}}\) on some IoTs.
+A separate methodology probe (`uavdt.sca_joint`) rematches \(a_{ij}\) to
+the current best-SE UAV; on the primary 25% grid that does not recover
+\(T_k=0.8\) s feasibility (0/20) and does not move feasible-axis Mbps
+(max \(\Delta=+0.006\)). An opt-in extra rematch candidate (process-cohesive
+grouping; `process_cohesive_candidate=True`) recovers 20/20 feasible at
+\(T_k=0.8\) s — confirmation that the blocker was the greedy proposal,
+not the LP. Problem (P) is feasible at \(T_k=0.8\) s under that
+construction at k-means \(q\) on 40/40 geometries (seeds 1–20 and
+held-out 21–40; see `docs/RESULTS.md` §2.8 and §6). Default SCA-joint
+stays best-SE-only so recorded probe JSON remains reproducible. The
+probe does not replace frozen SCA. TD3’s frozen-binaries decision is
+independent of it.
 
 ### 6.3 Sequential phases — IMPLEMENTATION CHOICE
 
-Two convex LPs are solved in sequence. They are **not** a joint
-\((B,q)\) Taylor program and **not** unpublished paper algebra.
+The headline Python/MATLAB path is **not** a frozen-bandwidth position LP followed by a separate bandwidth step. Each outer iteration solves a **joint convexified \((q,B)\) LP** (`solve_joint_convex_step` in `cvx_problem.py`): first-order Taylor of \(\sum_i a_{ij} B_{ij}\mathrm{SE}_{ij}(q)\) in both \(q\) and \(B\) at the current linearization point, with box bounds, an \(L_\infty\) step on \(q\), supporting halfspaces for (28), and exact bandwidth floors from (25)–(27) / AoDT at fixed association.
 
-**Position LP (bandwidth frozen).** Maximize the first-order map of
-\(\sum_i a_{ij} B_{ij}^{(n)}\mathrm{SE}_{ij}(q_j)\) using the numerical
-Jacobian of the core channel. Constraints: field box,
-\(\|q_j-q_j^{(n)}\|_\infty\le\) `step_size` (default **1 m**), and the
-supporting halfspace for (28),
-\(u_{jl}\cdot(q_j-q_l)\ge\theta\). This LP is **not** a QoS certificate.
+A separate **bandwidth-only LP** at frozen \(q\) (`solve_bandwidth_at_fixed_q`) is still used for initialization, SCA-joint rematch candidates, placement baselines, and hand constructions — but not as the main SCA move.
 
-The CVXPY fallback used by unit tests takes the same Jacobian as a
-normalized gradient step instead of calling MOSEK for positions.
+**True feasibility gate.** A candidate \((q,B)\) is accepted only if it is feasible on the MATLAB-side copy of Eqs. (1)–(6)/(17) **and** the true sum rate improves by `improvement_tolerance`. After MATLAB returns, Python `evaluate()` is the published score and must also be clean. Rejected candidates never become the linearization point.
 
-**True feasibility gate.** A candidate \((q,B)\) is accepted only if it
-is feasible on the MATLAB-side copy of Eqs. (1)–(6)/(17) **and** the
-true sum rate improves by `improvement_tolerance`. After MATLAB returns,
-Python `evaluate()` is the published score and must also be clean.
-Rejected candidates never become the linearization point.
+**Bandwidth LP (geometry frozen).** When \(q\) is frozen, \(\mathrm{SE}_{ij}(q)\) is fixed and \(r_{ij}=B_{ij}\mathrm{SE}_{ij}(q)\) is linear in \(B_{ij}\). Maximize \(\sum a_{ij}\mathrm{SE}_{ij}B_{ij}\) subject to (26)–(27) and exact per-link floors from QoS and AoDT slack. With \(a,b\) fixed, \(Q_k\) is constant and \(S_i/(B_{ij}\mathrm{SE}_{ij})\le\mathrm{slack}_i\) reformulates to \(B_{ij}\ge S_i/(\mathrm{SE}_{ij}\,\mathrm{slack}_i)\) — an LP, not a joint Taylor map.
 
-**Bandwidth LP (geometry frozen).** \(\mathrm{SE}_{ij}(q)\) comes from
-Eqs. (1)–(6). Then \(r_{ij}=B_{ij}\mathrm{SE}_{ij}(q)\) is exactly
-linear in \(B_{ij}\). Maximize \(\sum a_{ij}\mathrm{SE}_{ij}B_{ij}\)
-subject to (26)–(27) and the exact floors below.
+Leftover spectrum on the largest-\(\mathrm{SE}\) associated link is an expected vertex of a linear sum-rate objective, not a modelling bug.
 
-**AoDT / QoS at fixed \(q\).** With \(a,b\) fixed, \(Q_k\) is constant.
-\(S_i/(B_{ij}\mathrm{SE}_{ij})\le\mathrm{slack}_i\) is **exactly**
-
-\[
-B_{ij}\ge\max\Bigl(\frac{R_{\min}}{\mathrm{SE}_{ij}(q)},\;
-\frac{S_i}{\mathrm{SE}_{ij}(q)\,\mathrm{slack}_i}\Bigr),
-\]
-
-where \(\mathrm{slack}_i=T_k-Q_k-\mathbf{1}_{\mathrm{fwd}}T_{\mathrm{u2u}}\).
-That is an LP, not `inv_pos` and not a joint Taylor of \((B,q)\).
-Process-level \(\max_i D_i\) is enforced by applying the floor to every
-member of \(N_k\).
-
-Leftover spectrum on the largest-\(\mathrm{SE}\) associated link is an
-expected vertex of a linear sum-rate objective, not a modelling bug.
+The CVXPY unit-test fallback may use a normalized gradient step instead of calling MOSEK when `solver=None`; that affects test speed only, not the joint-\((q,B)\) formulation above.
 
 ### 6.4 Initialization — IMPLEMENTATION CHOICE
 
@@ -506,10 +491,11 @@ when the **true** objective change after an accepted step is
 Also stop with **`STEP_SIZE_LIMIT`** if `accepted_steps == 0` at any
 non-`MAX_ITERATIONS` stop (including a stationary convex step, and
 including `step_size` still above `min_step_size`). **`CONVERGED`**
-requires `accepted_steps >= 1`. **`MAX_ITERATIONS`** only if the
-iteration cap is hit with remaining `step_size` still above
-`min_step_size`. A MOSEK `Solved` subproblem is **not** by itself
-convergence.
+requires `accepted_steps >= 1`. **`MAX_ITERATIONS`** if the iteration
+cap is hit with remaining `step_size` still above `min_step_size` —
+**including** the case `accepted_steps == 0` (Python `classify_stop_reason`
+does not remap that case to `STEP_SIZE_LIMIT`; see `docs/RESULTS.md` §6).
+A MOSEK `Solved` subproblem is **not** by itself convergence.
 
 Python `classify_stop_reason` and MATLAB `classify_stop_reason` in
 `matlab/sca_seq.m` implement **the same** rule.

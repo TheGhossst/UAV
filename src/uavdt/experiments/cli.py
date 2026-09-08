@@ -20,7 +20,7 @@ from uavdt.config import (
 from uavdt.experiments import run_one, run_seeds
 from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign
 from uavdt.experiments.grids import AXES
-from uavdt.experiments.methods import METHODS
+from uavdt.experiments.methods import KNOWN_METHODS
 from uavdt.experiments.spot import spot_validate_sca
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca import SCASettings, solve_sca
@@ -278,6 +278,58 @@ def cmd_sca(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sca_joint(args: argparse.Namespace) -> int:
+    from uavdt.sca_joint import solve_sca_joint
+
+    cfg = _cfg_from_args(args)
+    scenario = generate_scenario(args.seed, cfg)
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+    if solver in {"matlab", "MATLAB", "mosek", "MOSEK"}:
+        raise SystemExit("sca-joint is CVXPY-only; frozen SCA keeps the MATLAB path")
+    settings = SCASettings(
+        max_iterations=int(args.max_iterations),
+        epsilon=float(args.epsilon),
+        step_size_m=float(args.step_size),
+        solver=solver,
+        process_cohesive_candidate=bool(
+            getattr(args, "process_cohesive_candidate", False)
+        ),
+    )
+    result = solve_sca_joint(scenario, args.seed, settings=settings)
+    write_history(result, args.history_json)
+    write_history(result, args.history_csv)
+    ev = result.true_eval
+    c = ev.constraints
+    d = result.diagnostics
+    stop = str(d.get("stop_reason", ""))
+    print("method                sca_joint (methodology probe; not headline SCA)")
+    print(f"B_sys                 {_fmt_hz(cfg.b_sys_hz)}")
+    print(f"solver_status         {result.solver_status}")
+    print(f"n_iterations          {result.n_iterations}")
+    print(f"stop_reason           {stop}")
+    print(f"accepted_steps        {d.get('accepted_steps')}")
+    print(f"process_cohesive_cand {d.get('process_cohesive_candidate')}")
+    print(f"rematch_accepted      {d.get('rematch_accepted')}")
+    print(f"rematch_kinds         {d.get('rematch_kinds')}")
+    print(f"association_frozen    {d.get('association_init_equals_final')}")
+    print(f"processing_frozen     {d.get('processing_init_equals_final')}")
+    print(f"final_true_obj        {result.true_objective:.6g}")
+    print(f"true_sum_rate_Mbps    {ev.sum_rate_mbps:.6g}")
+    print(f"feasible              {ev.feasible}")
+    print(
+        "violations            "
+        f"qos={c.qos_violations} aodt={c.aodt_violations} "
+        f"sep={c.sep_violations} cpu={c.cpu_unstable_count} "
+        f"bw_excess_Hz={c.bw_excess_hz:.4g}"
+    )
+    print(f"wall_clock_s          {d.get('wall_clock_s')}")
+    print(f"history_json          {args.history_json}")
+    print(f"history_csv           {args.history_csv}")
+    return 0
+
+
 def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
     cfg = _cfg_from_args(args)
     solver = args.solver
@@ -298,8 +350,8 @@ def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
 def _parse_methods(raw: str) -> tuple[str, ...]:
     names = tuple(x.strip().lower() for x in raw.split(",") if x.strip())
     for n in names:
-        if n not in METHODS:
-            raise ValueError(f"unknown method {n!r}; expected {METHODS}")
+        if n not in KNOWN_METHODS:
+            raise ValueError(f"unknown method {n!r}; expected {KNOWN_METHODS}")
     return names
 
 
@@ -477,6 +529,33 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--history-csv", type=str, default="results/sca_history.csv")
     sc.set_defaults(func=cmd_sca)
 
+    sj = sub.add_parser(
+        "sca-joint",
+        help="SCA-joint probe: Algorithm 1 plus discrete a_ij/b_ij re-match",
+    )
+    _add_shared(sj)
+    sj.add_argument("--seed", type=int, default=1)
+    sj.add_argument("--max-iterations", type=int, default=30)
+    sj.add_argument("--epsilon", type=float, default=1e-4)
+    sj.add_argument("--step-size", type=float, default=20.0)
+    sj.add_argument(
+        "--solver",
+        type=str,
+        default="cvxpy",
+        help="CVXPY only (sca_joint has no MATLAB path)",
+    )
+    sj.add_argument("--history-json", type=str, default="results/sca_joint_history.json")
+    sj.add_argument("--history-csv", type=str, default="results/sca_joint_history.csv")
+    sj.add_argument(
+        "--process-cohesive-candidate",
+        action="store_true",
+        help=(
+            "Also try process-cohesive a_ij as a rematch candidate. "
+            "Default off keeps recorded best-SE-only SCA-joint runs."
+        ),
+    )
+    sj.set_defaults(func=cmd_sca_joint)
+
     dbg = sub.add_parser(
         "sca-seq-debug",
         help="Algorithm 1 SCA iteration log (true-feasible gate)",
@@ -509,7 +588,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint]. sca_joint is a probe, not the headline method.",
     )
     camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
     camp.add_argument("--seed-start", type=int, default=1)

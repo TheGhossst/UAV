@@ -7,7 +7,7 @@
 | -------------------------- | -------------------------------------------------------------------------------------------------- |
 | **Scope**                  | Our experimental outcomes on the fresh `uavdt` simulator                                           |
 | **Not in scope**           | Numeric comparison of Mbps figures to the paper’s §VII plots                                       |
-| **Last full regeneration** | 2026-09-07 (25% restored as primary cap; 15% kept as tighter-cap sensitivity) |
+| **Last full regeneration** | 2026-09-08 (full pipeline: pytest 125/125, primary + cap15 + 500 m campaigns, SCA-joint + tk08 follow-ups, fig11, spot-validate, analysis/plots) |
 | **Primary campaign**       | `results/campaign_8.8mhz_cap25_si12k.json` (100 m, 25% per-link cap)           |
 | **Tighter-cap sensitivity**| `results/campaign_8.8mhz_cap15_n20.json` (100 m, 15% per-link cap)             |
 | **Paper-field test**       | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m, 25% cap)               |
@@ -30,10 +30,11 @@
 10. [Known limitations](#6-known-limitations-this-milestone)
 11. [Paper field 500 m](#26-paper-field-500--500-m-88-mhz-25-cap)
 12. [Primary campaign 25%](#27-primary-campaign-88-mhz-25-cap)
-13. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
-14. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
-15. [How to regenerate](#9-how-to-regenerate)
-16. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
+13. [SCA-joint probe](#28-sca-joint-methodology-probe)
+14. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
+15. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
+16. [How to regenerate](#9-how-to-regenerate)
+17. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
 
 ---
 
@@ -76,11 +77,28 @@ The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-fiel
 
 ### Last regeneration
 
-**2026-09-07** — restore 25% as primary (`campaign_8.8mhz_cap25_si12k.json`); keep 15% as tighter-cap sensitivity (`campaign_8.8mhz_cap15_n20.json`); 500 m remains a 25% field test. Mechanism diagnostics: `results/cap_binding_diagnostic.json`, `results/se_spread_by_j.json`.
+**2026-09-08 (full pipeline)** — Re-ran the complete regeneration ledger ([§9](#9-how-to-regenerate)) on current code:
 
-**2026-09-05** — 100 m 25% campaign and analysis (primary):
+- `pytest` **125/125** (includes `test_sca_joint.py` and other SCA-joint coverage)
+- `check_bsys_20khz.py` — 0% feasible at 100 m and 500 m (unchanged)
+- Primary `campaign_8.8mhz_cap25_si12k.json` + init-repair + paired winrate/losses
+- Cap15 `campaign_8.8mhz_cap15_n20.json` + fig11 + paired winrate
+- 500 m `campaign_8.8mhz_cap25_si12k_500m.json` + figures
+- `fig11_8.8mhz_cap25_si12k.json` — **50/50** sensibility checks pass
+- `spot-validate` — CVXPY vs MATLAB `agreement: ok` (no cap + 25% cap)
+- SCA-joint probe + tk08 follow-ups (cohesive **20/20**, construction **40/40**, tradeoff gap mean **0.586** Mbps)
+- `analyze_campaigns.py` + `plot_paper_figures.py` (primary, cap15, 500 m)
+- Bandwidth preset sweep (`run_all_bandwidth_campaigns.ps1`) — Sep 7 artifacts retained; numbers match fresh primary run
 
-- `pytest` **108/108**
+One-command replay: `scripts/run_full_regeneration.ps1` (adds bandwidth sweep if uncommented).
+
+**2026-09-08 (earlier)** — T_k=0.8 s audit trail closed: hand construction → best-SE joint null → full-sweep null → process-cohesive candidate **20/20** → construction **40/40** → sync tradeoff gap **0.59 Mbps** mean (median 0.57, 40 geometries). See [§2.8](#28-sca-joint-methodology-probe).
+
+**2026-09-07** — restore 25% as primary; keep 15% as tighter-cap sensitivity; 500 m field test. Mechanism diagnostics: `cap_binding_diagnostic.json`, `se_spread_by_j.json`.
+
+**2026-09-05** — first 100 m 25% campaign and analysis:
+
+- `pytest` **108/108** *(superseded by 125/125 after SCA-joint tests)*
 - Primary campaign `campaign_8.8mhz_cap25_si12k.json` (all axes, 20 seeds, CVXPY)
 - `fig11_8.8mhz_cap25_si12k.json`; spot-validate (8.8 MHz no cap + cap 25%)
 - Full bandwidth preset sweep: `scripts/run_all_bandwidth_campaigns.ps1`
@@ -153,6 +171,19 @@ Invert Eq. (6) under an equal per-link split, `B_i = R / (I \log_2(1+\mathrm{SNR
 
 At a fantasy `\mathrm{SNR}=10^{15}` the stated 20 kHz *floor* would suffice (`B_i` drops to 9–18 kHz). That is why Reading B is not a physical impossibility in the same parameter-free sense as Reading A. It *is* an unstated parameter **21–43×** the table row on the radio Table II actually writes (`\mathrm{SNR}\approx 1`), or a hidden (27) cap of **~7–14 MHz** (hundreds of times 20 kHz as a pool). Neither is a units typo of 20{,}000 Hz.
 
+### 0.2 Sensitivity: radians vs degrees in Eq. (4)
+
+Table II gives `a = 9.61`, `b = 0.16` in the usual Al-Hourani **degree** convention, but Eq. (4) writes \(\theta=\arcsin(H/d_{ij})\) with no conversion. This repo defaults to **radians** (`los_angle_unit="rad"`); `deg` is an opt-in alternate reading.
+
+**Sensitivity check (ran 2026-09-08).** Same zenith link and default campaign point (J = 3, I = 10, seed 1, 8.8 MHz, 25% cap):
+
+| `los_angle_unit` | Zenith SNR | Default-point sum rate |
+| --- | --- | --- |
+| **rad** (default) | **1.03** | **8.91 Mbps** |
+| deg | 90.5 | 57.23 Mbps |
+
+Only the radian reading is consistent with §0.1 (\(\mathrm{SNR}\approx 1\) at zenith) and the feasible-axis Mbps tables. The degree reading would make every headline rate meaningless. **Adopted reading: radians.** Do not compare to papers that silently apply a degree conversion without stating it.
+
 ### 0.3 Control: paper 500 × 500 m field, still 20 kHz
 
 A critic can object that the infeasible 20 kHz result was obtained on a **100 × 100 m** field, so two things were changed at once.
@@ -213,6 +244,15 @@ The 500 m drop (0.020 → 0.013 Mbps) is equal-share averaging over worse links,
 
 SCA optimizes (17) as written, so the objective does **not** behave the way the narrative figure describes. The hetero−slow gap **grew** under settled `S_i`/`L` (see [§8.1](#81-fig-11-i--10-k-means-88-mhz-25-cap-20-seeds)).
 
+### Third audit finding: Eq. (4) angle unit
+
+| Aspect | Status |
+| --- | --- |
+| **Ambiguity** | Table II `a`, `b` are degree-based Al-Hourani constants; Eq. (4) writes \(\arcsin(H/d)\) with no conversion |
+| **Sensitivity** | **Checked** — rad: zenith SNR **1.03**, J = 3 seed 1 **8.91 Mbps**; deg: SNR **90.5**, **57.23 Mbps** |
+| **Adopted reading** | **Radians** (`los_angle_unit="rad"`, default). Degree reading is inconsistent with §0 and all headline tables |
+| **Detail** | [§0.2](#02-sensitivity-radians-vs-degrees-in-eq-4); `docs/REPRODUCTION.md` §3 |
+
 ---
 
 ## Campaign inventory
@@ -228,7 +268,7 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/campaign_2.4mhz.json`                  | 2.4 MHz     | none         | 20     | Mid-bandwidth, saturated                                          |
 | `results/campaign_2.4mhz_cap25.json`            | 2.4 MHz     | 25%          | 20     | Mid-bandwidth, differentiated                                     |
 | `results/campaign_8.8mhz_n20.json`              | 8.8 MHz     | none         | 20     | Saturated control (2026-09-05 refresh)                            |
-| `**results/campaign_8.8mhz_cap25_si12k.json**`  | **8.8 MHz** | **25%**      | **20** | **Primary campaign** (100 × 100 m, leftover-dump stress test)     |
+| `results/campaign_8.8mhz_cap25_si12k.json`  | **8.8 MHz** | **25%**      | **20** | **Primary campaign** (100 × 100 m, leftover-dump stress test)     |
 | `results/campaign_8.8mhz_cap15_n20.json`        | 8.8 MHz     | 15%          | 20     | Tighter-cap **sensitivity** (100 m; search-selected)              |
 | `results/campaign_8.8mhz_cap25_si12k_500m.json` | 8.8 MHz     | 25%          | 20     | **Paper-field test** (500 × 500 m, same 25% primary cap)          |
 | `results/campaign_8.8mhz_cap25_n20.json`        | 8.8 MHz     | 25%          | 20     | Same 25% config; output of `run_all_bandwidth_campaigns.ps1`      |
@@ -253,8 +293,17 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/campaign_8.8mhz_cap15_n20_paired.json` / `.csv`   | Paired SCA vs baselines (15% sensitivity)           |
 | `results/campaign_8.8mhz_cap15_n20_losses.json`            | Loss-seed forensics (J = 3, 15% sensitivity)        |
 | `results/compare_cap15_vs_cap25.json`                      | Side-by-side 15% vs 25%                             |
-| `results/cap_binding_diagnostic.json`                      | Same-geometry leftover-dump / cap-binding audit     |
+| `results/cap_binding_diagnostic.json`                      | Leftover-dump / cap-binding audit (J=1–5)            |
+| `results/bw_cap_by_J_grid.json`                            | 30-cell cap×J search (6 caps × J=1–5; single FDR)    |
+| `results/bw_boundary_refine_j3.json`                       | J=3 bisection 23.5–24.5% + 33-test FDR + variance audit |
 | `results/se_spread_by_j.json`                              | SE max/mean/min vs J (why the gap fades)            |
+| `results/campaign_8.8mhz_cap25_si12k_scajoint.json`        | SCA-joint probe (full axes; method=`sca_joint` only) |
+| `results/tk08_scajoint_feasibility.json`                   | T_k=0.8 s frozen SCA vs best-SE SCA-joint (20 seeds) |
+| `results/tk08_scajoint_cohesive.json`                      | T_k=0.8 s SCA-joint + process-cohesive candidate (20 seeds) |
+| `results/tk08_cohesive_construction.json`                  | T_k=0.8 s centroid-cohesive construction (seeds 1–40) |
+| `results/tk08_sync_tradeoff_gap.json`                        | 40-geometry rate-for-synchronization gap (fixed k-means q) |
+| `results/sca_joint_vs_frozen.json`                         | Sweep comparison vs frozen SCA (Δ>0.05 Mbps bar)     |
+| `results/sca_joint_default_runtime.json`                   | Wall-clock / iterations at default J=3               |
 | `results/spot_validate_8.8mhz.json`                        | CVXPY vs MATLAB MOSEK (`agreement: ok`)             |
 | `results/fig11_8.8mhz_cap25_si12k.json` / `.csv`           | Fig. 11 λ patterns (primary; equal-share)           |
 | `results/fig11_8.8mhz_cap15.json` / `.csv`                 | Fig. 11 (15% sensitivity; numerically identical)    |
@@ -262,7 +311,7 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/figures/`                                         | Primary plots (25%); `figures/cap15/` holds 15%     |
 
 
-**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`
+**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
 
 ---
 
@@ -441,9 +490,11 @@ Campaign Mbps means are `mean(all 20 seeds)` — `campaign._summarize` does not 
 
 **Analysis**
 
-- T_k = 0.8 s is **0% feasible** for SCA, k-means, and random under frozen nearest-association (PSO 2/20). That 0% **does not survive a different discrete init** — do not publish it as a Problem (P) limit.
+- T_k = 0.8 s is **0% feasible** for SCA, k-means, and random under frozen nearest-association (PSO 2/20). **Do not publish that 0% as a Problem (P) limit.**
 - Eq. (17) slack: T_k - Q - T_{\mathrm{u2u}} on forwarded links. With \lambda=2/s, |N_k|=5, \mu\approx 53.3/s, Q\approx 0.594 s → Q+T_{\mathrm{u2u}}\approx 0.894 s **> 0.8 s** even at infinite rate.
-- Legal alternatives exist: J = 1 (20/20 feasible); process-cohesive a_{ij} on same k-means positions (20/20); PSO 2/20 by parking both groups on one UAV.
+- The same 20 campaign seeds, and 20 held-out geometries (seeds 21–40), admit a legal assignment at the **same k-means \(q\)**: put all of \(N_k\) on one UAV (process-cohesive \(a_{ij}\)). That construction is feasible **40/40** (`tk08_cohesive_construction.json`). Nearest-UAV stays **0/40** (bandwidth LP infeasible; upload slack \(T_k-Q-T_{\mathrm{u2u}}=-0.094\) s). J = 1 is also 20/20 (no other UAV to forward to). PSO is 2/20 by parking both groups on one UAV.
+- Letting sequential SCA rematch \(a_{ij}\) to the current best-SE UAV does **not** find that map (§2.8): frozen SCA and best-SE SCA-joint are both **0/20** at T_k = 0.8 s. Best-SE coincides with nearest at the infeasible init, so that discrete step is a no-op.
+- Adding process-cohesive grouping as a **second rematch candidate** does find it: SCA-joint is then **20/20** feasible (§2.8). That is a probe flag, not the headline solver. The radio cost of meeting \(T_k=0.8\) s via grouping is **~0.6 Mbps** median at fixed \(q\) across **40/40** geometries (range 0.29–0.98; §I accuracy–synchronization tradeoff).
 - For T_k ≥ 1.2 s the comm objective rises toward the default plateau.
 
 ### 2.5 Fig. 10 analogue — UAV CPU f_j (I = 10, J = 3)
@@ -494,7 +545,7 @@ All methods **100% feasible** at J = 3 on both fields.
 - SCA leads at every J; the gap vs k-means is **largest at J = 3** (~0.83 Mbps) where placement and bandwidth allocation matter most on a large field.
 - At J = 1, PSO nearly matches SCA (~6.02 vs 6.03 Mbps); k-means lags (~4.58 Mbps).
 - I = 32: random drops to **95%** feasible (one seed fails QoS/AoDT); SCA/k-means/PSO stay 100%.
-- T_k = 0.8 s remains **0% feasible** for all methods (same frozen-init artefact as §2.4).
+- T_k = 0.8 s remains **0% feasible** for all methods under nearest-a (same discrete-init artefact as §2.4 / §2.8; not a Problem (P) limit).
 - Method ranking is unchanged: **SCA > PSO ≈ random > k-means** at 500 m, with larger separations than at 100 m.
 
 Plot: `python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m`
@@ -519,6 +570,154 @@ At default J = 3, SCA vs random is **not** significant (p = 0.123). That does no
 
 
 Random drops the most when the cap tightens; SCA’s ranking edge **widens** at 15%. Paired vs-random at 25%: +0.019 ± 0.042 Mbps, 15/20, Wilcoxon p = 0.123. Full 25% axis tables remain in the primary campaign JSON; do not mix them with the 15% tables in §2.1–2.5.
+
+#### Cap × J search and boundary refinement
+
+**Question:** is 15% “significant vs random” a general property of any cap, or a search-selected cell in a larger landscape?
+
+**What ran.** Exploratory **30-cell** grid: caps **15%, 18%, 20%, 23%, 25%, 30%** × **J = 1–5**, 20 seeds each, SCA vs random at 8.8 MHz (`bw_cap_by_J_grid.json`). One **BH-FDR** correction across all 30 Wilcoxon p-values. Practical-effect audit: **Δ > 0.05 Mbps** (same bar as elsewhere). Mechanism audit: frozen-geometry leftover-dump binding (`cap_binding_diagnostic.json`). J = 3 **bisection** at **23.5%, 24%, 24.5%** with the 30 grid points pooled into a **33-test FDR** (`bw_boundary_refine_j3.json`). Loose-cap **40%/50%** J = 3 rows in the boundary file are variance diagnostics only (excluded from the 33-test FDR).
+
+**Landscape (not two endpoints).** Significance vs random is **U-shaped in cap%**, not monotonic:
+
+| Cap | J = 3 Δ (Mbps) | J = 3 FDR q | FDR-sig at **all** J = 1–5? | J = 3 clears Δ > 0.05? |
+| --- | --- | --- | --- | --- |
+| 15% | +0.129 | 8.2×10⁻⁶ | **Yes** | **Yes** |
+| 18% | +0.085 | 8.2×10⁻⁶ | No | Yes |
+| 20% | +0.060 | 1.1×10⁻⁵ | No | Yes |
+| 23% | +0.035 | 8.8×10⁻⁴ | No | No |
+| **25%** (primary) | +0.019 | 0.137 | No | No |
+| 30% | +0.011 | 0.032 | **Yes** | No |
+
+Only **15%** and **30%** are FDR-significant at every J simultaneously — but for opposite reasons. At **15%** the cap forces leftover spectrum across ~6 associated links (mean `n_at_cap` = 6 at J = 3), so placement and B allocation matter; Δ is large at low J and shrinks at J = 4–5 (0.047 / 0.016 Mbps — below the practical bar). At **30%** the raw gap stays **< 0.02 Mbps** at J = 3 while `std(Δ)` falls (0.042 → 0.027 Mbps); standardized effect `Δ/std` stays ~0.4. Later p &lt; 0.05 values in the 25–50% band are **variance shrinkage on an already-tiny gap**, not effect-size recovery (`bw_boundary_refine_j3.json` paragraph).
+
+**J = 3 crossover (precise).** After 33-test FDR, significance holds through **23.5%** (q = 0.0052, Δ = +0.029 Mbps) and turns off at **24.0%** (q = 0.101, Δ = +0.022 Mbps). That brackets the switch between “tight-cap regime” and “primary 25% leftover-dump stress test.”
+
+**Practical-effect verdict.** **No cap** survives “FDR-significant **and** Δ > 0.05 Mbps at all J = 1–5.” 15% was retained as a **tighter-cap sensitivity** (search-selected), not as an independently chosen primary. **25%** stays primary because it was adopted as the leftover-dump stress test **before** the grid search, and because vs-random at default J = 3 is honestly n.s. (p = 0.123) — not because the grid “picked” 25%.
+
+**Why this matters.** Without this subsection, the doc reads like “we tried 15% and 25%.” The actual finding is a **characterized cap landscape**: tight caps concentrate the LP onto more links (real effect); loose caps let the LP dump on one link (tiny Δ, variance-driven significance); the primary 25% point sits in the middle where effect size is negligible even when k-means/PSO comparisons remain significant.
+
+### 2.8 SCA-joint methodology probe
+
+**Primary question (pre-registered):** is freezing \(a_{ij}\) / \(b_{ij}\) after nearest-UAV init a limitation of Problem (P), or only of this sequential SCA solver?
+
+**What ran.** A separate solver (`uavdt.sca_joint`, campaign tag `method="sca_joint"`) keeps Algorithm 1’s joint Taylor-LP on \((q,B)\), then at each outer iteration proposes discrete re-associations and `cpu_stable_processing` for (23)/(24). The discrete update is accepted only if `evaluate()` becomes newly feasible or the true sum rate improves (same gate as the \(q,B\) step). Frozen SCA was not modified. Headline files tagged `sca` were not overwritten. Default rematch is best-SE only; later steps add an optional process-cohesive candidate and a 40-seed construction sweep.
+
+**Sources:** `results/tk08_scajoint_feasibility.json`, `results/tk08_scajoint_cohesive.json`, `results/tk08_cohesive_construction.json`, `results/tk08_sync_tradeoff_gap.json`, `results/campaign_8.8mhz_cap25_si12k_scajoint.json`, `results/sca_joint_vs_frozen.json`, `results/sca_joint_default_runtime.json`. Frozen numbers are from `campaign_8.8mhz_cap25_si12k.json`. Practical-effect bar: **Δ > 0.05 Mbps**. SCA-joint vs random/k-means/PSO is **not** a replacement headline comparison.
+
+#### Investigation sequence (T_k = 0.8 s)
+
+The Fig. 9 row at \(T_k=0.8\) s looked like a model limit (0% feasible for SCA, k-means, random). The work below is the audit trail — each step either falsified a hypothesis or narrowed it.
+
+| Step | Suspicion / test | Outcome | Artifact |
+| --- | --- | --- | --- |
+| **1** | Campaign 0% means Problem (P) is infeasible at \(T_k=0.8\) s | **Falsified.** Hand construction: put all of \(N_k\) on one UAV at the same k-means \(q\) → feasible on campaign seeds | `tk08_scajoint_feasibility.json` (side field) |
+| **2** | Unfreezing \(a_{ij}\) with best-SE rematch will find that map | **Null.** SCA-joint (best-SE only) **0/20**; best-SE = nearest at init, so rematch is a no-op; UAVs never move | `tk08_scajoint_feasibility.json` |
+| **3** | Maybe association matters on the full axis sweep | **Null for Mbps.** Best-SE SCA-joint ≥ frozen SCA everywhere; max Δ **+0.006 Mbps**; **0/29** feasibility differences on feasible points | `campaign_8.8mhz_cap25_si12k_scajoint.json`, `sca_joint_vs_frozen.json` |
+| **4** | Refine: blocker is “greedy never proposes grouping,” not LP / evaluate bug | **Targeted test.** One extra rematch candidate: process-cohesive \(a_{ij}\) beside best-SE | (design) |
+| **5** | Process-cohesive candidate inside SCA-joint | **Confirmed.** **20/20** feasible; every seed accepts `process_cohesive`; LP and `evaluate()` were not the blocker | `tk08_scajoint_cohesive.json` |
+| **6** | Single-seed construction might be a geometry accident | **Generalized.** Centroid-cohesive construction feasible **40/40** (seeds 1–20 + held-out 21–40); nearest stays **0/40** | `tk08_cohesive_construction.json` |
+| **7** | Does the throughput cost of grouping also generalize? | **Yes, with spread explained by SE loss.** At fixed k-means \(q\), best-SE @ \(T_k=1.2\) s minus cohesive @ \(T_k=0.8\) s: mean **0.59 Mbps**, median **0.57**, range **0.29–0.98** (40/40). Spread tracks \(\sum \Delta\mathrm{SE}\) (\(r\approx 0.92\)), not count of IoTs off best link (\(r\approx 0.14\)) | `tk08_sync_tradeoff_gap.json` |
+
+**Mechanistic thread.** Splitting \(N_k\) across UAVs forces \(T_{\mathrm{u2u}}\) on forwarded links; with settled \(\lambda\) and \(|N_k|=5\), \(Q+T_{\mathrm{u2u}}\approx 0.894>0.8\) even at infinite rate — so nearest-UAV init cannot pass AoDT. Process-cohesive assignment removes forwarding (\(T_k-Q=+0.206\) s slack on every geometry). Best-SE rematch never proposes that map because per-IoT SE ranking coincides with nearest at the infeasible init. Adding the cohesive candidate is the direct test of that story; it passes.
+
+#### Summary at T_k = 0.8 s (I = 10, J = 3)
+
+| Method | Feasible | Mean Mbps | Process-cohesive \(a_{ij}\) |
+| --- | --- | --- | --- |
+| Frozen SCA | **0/20** | 8.909 (infeasible diagnostic) | 0/20 |
+| SCA-joint (best-SE only) | **0/20** | 8.909 (infeasible diagnostic) | 0/20 |
+| SCA-joint + process-cohesive candidate | **20/20** | **8.393** (feasible) | 20/20 |
+| Hand construction at k-means \(q\) | **40/40** (20 campaign + 20 held-out) | 8.275 at frozen \(q\) | 40/40 |
+
+The two Mbps columns are **not** a head-to-head ranking: 8.909 is the mean of infeasible nearest-UAV scores (AoDT fails; sum rate is still computed). 8.393 is the mean of **feasible** scores after accepting process-cohesive grouping and running the \((q,B)\) loop.
+
+#### Why the feasible cohesive rate is lower — and what it means for §I
+
+Readers will notice 8.393 < 8.909 and wonder whether feasibility was bought cheaply. Two separate points:
+
+1. **Do not compare those two means directly** — one averages failing runs, the other feasible converged solutions.
+2. **There is a real, quantified radio-efficiency cost to grouping** — and it is a direct instance of the accuracy–synchronization tradeoff the paper motivates in **§I** (higher communication throughput vs. meeting a tight process AoDT deadline).
+
+**Definition (fixed k-means \(q\), association only).** For each seed, compare two feasible frozen-\(q\) points on the same IoT placement: **best-SE** \(a_{ij}\) at \(T_k=1.2\) s (AoDT feasible under per-IoT radio gain) vs **process-cohesive** \(a_{ij}\) at \(T_k=0.8\) s (AoDT feasible under no-forwarding synchronization). The gap is the throughput “price” of meeting the tighter deadline via grouping rather than splitting \(N_k\).
+
+**40-geometry check** (`tk08_sync_tradeoff_gap.json`; seeds 1–20 campaign + 21–40 held-out):
+
+| Statistic | Gap (Mbps) |
+| --- | --- |
+| Mean | **0.59** |
+| Median (p50) | **0.57** |
+| Std | 0.16 |
+| Range | 0.29 – 0.98 |
+| p10 – p90 | 0.38 – 0.81 |
+| Campaign mean (seeds 1–20) | 0.60 |
+| Held-out mean (seeds 21–40) | 0.57 |
+| In [0.5, 0.7] Mbps | 18 / 40 (45%) |
+
+The magnitude **generalizes** with the feasibility result: both panels agree, and the median stays near **~0.6 Mbps**. It is **not** a single fixed constant. Quote **~0.6 Mbps (median ~0.57, p10–p90 ~0.38–0.81)** rather than treating 0.60 as exact.
+
+**What drives the spread (checked).** Cohesive grouping moves **3–8 IoTs per seed** off their best-SE UAV (mean **4.9**). That count alone does **not** predict the gap (\(r\approx 0.14\)). The gap tracks **how much spectral efficiency is sacrificed**: \(\sum_i(\mathrm{SE}_{ij}^{\mathrm{coh}}-\mathrm{SE}_{ij}^{\mathrm{best}})\) correlates with gap at **\(r\approx 0.92\)**. Two seeds make the distinction clear:
+
+- **Seed 16** (max gap **0.98 Mbps**): only **6/10** IoTs leave best-SE, but several land on much worse links (\(\Delta\mathrm{SE}\approx -0.27\) to \(-0.35\) per IoT; total \(\Delta\sum\mathrm{SE}=-1.43\)).
+- **Seed 23** (only **0.47 Mbps** despite **8/10** off best): every moved IoT’s alternative link is nearly as good (\(\Delta\mathrm{SE}\) mostly \(-0.03\) to \(-0.15\)).
+
+So the tail is not an outlier artefact or a second hidden mechanism — it is the same radio-geometry cost, with magnitude set by **how bad the cohesive links are**, not simply how many devices move. Nothing else is needed to explain the 0.29–0.98 Mbps range.
+
+**Paper framing.** This is not a solver-debugging footnote. It is an **experimental confirmation inside our reproduction** of the paper’s central conceptual claim: you can gain synchronization (satisfy Eq. (17) at \(T_k=0.8\) s by keeping each \(N_k\) on one UAV) only by giving up roughly half a megabit per second of sum rate at the same deployment geometry. Nearest/best-SE association maximizes the communication objective but fails the deadline; process-cohesive association pays the radio tax and passes. That is the rate-vs-AoDT tension stated in §I, observed quantitatively at the Fig. 9 edge case.
+
+The SCA-joint solver mean (8.393 Mbps) is slightly **above** the frozen-\(q\) cohesive construction mean (8.275 Mbps) because UAVs move after grouping; association stays process-cohesive.
+
+#### Full sweep vs frozen SCA (best-SE rematch; 8.8 MHz, 25% cap, 20 seeds)
+
+Step 3 above: pre-registered SCA-joint ≥ frozen SCA everywhere. **Holds** under the 0.05 Mbps bar (0/29 points with joint lower; 0/29 practical rate gaps; 0/29 feasibility differences on feasible-axis points). Largest Δ is **+0.006 Mbps** at default J = 3. Rematch *does* fire after UAVs move (463 accepted discrete updates over 580 seeds; association changed on 198/580), but the rate effect stays well below the bar.
+
+| Sweep point | Frozen SCA Mbps / feas. | SCA-joint Mbps / feas. | Δ Mbps | Verdict |
+| --- | --- | --- | --- | --- |
+| J = 1 | 8.758 / 100% | 8.758 / 100% | +0.000 | negligible |
+| J = 2 | 8.886 / 100% | 8.889 / 100% | +0.003 | negligible |
+| J = 3 | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| J = 4 | 8.971 / 100% | 8.972 / 100% | +0.001 | negligible |
+| J = 5 | 8.977 / 100% | 8.978 / 100% | +0.000 | negligible |
+| I = 10 | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| I = 16 | 8.942 / 100% | 8.943 / 100% | +0.001 | negligible |
+| I = 20 | 8.934 / 100% | 8.936 / 100% | +0.002 | negligible |
+| I = 24 | 8.925 / 100% | 8.928 / 100% | +0.003 | negligible |
+| I = 28 | 8.919 / 100% | 8.919 / 100% | +0.000 | negligible |
+| I = 32 | 8.906 / 100% | 8.907 / 100% | +0.001 | negligible |
+| λ = 1.0 /s | 8.944 / 100% | 8.947 / 100% | +0.003 | negligible |
+| λ = 1.5 /s | 8.947 / 100% | 8.951 / 100% | +0.004 | negligible |
+| λ = 2.0 /s | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| λ = 2.5 /s | 8.947 / 100% | 8.952 / 100% | +0.005 | negligible |
+| λ = 3.0 /s | 8.948 / 100% | 8.952 / 100% | +0.005 | negligible |
+| λ = 3.5 /s | 8.948 / 100% | 8.953 / 100% | +0.005 | negligible |
+| T_k = 0.8 s | 8.909 / **0%** | 8.909 / **0%** | +0.000 | negligible |
+| T_k = 1.2 s | 8.889 / 100% | 8.894 / 100% | +0.006 | negligible |
+| T_k = 1.6 s | 8.925 / 100% | 8.930 / 100% | +0.005 | negligible |
+| T_k = 2.0 s | 8.938 / 100% | 8.942 / 100% | +0.003 | negligible |
+| T_k = 2.4 s | 8.945 / 100% | 8.948 / 100% | +0.003 | negligible |
+| T_k = 2.8 s | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| T_k = 3.0 s | 8.948 / 100% | 8.953 / 100% | +0.005 | negligible |
+| f_j = 0.5×10⁸ | 8.946 / 100% | 8.949 / 100% | +0.002 | negligible |
+| f_j = 1.0×10⁸ | 8.948 / 100% | 8.952 / 100% | +0.004 | negligible |
+| f_j = 1.5×10⁸ | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| f_j = 2.0×10⁸ | 8.946 / 100% | 8.952 / 100% | +0.006 | negligible |
+| f_j = 2.5×10⁸ | 8.947 / 100% | 8.953 / 100% | +0.006 | negligible |
+
+Duplicate default-scenario rows (J = 3 / I = 10 / λ = 2 / T_k = 2.8 / f_j = 2×10⁸) are independent re-solves of the same 20 seeds; they agree. The T_k = 0.8 s row is the **best-SE** SCA-joint campaign (0/20). The cohesive-candidate follow-up (20/20) is a separate file and is not mixed into this table.
+
+**Verdict on the story.** The sequence above closes the T_k = 0.8 s false alarm: Problem (P) is feasible (40/40 construction); sequential SCA’s 0% is a nearest/best-SE proposal failure, confirmed when one cohesive candidate recovers 20/20. The throughput cost of synchronization generalizes too: **~0.6 Mbps** median at fixed \(q\) across 40 geometries (§I tradeoff, not a solver artifact). On every other sweep point, best-SE rematch does not move the headline (max Δ **+0.006 Mbps**). Frozen nearest-UAV association was costing the *model* claim at T_k = 0.8 s, not the Mbps tables. The cohesive rematch flag is a hypothesis test, not a headline solver. TD3’s binaries-frozen decision is independent of this probe.
+
+#### Wall-clock / iterations at the default point (TD3 write-up)
+
+Paper Fig. 5 flags SCA’s iteration/scalability cost as the gap TD3 is meant to close. Adding a discrete re-match was expected to make that worse.
+
+| | Frozen SCA | SCA-joint | Ratio (joint / frozen) |
+| --- | --- | --- | --- |
+| Mean wall-clock (20 seeds) | 0.891 s | 0.888 s | **1.00×** |
+| Mean outer iterations | 27.7 | 27.9 | 1.01× |
+| Mean Mbps | 8.946 | 8.952 | — |
+| Feasible | 20/20 | 20/20 | — |
+
+The extra work is an \(O(IJ)\) SE argmax plus an occasional frozen-\(q\) bandwidth LP when the ranking actually changes. At I = 10, J = 3 that is lost in the noise of the joint Taylor LP (~28 iterations, ~0.9 s). SCA’s scalability weakness for a later TD3 comparison remains the **convexified (q, B) loop**, not this greedy discrete search. The process-cohesive candidate is one extra frozen-\(q\) LP per rematch attempt; at T_k = 0.8 s that probe averaged **1.23 s / 24.7 iters** because it actually entered the \((q,B)\) loop after grouping. That is still the convex loop, not a combinatorial association search.
 
 ---
 
@@ -630,7 +829,7 @@ Differences are **path-dependent** (MATLAB sometimes takes more accepted positio
 | Rates ≤ bandwidth ceiling           | Yes — ~8.97 Mbps (no cap), ~8.90 (cap15), ~8.95 (cap25), ~2.43 at 2.4 MHz |
 | SCA best on feasible points (mean)  | Yes                                                             |
 | λ / CPU vary slightly when feasible | Yes — < 0.03 Mbps                                               |
-| T_k = 0.8 infeasible                | **No** as a model limit — 0% under frozen nearest-a only (§2.4) |
+| T_k = 0.8 infeasible                | **No** as a model limit — process-cohesive \(a_{ij}\) feasible **40/40** at k-means \(q\) (seeds 1–40); frozen SCA and best-SE SCA-joint **0/20**; SCA-joint + cohesive candidate **20/20** (§2.4, §2.8, §6) |
 | More UAVs help under cap (J = 1→3)  | Yes                                                             |
 | Method collapse without cap         | Yes — expected saturation                                       |
 | Paired stats + FDR documented       | Yes                                                             |
@@ -644,23 +843,37 @@ Differences are **path-dependent** (MATLAB sometimes takes more accepted positio
 
 ## 6. Known limitations (this milestone)
 
-Three published-looking “infeasibility” claims were artifacts. One remaining restriction is real but scoped to **this sequential solver**, not Problem (P).
+Three published-looking “infeasibility” claims were artifacts. **All three are closed** with campaign-scale evidence. Frozen nearest-UAV \(a_{ij}\) is not an open model question.
 
 ### False alarms *(resolved — do not publish as model limits)*
 
 
-| #   | Claim that looked like a model limit                     | What it actually was                                       | Status                                                                         |
-| --- | -------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| #   | Claim that looked like a model limit                     | What it actually was                                       | Status |
+| --- | -------------------------------------------------------- | ---------------------------------------------------------- | ------ |
 | 1   | Settled S_i/L vs placeholders: AoDT not binding, μ=200/s | External task size/cycles were placeholders                | **Resolved** — S_i=12,000 bytes, L=3.75×10⁶, μ≈53.3/s; AoDT binds at T_k=2.8 s |
-| 2   | I = 28–32 and f_j=0.5×10⁸ “infeasible” (55/60/65%)       | Majority-of-association b_ij put both processes on one UAV | **Resolved** — rematch process→UAV when (24) fails; 20/20 feasible             |
-| 3   | T_k=0.8 s “too tight for the model” (0%)                 | Frozen nearest a_ij splits N_k; Q+T_u2u≈0.894>0.8          | **Resolved as model claim** — legal assignments exist (§2.4)                   |
+| 2   | I = 28–32 and f_j=0.5×10⁸ “infeasible” (55/60/65%)       | Majority-of-association b_ij put both processes on one UAV | **Resolved** — rematch process→UAV when (24) fails; 20/20 feasible |
+| 3   | T_k=0.8 s “too tight for the model” (0%)                 | Frozen nearest \(a_{ij}\) splits \(N_k\); forwarded links have \(Q+T_{\mathrm{u2u}}\approx 0.894>0.8\) even at infinite rate | **Resolved as a model claim.** Centroid-cohesive \(a_{ij}\) at k-means \(q\): **40/40** feasible (campaign 1–20 + held-out 21–40; `tk08_cohesive_construction.json`). J = 1: 20/20. Frozen SCA and best-SE SCA-joint: **0/20**. SCA-joint + process-cohesive rematch candidate: **20/20** (`tk08_scajoint_cohesive.json`). The campaign 0% is the discrete init, not Problem (P). |
 
 
-### Real, scoped limitation *(this solver)*
+### Sequential SCA and association *(measured)*
 
-**Frozen discrete a_ij after nearest-UAV init.** Sequential SCA never rematches association. A legal no-forwarding map exists at the same k-means q (and at J = 1); this code does not search it. Scope: Algorithm 1 stand-in, not Problem (P).
+Algorithm 1 as implemented freezes \(a_{ij}\) and \(b_{ij}\) after nearest-UAV / CPU-stable init. That used to sit here as a soft “scoped to this solver” caveat backed by one constructed point. The SCA-joint probe (§2.8) measured it on the primary 25% grid (20 seeds, all axes).
 
-### Other *(by design / out of scope)*
+| Test | Result |
+| --- | --- |
+| Is Problem (P) feasible at \(T_k=0.8\) s? | **Yes.** Process-cohesive \(a_{ij}\) at k-means \(q\): **40/40** (seeds 1–20 and held-out 21–40). J = 1: 20/20. Slack sign (\(T_k-Q=+0.206\) s vs \(T_k-Q-T_{\mathrm{u2u}}=-0.094\) s) is geometry-independent; the bandwidth LP still cleared all 40 geometries. |
+| Frozen SCA feasible at \(T_k=0.8\) s? | **0/20** |
+| SCA-joint (best-SE rematch) feasible at \(T_k=0.8\) s? | **0/20** (0 rematch accepts). Best-SE coincides with nearest at that init, so the discrete step is a no-op. |
+| SCA-joint + process-cohesive candidate feasible at \(T_k=0.8\) s? | **20/20**. Accepts `process_cohesive` (never best-SE); 0 forwarding at termination. Confirms the blocker was “greedy never proposes grouping,” not an LP/evaluate bug. |
+| Radio cost of grouping at fixed \(q\) | **~0.6 Mbps** median (0.57), mean 0.59, p10–p90 **0.38–0.81**, range **0.29–0.98** over **40/40** geometries. Spread tracks \(\sum\Delta\mathrm{SE}\) (\(r\approx 0.92\)), not IoT count off best link (\(r\approx 0.14\); see seed 16 vs 23 in §2.8) |
+| Do feasible-axis Mbps move if association is unfrozen (best-SE)? | **No, not practically.** 29 sweep points; max Δ **+0.006 Mbps** (default J = 3); **0/29** above the 0.05 Mbps bar; **0/29** feasibility differences. |
+| Runtime cost of best-SE rematch (default J = 3) | Frozen 0.891 s / 27.7 iters vs joint 0.888 s / 27.9 iters (**1.00×**). |
+
+**Model fact:** Problem (P) is feasible at \(T_k=0.8\) s on this scenario, including held-out placements. Sequential SCA’s 0% is a nearest-UAV / best-SE coincidence — not a remaining scope note.
+
+**Headline tables:** unfreezing association with best-SE rematch does not change frozen-SCA Mbps. The cohesive-candidate flag is a hypothesis test, not a replacement solver. SCA-joint vs random/k-means/PSO is not a replacement comparison. TD3’s binaries-frozen decision is independent of this probe.
+
+### Other *(by design / out of scope / audit notes)*
 
 
 | Item                          | Status                                                    |
@@ -669,10 +882,13 @@ Three published-looking “infeasibility” claims were artifacts. One remaining
 | TD3 (Algorithm 2)             | Not implemented                                           |
 | Paper Mbps targets            | Explicitly not pursued                                    |
 | 20 kHz as (27) cap            | **Real** model infeasibility — not a solver artifact (§0) |
-| 15% per-link cap (sensitivity) | External parameter (not Problem (P)); search-selected tighter-cap experiment |
-| 25% per-link cap (primary)     | External leftover-dump stress test; vs-random n.s. at J = 3                          |
+| 15% per-link cap (sensitivity) | Search-selected from cap×J grid; FDR-sig at all J but practical Δ fails at J = 4–5 (§2.7) |
+| 25% per-link cap (primary)     | Leftover-dump stress test; vs-random n.s. at J = 3; sits in the 23.5–24% FDR crossover (§2.7) |
 | PSO                           | External baseline; equal-share inner fitness              |
 | Eq. (17) vs Fig. 11 narrative | **Open (paper intent)** — not a code bug (§8.1)           |
+| Eq. (4) angle unit            | **Checked.** Default radians; deg reading gives SNR ≈ 90 at zenith and ~57 Mbps at J = 3 (§0.2). Radians adopted. |
+| Idle compute UAVs under majority \(b_{ij}\) | **Checked, default scenario.** Constraint (23) allows one processing UAV per process; with K = 2, J = 3, majority vote often puts both processes on one UAV. **20/20** default seeds have ≥1 UAV with **zero** processing load (mean **1.35** idle compute UAVs); all three UAVs still carry associated uplink traffic. Legal under (23)+(24); `cpu_stable_processing` unchanged when majority is already stable. Does not move headline Mbps tables. |
+| SCA `stop_reason` when `accepted_steps = 0` | **Documented nit.** If the iteration cap is hit with zero accepted moves and `step_size` still above `min_step_size`, Python reports `MAX_ITERATIONS` rather than `STEP_SIZE_LIMIT` (`classify_stop_reason` explicitly exempts that case). Does not affect scoring; uncapped runs that never accept a step may show `MAX_ITERATIONS` in diagnostics. |
 
 
 ---
@@ -686,6 +902,14 @@ Three published-looking “infeasibility” claims were artifacts. One remaining
 ### Headline result (cap 25% primary, J = 3)
 
 > SCA achieves 8.946 Mbps mean sum rate vs 8.928 (random), 8.901 (k-means), and 8.905 (PSO). Paired vs random is +0.019 ± 0.042 Mbps, 15/20, Wilcoxon p = 0.123. Vs k-means and vs PSO the paired tests remain significant (20/20 and 19/20, both p &lt; 0.001).
+
+### T_k = 0.8 s is not a Problem (P) limit
+
+> At \(T_k=0.8\) s the sequential SCA campaign is 0/20 feasible under nearest-UAV association, because splitting \(N_k\) forces a \(T_{\mathrm{u2u}}\) hop and \(Q+T_{\mathrm{u2u}}\approx 0.894>0.8\). Hand construction and a 40-geometry check showed Problem (P) is still feasible (process-cohesive \(a_{ij}\) at k-means \(q\), 40/40). Best-SE SCA-joint did not find that map (0/20); adding a process-cohesive rematch candidate did (20/20). At fixed \(q\), grouping trades **~0.6 Mbps** median sum rate (p10–p90 ~0.38–0.81 across 40 seeds) for meeting the tight deadline — a direct, quantified instance of the accuracy–synchronization tradeoff the paper motivates in §I. Do not publish the 0% column as a model limit; do publish the frozen-SCA Mbps tables as the headline.
+
+### Accuracy–synchronization tradeoff (§I, quantified)
+
+> In our reproduction, keeping each process group on one UAV (no \(T_{\mathrm{u2u}}\)) makes \(T_k=0.8\) s feasible where nearest-UAV association fails, at a median cost of **~0.57 Mbps** sum rate at the same k-means geometry (mean 0.59, 40 seeds). This is an experimental confirmation of the rate-vs-AoDT tension stated in the paper’s introduction — not a solver footnote.
 
 ### Tighter-cap sensitivity (cap 15%, J = 3)
 
@@ -810,23 +1034,33 @@ python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n2
 # Paper field (500 × 500 m) — field-size test, same 25% primary cap
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
 python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m
+
+# SCA-joint methodology probe (does not overwrite frozen-SCA campaign JSON)
+python scripts/run_sca_joint_campaign.py
+python scripts/run_tk08_followup.py
 ```
 
 Full bandwidth preset sweep (long): `scripts/run_all_bandwidth_campaigns.ps1`
 
-### 2026-09-05 run timings
+One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regeneration.ps1`
+
+### Run timings (representative)
 
 
 | Step                             | Duration |
 | -------------------------------- | -------- |
+| `pytest` (125 tests)             | ~4 s     |
 | Primary 25% campaign (100 m)     | ~9 min   |
+| Cap15 campaign (100 m)           | ~11 min  |
+| 500 m field campaign             | ~11 min  |
+| SCA-joint full-axis probe        | ~10 min  |
+| tk08 follow-ups (3 steps)        | ~1 min   |
 | Init-repair                      | ~1.5 min |
-| Analysis scripts                 | < 2 min  |
-| Fig. 11                          | ~2 min   |
-| Full bandwidth sweep (6 presets) | ~36 min  |
+| Analysis + fig11 + plots         | < 3 min  |
+| Full bandwidth sweep (7 configs) | ~36 min  |
 
 
-**Logs:** `results/campaign_8.8mhz_cap25_si12k` siblings, `results/campaign_8.8mhz_cap15_n20` siblings, `results/run_all_bandwidth_campaigns.log`, `results/rerun_init_repair.log`, `results/check_bsys_20khz.json`
+**Logs:** `results/campaign_8.8mhz_cap25_si12k_run.log`, `results/rerun_init_repair.log`, `results/check_bsys_latest.log`, `results/spot_validate_nocap.log`, `results/spot_validate_cap25.log`, `results/run_all_bandwidth_campaigns.log`
 
 ---
 

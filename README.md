@@ -71,7 +71,7 @@ All commands below assume you are in the repo root and either have run
 ## Quick start
 
 ```powershell
-# Run the test suite
+# Run the test suite (125 tests as of 2026-09-08)
 python -m pytest
 
 # Evaluate one random placement at default settings (100×100 m, 20 kHz B_sys)
@@ -113,6 +113,7 @@ python -m uavdt sca --help
 | `multi-seed` | Mean/std over consecutive seeds (JSON summary) |
 | `bandwidth-sweep` | Run all three `B_sys` presets on one seed |
 | `sca` | Algorithm 1 SCA; writes iteration history to `results/` |
+| `sca-joint` | Methodology probe: SCA plus discrete \(a_{ij}/b_{ij}\) re-match (`method="sca_joint"`). Optional `--process-cohesive-candidate`. |
 | `sca-seq-debug` | Per-iteration SCA log with true-feasibility gate |
 | `campaign` | §VII sweeps over UAV count, IoT count, λ, AoDT threshold, CPU |
 | `spot-validate` | CVXPY vs MATLAB CVX/MOSEK spot-check on frozen SCA |
@@ -387,6 +388,16 @@ at 25% primary and 15% tighter-cap sensitivity), 20 seeds each. Requires PowerSh
 
 ```powershell
 .\scripts\run_all_bandwidth_campaigns.ps1
+```
+
+### `run_full_regeneration.ps1` — replay docs/RESULTS.md §9
+
+Runs pytest, check_bsys, primary + cap15 + 500 m campaigns, fig11,
+spot-validate, SCA-joint probe, tk08 follow-ups, and analysis/plots.
+Does **not** include the long bandwidth preset sweep (run that separately).
+
+```powershell
+.\scripts\run_full_regeneration.ps1
 ```
 
 ---

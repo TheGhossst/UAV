@@ -16,8 +16,9 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | Core physics (`channel`, `computation`, `evaluator`, `constraints`) | Frozen |
 | AoDT Eq. (17) scoring | Frozen (Problem (P) score) |
 | AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
-| SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py`: if majority-of-association \(b_{ij}\) violates (24) and \(J\ge K\), pick a feasible process→UAV map; \(b\) stays frozen after that |
-| New work | Baselines, sweeps, reporting |
+| SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
+| SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. TD3 binaries stay frozen independently of this probe. |
+| New work | Baselines, sweeps, reporting, SCA-joint probe |
 
 ---
 
@@ -94,6 +95,14 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 
 # Tighter-cap sensitivity (not the primary campaign)
 python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.15 --n-runs 5 --out results/campaign_8.8mhz_cap15_uavs.json
+
+# SCA-joint methodology probe (does not overwrite frozen-SCA campaign files)
+python scripts/run_sca_joint_campaign.py
+python scripts/run_tk08_followup.py
+
+# One-command replay of docs/RESULTS.md §9 (primary + cap15 + 500 m + sca-joint + analysis)
+# scripts/run_full_regeneration.ps1
+# Full bandwidth preset sweep (long, 7 configs): scripts/run_all_bandwidth_campaigns.ps1
 ```
 
 `--solver matlab` on `campaign` runs frozen SCA in MATLAB CVX+MOSEK
@@ -107,6 +116,14 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth
 - `results/campaign_*.json` — per-axis points, per-method mean/std Mbps,
   feasible fraction, per-seed rates
 - `results/campaign_*.csv` — flat table for plots
+- SCA-joint probe (separate files only; never overwrites frozen-SCA JSON):
+  `campaign_8.8mhz_cap25_si12k_scajoint.json`, `tk08_scajoint_feasibility.json`,
+  `sca_joint_vs_frozen.json`, `sca_joint_default_runtime.json`
+- T_k=0.8 s follow-ups (also separate files):
+  `tk08_scajoint_cohesive.json`, `tk08_cohesive_construction.json`,
+  `tk08_sync_tradeoff_gap.json`
+- Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
+  `cap_binding_diagnostic.json`
 - Paired writeup stats (same seed, champion vs baseline):
 
 ```text
@@ -160,16 +177,24 @@ sensitivity and other `(B_sys, share)` cells. Outputs land in `results/`
 | `scripts/analyze_nocap_8p8mhz.py` | No-cap vs 25% primary (15% still a sensitivity) |
 | `scripts/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
 | `scripts/bw_cap_by_j_grid.py` | Cap × J table with FDR |
+| `scripts/bw_boundary_refine_j3.py` | J=3 cap bisection + 33-test FDR |
 | `scripts/bw_threshold_refine.py` | Refine cap threshold near 25% |
 
 ---
 
-## First pass on disk (n_runs = 5, 8.8 MHz, no per-link cap)
+## First pass on disk
 
-- `results/campaign_8.8mhz.json` / `.csv` — Figs. 6–10 axes, methods
-  random / k-means / PSO / SCA (CVXPY).
-- `results/spot_validate_8.8mhz.json` — seed 1, no cap and 25% cap,
-  CVXPY vs MATLAB. `agreement: ok`. `se_max_abs_diff ~ 1e-15`.
+**Headline (n_runs = 20, 8.8 MHz, 25% primary cap, 100 m):**
+
+- `results/campaign_8.8mhz_cap25_si12k.json` / `.csv` — Figs. 6–10 axes,
+  methods random / k-means / PSO / SCA (CVXPY). Last regenerated 2026-09-08.
+- `results/fig11_8.8mhz_cap25_si12k.json` — Fig. 11 arrival patterns (50/50 sensibility).
+- `spot-validate` (stdout) — seed 1, no cap and 25% cap, CVXPY vs MATLAB.
+  `agreement: ok`. `se_max_abs_diff ~ 1e-15`.
+
+**Dev smoke (n_runs = 5, 8.8 MHz, no per-link cap):**
+
+- `results/campaign_8.8mhz.json` / `.csv` — quick axis sweep.
 
 At 8.8 MHz with **no** per-link cap, leftover spectrum sits on the
 highest-SE link, so mean sum rates sit near **~8.96–8.99 Mbps** for

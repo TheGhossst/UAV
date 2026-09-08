@@ -107,6 +107,7 @@ def run_campaign(
     return {
         "paper": "Khalaf et al. IEEE TNSM 2026 §VII Figs. 6–10 axes",
         "sca_frozen": True,
+        "sca_joint_probe": "sca_joint" in settings.methods,
         "n_runs": settings.n_runs,
         "seed_start": settings.seed_start,
         "methods": list(settings.methods),
