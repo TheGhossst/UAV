@@ -56,9 +56,11 @@ def _repro_note(campaign: dict | None = None) -> str:
     share = campaign.get("max_bw_share")
     cap = "no per-link cap" if share is None else f"{float(share):.0%} per-link cap"
     b_mhz = float(campaign.get("b_sys_hz") or 8_800_000.0) / 1e6
+    n = int(campaign.get("n_runs") or 20)
+    area = campaign.get("area_m") or [100.0, 100.0]
     return (
-        f"Reproduction: 100×100 m, B_sys = {b_mhz:g} MHz, {cap}, "
-        "20 seeds/point. Not Table II 20 kHz."
+        f"Reproduction: {float(area[0]):g}×{float(area[1]):g} m, "
+        f"B_sys = {b_mhz:g} MHz, {cap}, {n} seeds/point. Not Table II 20 kHz."
     )
 
 
@@ -264,12 +266,17 @@ def main() -> None:
     ap.add_argument(
         "--fig11",
         default="results/fig11_8.8mhz_cap25_si12k.json",
-        help="Fig. 11 JSON",
+        help="Fig. 11 JSON (skipped if the file is missing)",
     )
     ap.add_argument(
         "--out-dir",
         default="results/figures",
         help="Output directory for PNG/PDF figures",
+    )
+    ap.add_argument(
+        "--skip-fig11",
+        action="store_true",
+        help="Do not plot Fig. 11 even if the JSON exists",
     )
     args = ap.parse_args()
 
@@ -279,7 +286,6 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     campaign = _load(campaign_path)
-    fig11 = _load(fig11_path)
     global REPRO_NOTE
     REPRO_NOTE = _repro_note(campaign)
 
@@ -335,8 +341,10 @@ def main() -> None:
             x_formatter=lambda x: f"{x / 1e8:g}",
         )
     )
-    written.append(plot_fig11(fig11, out_dir, metric="fcfs_sim"))
-    written.append(plot_fig11(fig11, out_dir, metric="eq17"))
+    if not args.skip_fig11 and fig11_path.exists():
+        fig11 = _load(fig11_path)
+        written.append(plot_fig11(fig11, out_dir, metric="fcfs_sim"))
+        written.append(plot_fig11(fig11, out_dir, metric="eq17"))
     written.append(plot_overview_grid(campaign, out_dir))
 
     print(f"Campaign: {campaign_path}")

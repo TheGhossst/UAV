@@ -150,6 +150,7 @@ def run_method(
     *,
     sca_settings: SCASettings | None = None,
     pso_settings: PSOSettings | None = None,
+    uav_xyz_m: np.ndarray | None = None,
 ) -> MethodRun:
     name = method.lower().strip()
     if name not in KNOWN_METHODS:
@@ -159,7 +160,13 @@ def run_method(
         return _run_sca_family(scenario, name, seed, sca_settings)
 
     if name == "random":
-        uav = place_random(scenario.cfg.num_uav, seed, scenario.cfg)
+        if uav_xyz_m is None:
+            uav = place_random(scenario.cfg.num_uav, seed, scenario.cfg)
+        else:
+            uav = np.asarray(uav_xyz_m, dtype=float)
+            expected = (scenario.cfg.num_uav, 3)
+            if uav.shape != expected:
+                raise ValueError(f"uav_xyz_m must have shape {expected}")
     elif name == "kmeans":
         uav = place_kmeans(scenario, seed)
     else:

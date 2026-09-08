@@ -71,7 +71,7 @@ All commands below assume you are in the repo root and either have run
 ## Quick start
 
 ```powershell
-# Run the test suite (125 tests as of 2026-09-08)
+# Run the test suite
 python -m pytest
 
 # Evaluate one random placement at default settings (100×100 m, 20 kHz B_sys)
@@ -118,6 +118,7 @@ python -m uavdt sca --help
 | `campaign` | §VII sweeps over UAV count, IoT count, λ, AoDT threshold, CPU |
 | `spot-validate` | CVXPY vs MATLAB CVX/MOSEK spot-check on frozen SCA |
 | `aodt-compare` | Closed-form AoDT vs event-driven queue simulation |
+| `n100` | Generate 100 saved area+IoT+UAV layouts; run SCA/baselines; plot averages |
 | `fig11` | Fig. 11 arrival-pattern sweep (uniform fast/slow/heterogeneous λ) |
 
 ---
@@ -333,6 +334,39 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 | `--out` | `results/fig11.json` | Output JSON (`.csv` sibling written automatically). |
 
 Exit code `2` if sensibility checks fail.
+
+---
+
+### `n100` — 100 saved area + IoT + UAV scenarios
+
+Generate a frozen bank of random layouts (square field, IoT at \(z=0\), random UAV xy at height \(H\)), run SCA (the per-instance optimizer) plus placement baselines on every layout, then plot **means over the bank**. This is the Monte Carlo at the default \(I=10\), \(J=3\) operating point. It is **not** the Fig. 6–10 axis sweep; for those with 100 seeds use `campaign --n-runs 100` (much longer).
+
+TD3 remains out of scope: “training” here is Algorithm 1 SCA on each saved scenario.
+
+```powershell
+# Write 100 layouts, then SCA + baselines, then average figures
+python -m uavdt n100 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver cvxpy
+
+# Layouts only
+python -m uavdt n100 --generate-only --n-scenarios 100 --bank data/scenario_bank/n100_i10_j3_100m.json
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--n-scenarios` | `100` | Number of saved layouts. |
+| `--seed-start` | `1` | First seed (inclusive). |
+| `--num-iot` / `--num-uav` | `10` / `3` | Frozen \(I\) and \(J\). |
+| `--bank` | `data/scenario_bank/n100_i10_j3_100m.json` | Saved geometry. |
+| `--out` | `results/n100/eval.json` | Per-scenario scores (`_summary.csv` sibling). |
+| `--fig-dir` | `results/figures/n100` | Mean/std, box, running-mean, maps. |
+| `--checkpoint` | `results/n100/eval.checkpoint.json` | Resume after a crash. |
+| `--methods` | `random,kmeans,pso,sca` | Same set as `campaign`. |
+| `--generate-only` | off | Write the bank and stop. |
+| `--skip-eval` / `--skip-plot` | off | Replot from an existing `--out`. |
+| `--force-generate` | off | Overwrite an existing bank. |
+| `--no-resume` | off | Ignore the checkpoint. |
+
+If `--bandwidth-preset` is omitted, this command uses **8.8 MHz** and a **25%** per-link cap so it matches the primary campaign.
 
 ---
 

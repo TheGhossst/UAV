@@ -109,6 +109,32 @@ python scripts/run_tk08_followup.py
 (slow: one MATLAB session per SCA seed). Prefer CVXPY for the grid and
 `spot-validate` for MOSEK.
 
+### 100-scenario Monte Carlo (area + IoT + UAV bank)
+
+The paper averages **20** random runs per plotted point. This extra study
+freezes **100** layouts and reports the mean over that bank at the default
+operating point (`I=10`, `J=3`, 100×100 m). Each record stores area bounds,
+IoT \((x,y,0)\), process membership, \(\lambda_i\), and a random feasible UAV
+placement. SCA / k-means / PSO still place or optimize their own UAVs; the
+`random` method replays the saved UAV coordinates.
+
+```text
+python -m uavdt n100 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver cvxpy --n-scenarios 100
+```
+
+Writes:
+
+- `data/scenario_bank/n100_i10_j3_100m.json` — frozen layouts (not gitignored)
+- `results/n100/eval.json` / `.csv` / `_summary.csv` — per-scenario scores
+- `results/figures/n100/` — mean±std bars, boxplots, running mean, maps
+
+Checkpoint: `results/n100/eval.checkpoint.json`. Re-run the same command to
+resume. `--generate-only` writes the bank without SCA.
+
+This does **not** replace `campaign --n-runs 20` for Figs. 6–10. A 100-seed
+axis sweep is `campaign --n-runs 100` and is several times the existing
+primary campaign.
+
 ---
 
 ## Outputs
@@ -116,6 +142,9 @@ python scripts/run_tk08_followup.py
 - `results/campaign_*.json` — per-axis points, per-method mean/std Mbps,
   feasible fraction, per-seed rates
 - `results/campaign_*.csv` — flat table for plots
+- `data/scenario_bank/n100_*.json` — frozen 100-layout Monte Carlo bank
+- `results/n100/eval.json` — per-scenario SCA/baseline scores; figures in
+  `results/figures/n100/`
 - SCA-joint probe (separate files only; never overwrites frozen-SCA JSON):
   `campaign_8.8mhz_cap25_si12k_scajoint.json`, `tk08_scajoint_feasibility.json`,
   `sca_joint_vs_frozen.json`, `sca_joint_default_runtime.json`

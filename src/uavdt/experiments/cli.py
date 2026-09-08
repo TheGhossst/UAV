@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -19,7 +20,7 @@ from uavdt.config import (
 )
 from uavdt.experiments import run_one, run_seeds
 from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign
-from uavdt.experiments.grids import AXES
+from uavdt.experiments.grids import AXES, config_for_counts
 from uavdt.experiments.methods import KNOWN_METHODS
 from uavdt.experiments.spot import spot_validate_sca
 from uavdt.placement.pso import PSOSettings
@@ -486,6 +487,96 @@ def cmd_fig11(args: argparse.Namespace) -> int:
     return 0 if report["all_ok"] else 2
 
 
+def cmd_n100(args: argparse.Namespace) -> int:
+    from uavdt.experiments.n100 import evaluate_bank, write_eval
+    from uavdt.experiments.n100_plot import plot_n100_figures
+    from uavdt.experiments.scenario_bank import generate_bank, load_bank, write_bank
+
+    if args.bandwidth_preset is None:
+        args.bandwidth_preset = "8.8mhz"
+    if args.max_bw_share is None:
+        args.max_bw_share = PRIMARY_MAX_BW_SHARE
+    cfg = config_for_counts(int(args.num_iot), int(args.num_uav), _cfg_from_args(args))
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+
+    bank_path = Path(args.bank)
+    if args.force_generate or not bank_path.exists():
+        bank = generate_bank(
+            int(args.n_scenarios),
+            cfg,
+            seed_start=int(args.seed_start),
+            num_iot=int(args.num_iot),
+            num_uav=int(args.num_uav),
+        )
+        write_bank(bank, bank_path)
+        print(f"wrote {bank_path}")
+        print(f"n_scenarios          {bank['n_scenarios']}")
+        geo = bank["geometry"]
+        print(
+            f"geometry             {geo['area_x_m']:g}x{geo['area_y_m']:g} m  "
+            f"I={geo['num_iot']}  J={geo['num_uav']}"
+        )
+    else:
+        bank = load_bank(bank_path)
+        print(f"loaded {bank_path}")
+        if int(bank["n_scenarios"]) != int(args.n_scenarios):
+            print(
+                f"note                 bank has {bank['n_scenarios']} scenarios; "
+                f"--n-scenarios {args.n_scenarios} ignored"
+            )
+
+    if args.generate_only:
+        return 0
+
+    payload = None
+    out_path = Path(args.out)
+    if not args.skip_eval:
+        payload = evaluate_bank(
+            bank,
+            cfg,
+            _parse_methods(args.methods),
+            sca_settings=SCASettings(
+                max_iterations=int(args.max_iterations),
+                epsilon=float(args.epsilon),
+                step_size_m=float(args.step_size),
+                solver=solver,
+            ),
+            pso_settings=PSOSettings(),
+            checkpoint_path=args.checkpoint,
+            resume=not args.no_resume,
+            bank_path=bank_path,
+        )
+        wrote = write_eval(payload, out_path)
+        print(f"wrote {wrote}")
+        print(f"wrote {wrote.with_suffix('.csv')}")
+        print(f"wrote {wrote.with_name(wrote.stem + '_summary.csv')}")
+        for method, stats in payload["by_method"].items():
+            print(
+                f"{method:12s}  mean={stats['mean_sum_rate_Mbps']:.4f} Mbps  "
+                f"std={stats['std_sum_rate_Mbps']:.4f}  "
+                f"feas={100.0 * stats['feasible_fraction']:.1f}%  "
+                f"n={stats['n']}"
+            )
+
+    if args.skip_plot:
+        return 0
+    if payload is None:
+        if not out_path.exists():
+            print(f"missing eval JSON {out_path}; run without --skip-eval")
+            return 2
+        payload = json.loads(out_path.read_text(encoding="utf-8"))
+    try:
+        paths = plot_n100_figures(payload, bank, args.fig_dir)
+    except ImportError:
+        print("matplotlib is not installed; skip plots (pip install matplotlib)")
+        return 0
+    for path in paths:
+        print(f"wrote {path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="uavdt",
@@ -647,6 +738,50 @@ def build_parser() -> argparse.ArgumentParser:
     f11.add_argument("--warmup", type=float, default=16.0)
     f11.add_argument("--out", type=str, default="results/fig11.json")
     f11.set_defaults(func=cmd_fig11)
+
+    n100 = sub.add_parser(
+        "n100",
+        help="Generate 100 area+IoT+UAV scenarios, run SCA/baselines, plot averages",
+    )
+    _add_shared(n100)
+    n100.add_argument("--n-scenarios", type=int, default=100)
+    n100.add_argument("--seed-start", type=int, default=1)
+    n100.add_argument("--num-iot", type=int, default=10)
+    n100.add_argument("--num-uav", type=int, default=3)
+    n100.add_argument(
+        "--bank",
+        type=str,
+        default="data/scenario_bank/n100_i10_j3_100m.json",
+        help="Saved area+IoT+UAV layouts",
+    )
+    n100.add_argument("--out", type=str, default="results/n100/eval.json")
+    n100.add_argument("--fig-dir", type=str, default="results/figures/n100")
+    n100.add_argument(
+        "--checkpoint",
+        type=str,
+        default="results/n100/eval.checkpoint.json",
+    )
+    n100.add_argument(
+        "--methods",
+        type=str,
+        default="random,kmeans,pso,sca",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint]",
+    )
+    n100.add_argument("--max-iterations", type=int, default=30)
+    n100.add_argument("--epsilon", type=float, default=1e-4)
+    n100.add_argument("--step-size", type=float, default=20.0)
+    n100.add_argument(
+        "--solver",
+        type=str,
+        default="cvxpy",
+        help="SCA backend: cvxpy (default) or matlab/MOSEK",
+    )
+    n100.add_argument("--generate-only", action="store_true")
+    n100.add_argument("--skip-eval", action="store_true")
+    n100.add_argument("--skip-plot", action="store_true")
+    n100.add_argument("--force-generate", action="store_true")
+    n100.add_argument("--no-resume", action="store_true")
+    n100.set_defaults(func=cmd_n100)
     return p
 
 
