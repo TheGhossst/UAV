@@ -19,6 +19,7 @@ from uavdt.experiments.scenario_bank import (
 )
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca.settings import SCASettings
+from uavdt.td3.settings import TD3Settings
 
 
 def _log(msg: str) -> None:
@@ -139,6 +140,7 @@ def evaluate_bank(
     *,
     sca_settings: SCASettings | None = None,
     pso_settings: PSOSettings | None = None,
+    td3_settings: TD3Settings | None = None,
     checkpoint_path: str | Path | None = None,
     resume: bool = True,
     bank_path: str | Path | None = None,
@@ -149,6 +151,8 @@ def evaluate_bank(
     records = list(bank["scenarios"])
     n = len(records)
     total = n * len(methods)
+    if done:
+        _log(f"  resume checkpoint    {len(done)}/{total} runs already stored")
     finished = 0
     for rec in records:
         sc = scenario_from_record(rec, cfg)
@@ -157,10 +161,6 @@ def evaluate_bank(
             key = _run_key(sc.seed, method)
             finished += 1
             if key in done:
-                _log(
-                    f"  [{finished}/{total}] {rec['id']}  method={method}  "
-                    f"seed={sc.seed}  (checkpoint)"
-                )
                 continue
             _log(f"  [{finished}/{total}] {rec['id']}  method={method}  seed={sc.seed}")
             t0 = perf_counter()
@@ -171,12 +171,20 @@ def evaluate_bank(
                 sc.seed,
                 sca_settings=sca_settings,
                 pso_settings=pso_settings,
+                td3_settings=td3_settings,
                 uav_xyz_m=uav_arg,
             )
             run.diagnostics.setdefault("wall_clock_s", perf_counter() - t0)
             done[key] = run_to_record(run, scenario_id=int(rec["id"]))
             if ckpt is not None:
                 _atomic_write_json(ckpt, {"runs": done})
+            if method == "td3":
+                _log(
+                    f"           done {perf_counter() - t0:.1f}s  "
+                    f"{run.sum_rate_mbps:.4f} Mbps  "
+                    f"feas={int(run.feasible)}  "
+                    f"[{finished}/{total}]"
+                )
 
     ordered: list[dict] = []
     for rec in records:
@@ -211,7 +219,7 @@ def evaluate_bank(
         "paper": "Khalaf et al. IEEE TNSM 2026 — 100-scenario Monte Carlo",
         "note": (
             "Each saved scenario is one random area + IoT + UAV layout. "
-            "SCA is the per-instance optimizer (TD3 is out of scope). "
+            "SCA is the per-instance optimizer. TD3 is opt-in via --methods. "
             "Plotted points are means over the bank. "
             f"Area is {cfg.area_x_m:g}×{cfg.area_y_m:g} m, "
             f"I={cfg.num_iot}, J={cfg.num_uav}."

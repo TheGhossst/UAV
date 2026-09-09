@@ -1,7 +1,8 @@
 """Run one method on one scenario. All methods share evaluate().
 
 SCA code is frozen: this module only *calls* solve_sca.
-SCA-joint is a separate methodology probe (method=\"sca_joint\").
+SCA-joint is a methodology probe (method=\"sca_joint\").
+TD3 is opt-in (method=\"td3\"); knobs are TD3Settings, not SimConfig.
 """
 
 from __future__ import annotations
@@ -19,11 +20,12 @@ from uavdt.placement.random import place_random
 from uavdt.resources import cpu_stable_processing, nearest_association
 from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
 from uavdt.sca.settings import SCASettings
+from uavdt.td3.settings import TD3Settings
 
 
-# Headline campaign methods. sca_joint is opt-in via --methods.
+# Headline campaign methods. sca_joint and td3 are opt-in via --methods.
 METHODS = ("random", "kmeans", "pso", "sca")
-KNOWN_METHODS = METHODS + ("sca_joint",)
+KNOWN_METHODS = METHODS + ("sca_joint", "td3")
 
 
 @dataclass
@@ -143,6 +145,27 @@ def _run_sca_family(
     )
 
 
+def _run_td3(
+    scenario: Scenario,
+    seed: int,
+    td3_settings: TD3Settings | None,
+) -> MethodRun:
+    from uavdt.td3.solve import solve_td3
+
+    t0 = perf_counter()
+    result = solve_td3(scenario, seed, settings=td3_settings)
+    diag = dict(result.diagnostics)
+    diag.setdefault("wall_clock_s", perf_counter() - t0)
+    return MethodRun(
+        method="td3",
+        seed=seed,
+        uav_xyz_m=result.uav_xyz_m,
+        allocation=result.allocation,
+        true_eval=result.true_eval,
+        diagnostics=diag,
+    )
+
+
 def run_method(
     scenario: Scenario,
     method: str,
@@ -150,6 +173,7 @@ def run_method(
     *,
     sca_settings: SCASettings | None = None,
     pso_settings: PSOSettings | None = None,
+    td3_settings: TD3Settings | None = None,
     uav_xyz_m: np.ndarray | None = None,
 ) -> MethodRun:
     name = method.lower().strip()
@@ -158,6 +182,9 @@ def run_method(
 
     if name in {"sca", "sca_joint"}:
         return _run_sca_family(scenario, name, seed, sca_settings)
+
+    if name == "td3":
+        return _run_td3(scenario, seed, td3_settings)
 
     if name == "random":
         if uav_xyz_m is None:

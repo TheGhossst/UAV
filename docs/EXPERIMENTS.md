@@ -17,8 +17,9 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | AoDT Eq. (17) scoring | Frozen (Problem (P) score) |
 | AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
-| SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. TD3 binaries stay frozen independently of this probe. |
-| New work | Baselines, sweeps, reporting, SCA-joint probe |
+| SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
+| TD3 (`uavdt.td3`, method=`td3`) | Opt-in Algorithm 2 fill-in. Does **not** change `SimConfig`. Knobs are `TD3Settings` (Fujimoto + Alg. 2 reward). Per-instance train. Not in default `METHODS`. |
+| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 |
 
 ---
 
@@ -40,8 +41,9 @@ also 0% feasible (`scripts/check_bsys_20khz.py`).
 | Fig. 10 | UAV CPU; text quotes 250 MHz | `I = 10`, `J = 3` | Sum rate vs computational capacity |
 | Fig. 11 | UAV count `J` with three λ patterns | `I = 10` | Uniform fast / slow / heterogeneous λ |
 
-Paper methods: **SCA**, **TD3**, **k-means**, **random**. TD3 is out of
-scope for this campaign.
+Paper methods: **SCA**, **TD3**, **k-means**, **random**. TD3 is implemented
+as an opt-in method (`--methods ...,td3`); it is not in the default campaign
+list. Hyperparameters are `TD3Settings`, not Table II.
 
 ---
 
@@ -60,6 +62,7 @@ scope for this campaign.
 | Placement baselines + frozen-`q` bandwidth LP | IMPLEMENTATION CHOICE | Same B LP as SCA’s bandwidth step so the comparison is placement |
 | PSO inner fitness with equal-share `B` | IMPLEMENTATION CHOICE | Final score still uses the LP + `evaluate()` |
 | Campaign SCA solver default CVXPY | IMPLEMENTATION CHOICE | MATLAB CVX/MOSEK is spot-validated |
+| TD3 | IMPLEMENTATION CHOICE | Alg. 2 fill-in; `TD3Settings`; opt-in `--methods td3` |
 
 Default grids (`src/uavdt/experiments/grids.py`):
 
@@ -86,6 +89,9 @@ python scripts/check_bsys_20khz.py
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --area-m 500 --placement kmeans
 
 python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 5 --out results/campaign_8.8mhz_cap25_uavs.json
+
+# TD3 opt-in (per-instance train; needs PyTorch). Not in the default --methods list.
+python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
 
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25

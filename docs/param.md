@@ -502,6 +502,10 @@ The exact seed values are **not specified by the paper**.
 | TD3 soft update                 | `tau`              | Not in Table II                 | Needed for exact TD3 implementation.                      |
 | TD3 exploration noise           | `sigma_RL`         | Not the communication `sigma`   | Must be kept separate.                                    |
 
+These TD3 knobs are now filled in `uavdt.td3.settings.TD3Settings` (Fujimoto et al.
+2018 + Algorithm 2 reward weights). They are **not** on `SimConfig` and are
+**not** Table II.
+
 
 ---
 
@@ -586,13 +590,14 @@ headline field (intentional modification; paper §VII uses 500 × 500 m). A
 - [x] `R_min = 10,000 bit/s` is enforced.
 - [x] AoDT is calculated using Eq. (17); threshold `T_k = 2.8 s`.
 - [x] CPU stability (24) enforced; `S_i` / `L` are external, labeled in config.
-- [x] Random, k-means, PSO, and SCA use the same `evaluate()` scorer.
+- [x] Random, k-means, PSO, SCA, and TD3 use the same `evaluate()` scorer.
 - [x] Campaigns use **20 runs** per point; mean and std reported in JSON/CSV.
 
 ### Algorithms
 
 - [x] SCA (Algorithm 1) — `src/uavdt/sca/`, CVXPY campaigns, MATLAB spot-check.
-- [ ] TD3 (Algorithm 2) — **not implemented** (out of scope).
+- [x] TD3 (Algorithm 2) — `src/uavdt/td3/`. Paper gaps filled in `TD3Settings`
+      (not Table II / not `SimConfig`). Opt-in method, not default campaigns.
 
 ### Reporting & artifacts
 

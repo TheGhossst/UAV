@@ -6,9 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
-METHOD_ORDER = ("sca", "kmeans", "random", "pso", "sca_joint")
+METHOD_ORDER = ("sca", "td3", "kmeans", "random", "pso", "sca_joint")
 METHOD_LABELS = {
     "sca": "SCA",
+    "td3": "TD3",
     "kmeans": "K-means",
     "random": "Random",
     "pso": "PSO (external)",
@@ -16,6 +17,7 @@ METHOD_LABELS = {
 }
 METHOD_STYLES = {
     "sca": {"color": "#1f77b4", "marker": "o"},
+    "td3": {"color": "#17becf", "marker": "P"},
     "kmeans": {"color": "#ff7f0e", "marker": "s"},
     "random": {"color": "#2ca02c", "marker": "^"},
     "pso": {"color": "#9467bd", "marker": "D"},

@@ -28,6 +28,7 @@ from uavdt.sca import SCASettings, solve_sca
 from uavdt.sca.algorithm import write_history
 from uavdt.sca.debug import print_human_table, run_sca_seq_debug
 from uavdt.scenario import generate_scenario
+from uavdt.td3.settings import TD3Settings
 
 
 def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
@@ -331,6 +332,53 @@ def cmd_sca_joint(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_td3(args: argparse.Namespace) -> int:
+    from uavdt.td3.solve import solve_td3
+
+    cfg = _cfg_from_args(args)
+    scenario = generate_scenario(args.seed, cfg)
+    settings = TD3Settings(
+        total_steps=int(args.total_steps),
+        horizon=int(args.horizon),
+        hidden=int(args.hidden),
+        batch_size=int(args.batch_size),
+        warmup_steps=int(args.warmup_steps),
+        buffer_size=int(args.buffer_size),
+        log_every=int(args.log_every),
+        export_mode=str(args.export_mode),
+        export_avg_steps=int(args.export_avg_steps),
+    )
+    result = solve_td3(scenario, args.seed, settings=settings)
+    ev = result.true_eval
+    c = ev.constraints
+    d = result.diagnostics
+    print("method                TD3 (Algorithm 2 fill-in; TD3Settings, not Table II)")
+    print(f"B_sys                 {_fmt_hz(cfg.b_sys_hz)}")
+    print(f"total_steps           {d.get('total_steps')}")
+    print(f"n_updates             {d.get('n_updates')}")
+    print(f"n_episodes            {d.get('n_episodes')}")
+    print(f"obs_dim               {d.get('obs_dim')}")
+    print(f"act_dim               {d.get('act_dim')}")
+    print(f"hidden                {d.get('hidden')}")
+    print(f"export_rule           {d.get('export_rule')}")
+    print(f"true_sum_rate_Mbps    {ev.sum_rate_mbps:.6g}")
+    print(f"snapshot_LP_Mbps      {d.get('snapshot_export_sum_rate_Mbps')}")
+    print(f"policy_LP_Mbps        {d.get('policy_export_sum_rate_Mbps')}")
+    print(f"AoDT_s                {np_list(ev.aodt_s)}")
+    print(f"rho                   {np_list(ev.rho)}")
+    print(f"feasible              {ev.feasible}")
+    print(
+        "violations            "
+        f"qos={c.qos_violations} aodt={c.aodt_violations} "
+        f"sep={c.sep_violations} cpu={c.cpu_unstable_count} "
+        f"bw_excess_Hz={c.bw_excess_hz:.4g}"
+    )
+    print(f"wall_clock_s          {d.get('wall_clock_s')}")
+    print("uav_xyz_m")
+    print(result.uav_xyz_m)
+    return 0
+
+
 def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
     cfg = _cfg_from_args(args)
     solver = args.solver
@@ -382,6 +430,7 @@ def cmd_campaign(args: argparse.Namespace) -> int:
             solver=solver,
         ),
         pso_settings=PSOSettings(),
+        td3_settings=TD3Settings(),
     )
     payload = run_campaign(_parse_axes(args.axis), cfg, settings)
     out = write_campaign(payload, args.out)
@@ -544,6 +593,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
                 solver=solver,
             ),
             pso_settings=PSOSettings(),
+            td3_settings=TD3Settings(),
             checkpoint_path=args.checkpoint,
             resume=not args.no_resume,
             bank_path=bank_path,
@@ -647,6 +697,38 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sj.set_defaults(func=cmd_sca_joint)
 
+    td = sub.add_parser(
+        "td3",
+        help="Algorithm 2 TD3 (opt-in; TD3Settings, not Table II)",
+    )
+    _add_shared(td)
+    td.add_argument("--seed", type=int, default=1)
+    td.add_argument("--total-steps", type=int, default=7000)
+    td.add_argument("--horizon", type=int, default=50)
+    td.add_argument("--hidden", type=int, default=256)
+    td.add_argument("--batch-size", type=int, default=256)
+    td.add_argument("--warmup-steps", type=int, default=256)
+    td.add_argument("--buffer-size", type=int, default=100_000)
+    td.add_argument(
+        "--log-every",
+        type=int,
+        default=250,
+        help="Print a TD3 train progress line every N env steps (0=silent)",
+    )
+    td.add_argument(
+        "--export-mode",
+        choices=("policy", "best_snapshot"),
+        default="policy",
+        help="Official score: trained policy rollout (default) or best snapshot",
+    )
+    td.add_argument(
+        "--export-avg-steps",
+        type=int,
+        default=10,
+        help="Average last N UAV xy of the deterministic eval episode",
+    )
+    td.set_defaults(func=cmd_td3)
+
     dbg = sub.add_parser(
         "sca-seq-debug",
         help="Algorithm 1 SCA iteration log (true-feasible gate)",
@@ -679,7 +761,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint]. sca_joint is a probe, not the headline method.",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,td3]. sca_joint and td3 are opt-in.",
     )
     camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
     camp.add_argument("--seed-start", type=int, default=1)
@@ -765,7 +847,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint]",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,td3]",
     )
     n100.add_argument("--max-iterations", type=int, default=30)
     n100.add_argument("--epsilon", type=float, default=1e-4)

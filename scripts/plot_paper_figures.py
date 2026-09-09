@@ -20,16 +20,18 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Paper baselines first, then external PSO.
-METHOD_ORDER = ("sca", "kmeans", "random", "pso")
+# Paper methods first (SCA, TD3), then k-means/random, then external PSO.
+METHOD_ORDER = ("sca", "td3", "kmeans", "random", "pso")
 METHOD_LABELS = {
     "sca": "SCA",
+    "td3": "TD3",
     "kmeans": "K-means",
     "random": "Random",
     "pso": "PSO (external)",
 }
 METHOD_STYLES = {
-    "sca": {"color": "#1f77b4", "marker": "o", "linewidth": 2.2, "zorder": 4},
+    "sca": {"color": "#1f77b4", "marker": "o", "linewidth": 2.2, "zorder": 5},
+    "td3": {"color": "#17becf", "marker": "P", "linewidth": 2.0, "zorder": 4},
     "kmeans": {"color": "#ff7f0e", "marker": "s", "linewidth": 1.8, "zorder": 3},
     "random": {"color": "#2ca02c", "marker": "^", "linewidth": 1.8, "zorder": 2},
     "pso": {"color": "#9467bd", "marker": "D", "linewidth": 1.6, "linestyle": "--", "zorder": 1},

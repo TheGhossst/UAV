@@ -14,6 +14,7 @@ from uavdt.experiments.methods import METHODS, MethodRun, run_method
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca.settings import SCASettings
 from uavdt.scenario import generate_scenario
+from uavdt.td3.settings import TD3Settings
 
 
 @dataclass
@@ -23,6 +24,7 @@ class CampaignSettings:
     methods: tuple[str, ...] = METHODS
     sca_settings: SCASettings | None = None
     pso_settings: PSOSettings | None = None
+    td3_settings: TD3Settings | None = None
 
 
 def _seed_list(settings: CampaignSettings) -> tuple[int, ...]:
@@ -74,6 +76,7 @@ def run_point(
                     seed,
                     sca_settings=settings.sca_settings,
                     pso_settings=settings.pso_settings,
+                    td3_settings=settings.td3_settings,
                 )
             )
         by_method[method] = _summarize(runs)
@@ -108,6 +111,7 @@ def run_campaign(
         "paper": "Khalaf et al. IEEE TNSM 2026 §VII Figs. 6–10 axes",
         "sca_frozen": True,
         "sca_joint_probe": "sca_joint" in settings.methods,
+        "td3_opt_in": "td3" in settings.methods,
         "n_runs": settings.n_runs,
         "seed_start": settings.seed_start,
         "methods": list(settings.methods),

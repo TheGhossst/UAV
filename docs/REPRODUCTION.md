@@ -66,8 +66,9 @@ Do **not** carry these forward from the old tree:
 ### 0.4 Equations implemented (core milestone)
 
 See §2. **SCA (Algorithm 1)** is implemented in `src/uavdt/sca/` (CVXPY
-default; MATLAB CVX+MOSEK spot-validated). **TD3 (Algorithm 2)** remains
-**out of scope** for this milestone.
+default; MATLAB CVX+MOSEK spot-validated). **TD3 (Algorithm 2)** is
+implemented in `src/uavdt/td3/` as an opt-in method; knobs are
+`TD3Settings`, not `SimConfig`.
 
 ### 0.5–0.7 Parameters, unspecified values, ambiguities
 
@@ -90,13 +91,14 @@ src/uavdt/
     placement/         random (θ), k-means, PSO (external)
     sca/               Algorithm 1 SCA (CVXPY + MATLAB bridge)
     sca_joint/         Methodology probe: SCA + discrete a_ij/b_ij re-match
+    td3/               Algorithm 2 TD3 (opt-in; TD3Settings, not SimConfig)
     experiments/       CLI, campaigns, Fig. 11, spot-validate
 tests/                 unit tests for the validation items in §0.9
 docs/REPRODUCTION.md   this file
 ```
 
-TD3 is intentionally absent. SCA was added after the core model passed
-the validation plan in §0.9.
+TD3 is opt-in (`method="td3"` / `python -m uavdt td3`). SCA remains the
+headline per-instance optimizer for default campaigns.
 
 ### 0.9 Validation / test plan
 
@@ -270,7 +272,7 @@ R_{\mathrm{sum}}=\sum_{i=1}^{I}\sum_{j=1}^{J}a_{ij}r_{ij}.
 | Eq. (17) uses `∑_{i∈N_k} λ_i`, while constraint (24) uses all tasks on UAV `j` | Both implemented as written. |
 | Eqs. (14)–(15) vs (17) (min-rate vs total-rate in the AoI term) | **(17) is the stated final form** and is what we compute. |
 | Base-station coordinates | Unused: download time neglected in the paper. |
-| TD3 hyperparameters (`γ`, `τ`, `d`, network sizes, …) | Not in Table II. Not implemented in this milestone. |
+| TD3 hyperparameters (`γ`, `τ`, `d`, network sizes, …) | Not in Table II. Filled in `TD3Settings` (Fujimoto 2018 + Alg. 2). |
 | Random seeds for the 20 runs | Not specified. CLI accepts `--seed` / `--n-runs`. |
 
 Execution defaults for `task_size_bits` and `task_cycles` exist only so
@@ -454,8 +456,8 @@ not the LP. Problem (P) is feasible at \(T_k=0.8\) s under that
 construction at k-means \(q\) on 40/40 geometries (seeds 1–20 and
 held-out 21–40; see `docs/RESULTS.md` §2.8 and §6). Default SCA-joint
 stays best-SE-only so recorded probe JSON remains reproducible. The
-probe does not replace frozen SCA. TD3’s frozen-binaries decision is
-independent of it.
+probe does not replace frozen SCA. TD3 is a separate opt-in solver
+(`uavdt.td3`) and does not change this probe.
 
 ### 6.3 Sequential phases — IMPLEMENTATION CHOICE
 
@@ -551,4 +553,4 @@ Problem (P) as written:
 - SCA solver is **frozen**. Characterization vs `J`, `I`, `λ`, `T_k`,
   CPU, and Random/K-means/PSO lives in `docs/EXPERIMENTS.md`.
 - Fig. 11 heterogeneous-λ AoDT check: `python -m uavdt fig11`.
-- TD3 (Algorithm 2) is out of scope.
+- TD3 (Algorithm 2) is opt-in (`uavdt.td3`); hyperparameters are not Table II.

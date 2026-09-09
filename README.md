@@ -2,9 +2,11 @@
 
 Python implementation of the Khalaf et al. (IEEE TNSM, 2026) **system model**
 for UAV-aided digital twins in IoT networks. Includes placement baselines,
-Algorithm 1 SCA, and §VII-style experimental campaigns.
+Algorithm 1 SCA, Algorithm 2 TD3 (opt-in), and §VII-style experimental campaigns.
 
-**Not in this milestone:** TD3 (Algorithm 2).
+TD3 hyperparameters live in `TD3Settings` (`uavdt.td3`). They are **not** on
+`SimConfig` and are **not** Table II. Default campaigns still run
+`random,kmeans,pso,sca`.
 
 | Document | Purpose |
 | --- | --- |
@@ -22,6 +24,7 @@ Algorithm 1 SCA, and §VII-style experimental campaigns.
 - **CVXPY** (required for `sca`, `campaign`, `spot-validate` with the default CVXPY backend)
 - **pytest** (for tests)
 - **matplotlib** (optional; only for `scripts/plot_paper_figures.py` — install via `requirements-dev.txt`)
+- **PyTorch** (optional; only for `td3` — `pip install torch` or `pip install -e ".[td3]"`)
 - **MATLAB R2026a + CVX + MOSEK** (optional; only needed when `--solver matlab` is used)
 
 ---
@@ -114,6 +117,7 @@ python -m uavdt sca --help
 | `bandwidth-sweep` | Run all three `B_sys` presets on one seed |
 | `sca` | Algorithm 1 SCA; writes iteration history to `results/` |
 | `sca-joint` | Methodology probe: SCA plus discrete \(a_{ij}/b_{ij}\) re-match (`method="sca_joint"`). Optional `--process-cohesive-candidate`. |
+| `td3` | Algorithm 2 TD3 (opt-in). Per-instance train; knobs are `TD3Settings`, not `SimConfig`. |
 | `sca-seq-debug` | Per-iteration SCA log with true-feasibility gate |
 | `campaign` | §VII sweeps over UAV count, IoT count, λ, AoDT threshold, CPU |
 | `spot-validate` | CVXPY vs MATLAB CVX/MOSEK spot-check on frozen SCA |
@@ -228,6 +232,31 @@ python -m uavdt sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --sol
 
 ---
 
+### `td3` — Algorithm 2 (opt-in)
+
+Per-instance TD3 on one scenario. Paper Algorithm 2 gaps (network size,
+\(\gamma\), \(\tau\), noise, …) are filled in `TD3Settings` from Fujimoto et al.
+2018 plus the Algorithm 2 reward weights. Does **not** change `SimConfig`.
+Requires PyTorch.
+
+```powershell
+python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--seed` | `1` | Scenario and algorithm RNG seed. |
+| `--total-steps` | `7000` | Environment steps (paper Fig. 4 ≈ 7000). |
+| `--horizon` | `50` | Steps per episode before a random UAV reset. |
+| `--hidden` | `256` | MLP width (two ReLU layers). |
+| `--batch-size` | `256` | Replay minibatch. |
+| `--warmup-steps` | `256` | Random actions before critic updates. |
+| `--buffer-size` | `100000` | Replay capacity. |
+
+Campaign / n100: add `td3` to `--methods` (not in the default list).
+
+---
+
 ### `sca-seq-debug` — iteration-level debug log
 
 Same physics as `sca`, but prints a human-readable per-iteration table and
@@ -263,7 +292,7 @@ python -m uavdt campaign --axis uavs,iots --bandwidth-preset 8.8mhz --max-bw-sha
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--axis` | `all` | Comma-separated axes or `all`. Choices: `uavs`, `iots`, `lambda`, `aodt`, `cpu`. |
-| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods to compare. |
+| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods. Opt-in: `sca_joint`, `td3`. |
 | `--n-runs` | `5` | Seeds per sweep point. Paper uses **20**; default is 5 for faster runs. |
 | `--seed-start` | `1` | First seed. |
 | `--max-iterations` | `30` | SCA iterations (only affects the `sca` method). |
@@ -341,7 +370,8 @@ Exit code `2` if sensibility checks fail.
 
 Generate a frozen bank of random layouts (square field, IoT at \(z=0\), random UAV xy at height \(H\)), run SCA (the per-instance optimizer) plus placement baselines on every layout, then plot **means over the bank**. This is the Monte Carlo at the default \(I=10\), \(J=3\) operating point. It is **not** the Fig. 6–10 axis sweep; for those with 100 seeds use `campaign --n-runs 100` (much longer).
 
-TD3 remains out of scope: “training” here is Algorithm 1 SCA on each saved scenario.
+Default methods are SCA plus placement baselines. TD3 is opt-in:
+`--methods random,kmeans,pso,sca,td3` (slow: per-scenario training).
 
 ```powershell
 # Write 100 layouts, then SCA + baselines, then average figures
