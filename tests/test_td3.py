@@ -193,6 +193,19 @@ def test_format_eta_and_log_every_default():
     assert TD3Settings().export_actor == "best_checkpoint"
     assert TD3Settings().uav_init == "kmeans"
     assert TD3Settings().inner_bandwidth == "leftover"
+    assert TD3Settings().reward_mode == "alg2"
+    assert TD3Settings().action_heads == "full"
+    assert TD3Settings().infeasible_reward == -100.0
+    assert not TD3Settings().is_residual_on_sca()
+    proposed = TD3Settings.residual_on_sca()
+    assert proposed.uav_init == "sca"
+    assert proposed.assoc_mode == "frozen"
+    assert proposed.process_mode == "frozen"
+    assert proposed.inner_bandwidth == "lp"
+    assert proposed.reward_mode == "feasible_rate"
+    assert proposed.export_mode == "best_snapshot"
+    assert proposed.action_heads == "move_only"
+    assert proposed.is_residual_on_sca()
     assert _tiny().log_every == 0
 
 
@@ -285,3 +298,168 @@ def test_best_snapshot_export_mode_records_both():
     assert str(d.get("export_rule", "")).startswith("best_snapshot")
     assert abs(run.sum_rate_mbps - float(d["snapshot_export_sum_rate_Mbps"])) < 1e-9
     assert "policy_export_sum_rate_Mbps" in d
+
+
+def _tiny_residual() -> TD3Settings:
+    return TD3Settings.residual_on_sca(
+        total_steps=30,
+        horizon=10,
+        hidden=32,
+        batch_size=8,
+        warmup_steps=8,
+        buffer_size=64,
+        log_every=0,
+    )
+
+
+def test_cli_residual_preset_does_not_clobber_export_mode():
+    from uavdt.experiments.cli import _td3_settings_from_args
+
+    parser = build_parser()
+    alg2 = parser.parse_args(["td3", "--seed", "1"])
+    assert alg2.td3_preset == "alg2"
+    assert alg2.export_mode is None
+    s0 = _td3_settings_from_args(alg2)
+    assert s0.export_mode == "policy"
+    assert s0.uav_init == "kmeans"
+    proposed = parser.parse_args(
+        ["td3", "--td3-preset", "residual-on-sca", "--total-steps", "30"]
+    )
+    s1 = _td3_settings_from_args(proposed)
+    assert s1.is_residual_on_sca()
+    assert s1.export_mode == "best_snapshot"
+    assert s1.total_steps == 30
+    assert s1.action_heads == "move_only"
+
+
+def test_decode_move_only_and_frozen_requires_origin():
+    cfg = SimConfig()
+    sc = generate_scenario(1, cfg)
+    origin = np.array(
+        [[40.0, 40.0, 100.0], [50.0, 50.0, 100.0], [60.0, 30.0, 100.0]],
+        dtype=float,
+    )
+    from uavdt.resources import allocation_from_positions
+
+    origin_alloc = allocation_from_positions(sc, origin)
+    settings = TD3Settings.residual_on_sca(log_every=0)
+    assert action_size(cfg, settings) == 2 * cfg.num_uav
+    zeros = np.zeros(action_size(cfg, settings), dtype=float)
+    with pytest.raises(ValueError, match="origin_allocation"):
+        decode_action(zeros, origin, sc, settings, origin_xyz_m=origin)
+    uav, alloc = decode_action(
+        zeros,
+        origin,
+        sc,
+        settings,
+        origin_xyz_m=origin,
+        origin_allocation=origin_alloc,
+    )
+    np.testing.assert_allclose(uav, origin)
+    np.testing.assert_array_equal(
+        alloc.hard_association(), origin_alloc.hard_association()
+    )
+    np.testing.assert_array_equal(
+        alloc.hard_processing(), origin_alloc.hard_processing()
+    )
+    bumped = zeros.copy()
+    bumped[0] = 1.0
+    moved, alloc2 = decode_action(
+        bumped,
+        origin,
+        sc,
+        settings,
+        origin_xyz_m=origin,
+        origin_allocation=origin_alloc,
+    )
+    np.testing.assert_allclose(moved[0, :2], [50.0, 40.0])
+    np.testing.assert_array_equal(
+        alloc2.hard_association(), origin_alloc.hard_association()
+    )
+
+
+def test_feasible_rate_reward_is_penalty_when_infeasible():
+    pytest.importorskip("cvxpy")
+    from uavdt.evaluator import evaluate
+    from uavdt.models import Allocation
+    from uavdt.td3.env import reward_breakdown, zenith_r_max_bit_per_s
+
+    cfg = SimConfig(b_sys_hz=2.4e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    from uavdt.placement.kmeans import place_kmeans
+    from uavdt.resources import allocation_from_positions
+
+    uav = place_kmeans(sc, 1)
+    alloc = allocation_from_positions(sc, uav)
+    zero_bw = Allocation(
+        alloc.hard_association(),
+        alloc.hard_processing(),
+        np.zeros_like(alloc.bandwidth_hz),
+    )
+    ev = evaluate(sc, uav, zero_bw)
+    assert not ev.feasible
+    settings = TD3Settings.residual_on_sca(log_every=0)
+    r_max = zenith_r_max_bit_per_s(cfg)
+    reward, terms = reward_breakdown(ev, uav, cfg, settings, r_max)
+    assert reward == settings.infeasible_reward
+    assert terms["p_aodt"] >= 0.0
+    alg2, alg2_terms = reward_breakdown(ev, uav, cfg, TD3Settings(), r_max)
+    assert "p_aodt" in alg2_terms
+    assert alg2 != settings.infeasible_reward
+
+
+def test_zero_residual_on_sca_matches_solve_sca():
+    pytest.importorskip("cvxpy")
+    from uavdt.sca.algorithm import solve_sca
+    from uavdt.sca.settings import SCASettings
+    from uavdt.td3.env import UAVAoDTEnv
+
+    cfg = SimConfig(b_sys_hz=2.4e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    sca = solve_sca(sc, 1, settings=SCASettings(solver=None))
+    settings = TD3Settings.residual_on_sca(log_every=0)
+    env = UAVAoDTEnv(sc, settings, seed=1)
+    assert env.act_dim == 2 * cfg.num_uav
+    env.reset()
+    zeros = np.zeros(env.act_dim, dtype=float)
+    _obs, reward, _done, info = env.step(zeros)
+    ev = info["eval"]
+    np.testing.assert_allclose(env._uav, sca.uav_xyz_m)
+    np.testing.assert_array_equal(
+        env._alloc.hard_association(), sca.allocation.hard_association()
+    )
+    np.testing.assert_array_equal(
+        env._alloc.hard_processing(), sca.allocation.hard_processing()
+    )
+    assert ev.feasible == sca.true_eval.feasible
+    assert abs(ev.sum_rate_mbps - sca.true_eval.sum_rate_mbps) < 1e-4
+    if ev.feasible:
+        assert abs(reward - ev.sum_rate_mbps) < 1e-9
+    else:
+        assert reward == settings.infeasible_reward
+    assert env.origin_eval is not None
+    assert abs(env.origin_eval.sum_rate_mbps - sca.true_eval.sum_rate_mbps) < 1e-4
+
+
+def test_run_method_tiny_residual_on_sca():
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("cvxpy")
+    _ = torch
+    from uavdt.experiments.methods import run_method
+
+    cfg = SimConfig(b_sys_hz=2.4e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    run = run_method(sc, "td3", seed=1, td3_settings=_tiny_residual())
+    d = run.diagnostics
+    assert d.get("preset") == "residual-on-sca"
+    assert d.get("export_bandwidth") == "frozen_q_lp"
+    assert d.get("export_mode") == "best_snapshot"
+    assert d.get("reward_mode") == "feasible_rate"
+    assert d.get("uav_init") == "sca"
+    assert d.get("inner_bandwidth") == "lp"
+    assert d.get("act_dim") == 2 * cfg.num_uav
+    assert "origin_sum_rate_Mbps" in d
+    assert "delta_vs_origin_Mbps" in d
+    assert str(d.get("label", "")).startswith("Residual policy on SCA")
+    if run.feasible and d.get("origin_feasible"):
+        assert float(d["delta_vs_origin_Mbps"]) >= -1e-4

@@ -210,10 +210,13 @@ def solve_td3(
     window_mbps: list[float] = []
     window_feas: list[float] = []
     ep_mbps: list[float] = []
+    ep_scores: list[float] = []
     verbose = log_every > 0
+    preset = "residual-on-sca" if settings.is_residual_on_sca() else "alg2"
     if verbose:
         log_td3(
-            f"TD3 train  seed={int(seed)}  I={cfg.num_iot} J={cfg.num_uav} "
+            f"TD3 train  seed={int(seed)}  preset={preset}  "
+            f"I={cfg.num_iot} J={cfg.num_uav} "
             f"K={cfg.num_processes}  steps={settings.total_steps} "
             f"horizon={settings.horizon} warmup={warmup}  "
             f"device={settings.device}  obs={env.obs_dim} act={env.act_dim}  "
@@ -231,14 +234,20 @@ def solve_td3(
         window_r.append(float(reward))
         window_mbps.append(float(info.get("sum_rate_Mbps", info["eval"].sum_rate_mbps)))
         window_feas.append(float(info["eval"].feasible))
-        ep_mbps.append(float(info.get("sum_rate_Mbps", info["eval"].sum_rate_mbps)))
+        mbps = float(info.get("sum_rate_Mbps", info["eval"].sum_rate_mbps))
+        ep_mbps.append(mbps)
+        if settings.reward_mode == "feasible_rate":
+            ep_scores.append(float(reward))
+        else:
+            ep_scores.append(mbps)
         if log_every > 0 and len(window_r) > log_every:
             window_r.pop(0)
             window_mbps.pop(0)
             window_feas.pop(0)
         if done:
-            agent.consider_checkpoint(float(np.mean(ep_mbps)))
+            agent.consider_checkpoint(float(np.mean(ep_scores)))
             ep_mbps = []
+            ep_scores = []
             n_episodes += 1
             if t + 1 < settings.total_steps:
                 obs = env.reset()
@@ -264,8 +273,8 @@ def solve_td3(
                 )
             )
 
-    if ep_mbps:
-        agent.consider_checkpoint(float(np.mean(ep_mbps)))
+    if ep_scores:
+        agent.consider_checkpoint(float(np.mean(ep_scores)))
     if settings.export_actor == "best_checkpoint":
         agent.load_best_actor()
     if env.best is None:
@@ -294,12 +303,28 @@ def solve_td3(
             f"deterministic_policy last_{n_avg}_xy_mean last_step_ab frozen_q_lp"
         )
     elapsed = perf_counter() - t0
+    origin_ev = env.origin_eval
+    origin_mbps = None if origin_ev is None else float(origin_ev.sum_rate_mbps)
+    origin_feas = None if origin_ev is None else bool(origin_ev.feasible)
+    delta_origin = None if origin_mbps is None else float(ev.sum_rate_mbps - origin_mbps)
+    if settings.is_residual_on_sca():
+        label = (
+            "Residual policy on SCA: frozen a/b, inner frozen-q LP, "
+            "feasible-rate reward (not Algorithm 2)"
+        )
+    else:
+        label = (
+            "TD3 Algorithm 2 fill-in: per-instance train, Alg. 2 reward, "
+            "Fujimoto knobs in TD3Settings (not Table II)"
+        )
     if verbose:
         inner = train_best.true_eval
+        origin_s = "none" if origin_mbps is None else f"{origin_mbps:.4f}"
         log_td3(
-            f"TD3 done   seed={int(seed)}  rule={export_rule}  "
+            f"TD3 done   seed={int(seed)}  preset={preset}  rule={export_rule}  "
             f"export={ev.sum_rate_mbps:.4f} Mbps "
             f"feas={'yes' if ev.feasible else 'no'}  "
+            f"origin={origin_s}  "
             f"snapshot_LP={snap_ev.sum_rate_mbps:.4f} "
             f"policy_LP={pol_ev.sum_rate_mbps:.4f}  "
             f"inner_best={inner.sum_rate_mbps:.4f}  "
@@ -314,10 +339,8 @@ def solve_td3(
         n_steps=int(settings.total_steps),
         diagnostics={
             "method": "td3",
-            "label": (
-                "TD3 Algorithm 2 fill-in: per-instance train, Alg. 2 reward, "
-                "Fujimoto knobs in TD3Settings (not Table II)"
-            ),
+            "preset": preset,
+            "label": label,
             "n_updates": int(agent.n_updates),
             "n_episodes": int(n_episodes),
             "obs_dim": int(env.obs_dim),
@@ -334,10 +357,18 @@ def solve_td3(
             "assoc_mode": str(settings.assoc_mode),
             "uav_init": str(settings.uav_init),
             "inner_bandwidth": str(settings.inner_bandwidth),
+            "reward_mode": str(settings.reward_mode),
+            "action_heads": str(settings.action_heads),
             "discount": float(settings.discount),
             "critic_use_obs": bool(settings.critic_use_obs),
             "critic_move_only": bool(settings.critic_move_only),
             "export_actor": str(settings.export_actor),
+            "origin_sum_rate_Mbps": origin_mbps,
+            "origin_feasible": origin_feas,
+            "origin_wall_clock_s": float(env.origin_wall_clock_s),
+            "origin_stop_reason": env.origin_stop_reason,
+            "delta_vs_origin_Mbps": delta_origin,
+            "best_found_at_step": int(train_best.found_at_step),
             "best_actor_episode_Mbps": (
                 None
                 if not np.isfinite(agent.best_actor_score)

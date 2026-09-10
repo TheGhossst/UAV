@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -118,6 +119,74 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         default=0.0,
         help="Eq. (12) UAV→BS download Z (s). Paper neglects this; default 0.",
     )
+
+
+def _add_td3_preset_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--td3-preset",
+        choices=("alg2", "residual-on-sca"),
+        default="alg2",
+        help=(
+            "alg2: Algorithm 2 reproduction (k-means residual, leftover B, "
+            "penalty reward). residual-on-sca: proposed interface to (P)."
+        ),
+    )
+    p.add_argument(
+        "--inner-bandwidth",
+        choices=("leftover", "equal_share", "lp"),
+        default=None,
+        help="Override TD3Settings.inner_bandwidth (default follows the preset).",
+    )
+    p.add_argument(
+        "--uav-init",
+        choices=("kmeans", "random", "sca"),
+        default=None,
+        help="Override TD3Settings.uav_init (default follows the preset).",
+    )
+    p.add_argument(
+        "--reward-mode",
+        choices=("alg2", "feasible_rate"),
+        default=None,
+        help="Override TD3Settings.reward_mode (default follows the preset).",
+    )
+    p.add_argument(
+        "--export-mode",
+        choices=("policy", "best_snapshot"),
+        default=None,
+        help="Override TD3Settings.export_mode (default follows the preset).",
+    )
+
+
+def _td3_settings_from_args(args: argparse.Namespace) -> TD3Settings:
+    preset = str(getattr(args, "td3_preset", "alg2") or "alg2")
+    if preset == "residual-on-sca":
+        settings = TD3Settings.residual_on_sca()
+    elif preset == "alg2":
+        settings = TD3Settings()
+    else:
+        raise ValueError(f"unknown td3 preset {preset!r}")
+    updates: dict = {}
+    for name in (
+        "total_steps",
+        "horizon",
+        "hidden",
+        "batch_size",
+        "warmup_steps",
+        "buffer_size",
+        "log_every",
+        "export_avg_steps",
+    ):
+        if hasattr(args, name):
+            val = getattr(args, name)
+            if val is not None:
+                updates[name] = val
+    for name in ("export_mode", "inner_bandwidth", "uav_init", "reward_mode"):
+        val = getattr(args, name, None)
+        if val is not None:
+            updates[name] = val
+    if updates:
+        settings = replace(settings, **updates)
+    return settings
 
 
 def _print_eval(seed: int, cfg: SimConfig, uav, result, *, verbose: bool) -> None:
@@ -337,22 +406,18 @@ def cmd_td3(args: argparse.Namespace) -> int:
 
     cfg = _cfg_from_args(args)
     scenario = generate_scenario(args.seed, cfg)
-    settings = TD3Settings(
-        total_steps=int(args.total_steps),
-        horizon=int(args.horizon),
-        hidden=int(args.hidden),
-        batch_size=int(args.batch_size),
-        warmup_steps=int(args.warmup_steps),
-        buffer_size=int(args.buffer_size),
-        log_every=int(args.log_every),
-        export_mode=str(args.export_mode),
-        export_avg_steps=int(args.export_avg_steps),
-    )
+    settings = _td3_settings_from_args(args)
     result = solve_td3(scenario, args.seed, settings=settings)
     ev = result.true_eval
     c = ev.constraints
     d = result.diagnostics
-    print("method                TD3 (Algorithm 2 fill-in; TD3Settings, not Table II)")
+    if settings.is_residual_on_sca():
+        print(
+            "method                TD3 residual-on-SCA "
+            "(proposed interface to (P); not Algorithm 2)"
+        )
+    else:
+        print("method                TD3 (Algorithm 2 fill-in; TD3Settings, not Table II)")
     print(f"B_sys                 {_fmt_hz(cfg.b_sys_hz)}")
     print(f"total_steps           {d.get('total_steps')}")
     print(f"n_updates             {d.get('n_updates')}")
@@ -430,7 +495,7 @@ def cmd_campaign(args: argparse.Namespace) -> int:
             solver=solver,
         ),
         pso_settings=PSOSettings(),
-        td3_settings=TD3Settings(),
+        td3_settings=_td3_settings_from_args(args),
     )
     payload = run_campaign(_parse_axes(args.axis), cfg, settings)
     out = write_campaign(payload, args.out)
@@ -593,7 +658,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
                 solver=solver,
             ),
             pso_settings=PSOSettings(),
-            td3_settings=TD3Settings(),
+            td3_settings=_td3_settings_from_args(args),
             checkpoint_path=args.checkpoint,
             resume=not args.no_resume,
             bank_path=bank_path,
@@ -699,9 +764,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     td = sub.add_parser(
         "td3",
-        help="Algorithm 2 TD3 (opt-in; TD3Settings, not Table II)",
+        help="TD3 (opt-in). Default preset is Algorithm 2; residual-on-sca is the proposed (P) interface.",
     )
     _add_shared(td)
+    _add_td3_preset_args(td)
     td.add_argument("--seed", type=int, default=1)
     td.add_argument("--total-steps", type=int, default=7000)
     td.add_argument("--horizon", type=int, default=50)
@@ -714,12 +780,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=250,
         help="Print a TD3 train progress line every N env steps (0=silent)",
-    )
-    td.add_argument(
-        "--export-mode",
-        choices=("policy", "best_snapshot"),
-        default="policy",
-        help="Official score: trained policy rollout (default) or best snapshot",
     )
     td.add_argument(
         "--export-avg-steps",
@@ -751,6 +811,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="§VII-style sweeps: J, I, λ, T_k, CPU; methods random/kmeans/pso/sca",
     )
     _add_shared(camp)
+    _add_td3_preset_args(camp)
     camp.add_argument(
         "--axis",
         type=str,
@@ -826,6 +887,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate 100 area+IoT+UAV scenarios, run SCA/baselines, plot averages",
     )
     _add_shared(n100)
+    _add_td3_preset_args(n100)
     n100.add_argument("--n-scenarios", type=int, default=100)
     n100.add_argument("--seed-start", type=int, default=1)
     n100.add_argument("--num-iot", type=int, default=10)

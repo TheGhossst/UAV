@@ -186,28 +186,189 @@ def _running_mean(plt, payload, methods, note, out: Path) -> Path:
 
 
 def _per_scenario(plt, payload, methods, note, out: Path) -> Path:
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    line_styles = {
+        "sca": {"linewidth": 2.4, "alpha": 1.0, "zorder": 5},
+        "random": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
+        "kmeans": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
+        "pso": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
+        "td3": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
+        "sca_joint": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
+    }
+    all_rates: list[float] = []
+    n_scenarios = 0
     for method in methods:
         rates = np.asarray(payload["by_method"][method]["per_seed_Mbps"], dtype=float)
+        n_scenarios = max(n_scenarios, rates.size)
+        all_rates.extend(rates.tolist())
         xs = np.arange(1, rates.size + 1)
         style = METHOD_STYLES.get(method, {})
+        ls = line_styles.get(method, {"linewidth": 1.5, "alpha": 0.8, "zorder": 3})
         ax.plot(
             xs,
             rates,
             label=METHOD_LABELS.get(method, method),
-            color=style.get("color"),
-            marker=style.get("marker"),
-            markersize=3.5,
-            linewidth=1.0,
-            alpha=0.85,
+            color=style.get("color", "#555555"),
+            linewidth=ls["linewidth"],
+            alpha=ls["alpha"],
+            zorder=ls["zorder"],
+            solid_capstyle="round",
         )
-    _style(ax, "Scenario index", "Sum rate (Mbps)", "Per-scenario sum rate")
-    ax.legend(loc="best", framealpha=0.9)
+    y_min, y_max = float(np.min(all_rates)), float(np.max(all_rates))
+    pad = max(0.012, 0.08 * (y_max - y_min))
+    ax.set_ylim(y_min - pad, y_max + pad)
+    ax.set_xlim(1, n_scenarios)
+    ax.set_xticks(np.linspace(1, n_scenarios, min(6, n_scenarios), dtype=int))
+    _style(ax, "Scenario", "Sum rate (Mbps)", "Per-scenario sum rate")
+    ax.legend(loc="lower left", framealpha=0.95, edgecolor="0.85", fontsize=9)
     fig.text(0.5, 0.01, note, ha="center", fontsize=7.5, color="0.35")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     png = _save(fig, out / "n100_per_scenario")
     plt.close(fig)
     return png
+
+
+def plot_seed_layout_comparison(
+    payload: dict,
+    bank: dict,
+    seed: int,
+    out_dir: str | Path,
+    *,
+    methods: tuple[str, ...] = ("sca", "kmeans", "random", "pso"),
+) -> Path:
+    """Two-panel map: frozen bank layout vs per-method optimized UAV xy."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    record = next((r for r in bank["scenarios"] if int(r["seed"]) == int(seed)), None)
+    if record is None:
+        raise ValueError(f"seed {seed} not found in scenario bank")
+
+    scenario_id = int(record["id"])
+    geo = bank["geometry"]
+    area_x = float(geo["area_x_m"])
+    area_y = float(geo["area_y_m"])
+
+    iot = np.asarray(record["iot_xyz_m"], dtype=float)
+    proc = np.asarray(record["process_id_of_iot"], dtype=int)
+    init_uav = np.asarray(record["uav_xyz_m"], dtype=float)
+
+    runs: dict[str, dict] = {}
+    for method in methods:
+        match = [
+            r
+            for r in payload.get("runs", [])
+            if int(r["seed"]) == int(seed) and r["method"] == method
+        ]
+        if not match:
+            raise ValueError(f"method {method!r} missing for seed {seed}")
+        runs[method] = match[0]
+
+    proc_colors = ("#4c78a8", "#f58518")
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.4), sharex=True, sharey=True)
+    panels = (
+        (axes[0], init_uav, "Initial placement (saved bank UAVs)", None),
+        (axes[1], None, "Optimized UAV positions by method", methods),
+    )
+
+    def _draw_iot(ax) -> None:
+        for idx, (xy, p) in enumerate(zip(iot, proc, strict=True)):
+            color = proc_colors[int(p)]
+            ax.scatter(
+                xy[0],
+                xy[1],
+                c=color,
+                s=52,
+                zorder=3,
+                edgecolors="white",
+                linewidths=0.6,
+            )
+            ax.annotate(
+                str(idx + 1),
+                (xy[0], xy[1]),
+                textcoords="offset points",
+                xytext=(4, 4),
+                fontsize=7,
+                color="0.15",
+                zorder=6,
+            )
+        for k, color in enumerate(proc_colors):
+            ax.scatter(
+                [],
+                [],
+                c=color,
+                s=52,
+                edgecolors="white",
+                linewidths=0.6,
+                label=f"IoT $N_{{{k + 1}}}$ ({int(np.sum(proc == k))} devices)",
+            )
+
+    for ax, uav, title, panel_methods in panels:
+        _draw_iot(ax)
+        if panel_methods is None:
+            ax.scatter(
+                uav[:, 0],
+                uav[:, 1],
+                marker="^",
+                s=110,
+                c="#54a24b",
+                edgecolors="0.15",
+                linewidths=0.8,
+                label="UAV (initial)",
+                zorder=4,
+            )
+        else:
+            for method in panel_methods:
+                if method not in runs:
+                    continue
+                run = runs[method]
+                uav_opt = np.asarray(run["uav_xyz_m"], dtype=float)
+                style = METHOD_STYLES.get(method, {})
+                label = (
+                    f"{METHOD_LABELS.get(method, method)} "
+                    f"({run['sum_rate_Mbps']:.3f} Mbps)"
+                )
+                ax.scatter(
+                    uav_opt[:, 0],
+                    uav_opt[:, 1],
+                    marker=style.get("marker", "o"),
+                    s=95,
+                    c=style.get("color", "#555555"),
+                    edgecolors="0.15",
+                    linewidths=0.8,
+                    label=label,
+                    zorder=4,
+                )
+        ax.set_xlim(-0.02 * area_x, 1.02 * area_x)
+        ax.set_ylim(-0.02 * area_y, 1.02 * area_y)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_title(title, fontsize=10)
+        ax.grid(True, alpha=0.3, linestyle=":")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_xlabel("x (m)")
+        if ax is axes[0]:
+            ax.set_ylabel("y (m)")
+
+    axes[0].legend(loc="upper left", fontsize=8, framealpha=0.95, edgecolor="0.85")
+    axes[1].legend(loc="upper left", fontsize=7.5, framealpha=0.95, edgecolor="0.85")
+    fig.suptitle(
+        f"Seed {seed} (scenario {scenario_id}) — "
+        f"$I={len(iot)}$ IoT, $J={init_uav.shape[0]}$ UAV",
+        fontsize=12,
+        y=1.02,
+    )
+    note = _repro_note(payload)
+    fig.text(0.5, 0.01, note, ha="center", fontsize=7.5, color="0.35")
+    fig.tight_layout(rect=(0, 0.05, 1, 0.98))
+
+    stem = out / f"n100_seed{seed}_layout_comparison"
+    return _save(fig, stem)
 
 
 def _scenario_maps(plt, payload, bank, note, out: Path) -> Path:

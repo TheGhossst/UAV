@@ -4,6 +4,8 @@ Last updated: 2026-09-10
 
 Quick reference. Details in `docs/RESULTS.md` §2.9 and `docs/EXPERIMENTS.md`.
 
+**§2.9 layout:** scripts → `scripts/experiments/residual_on_sca/`; JSON → `results/residual_on_sca/`. Old `scripts/run_*.py` shims still work.
+
 ---
 
 ## In progress
@@ -16,10 +18,10 @@ Quick reference. Details in `docs/RESULTS.md` §2.9 and `docs/EXPERIMENTS.md`.
 
 ## Done — residual-on-SCA evaluation (2026-09-10)
 
-- [x] **Experiment B** — `results/residual_on_sca_heldout_21_40.json`  
+- [x] **Experiment B** — `results/residual_on_sca/residual_td3_heldout_21_40.json`  
   Readout: **neck_and_neck**. Mean Δ = +0.0032 Mbps, 4/20 wins, 0 losses, construction OK.
 
-- [x] **CMA-ES control** — `results/cmaes_sca_polish_heldout_21_40.json`  
+- [x] **CMA-ES control** — `results/residual_on_sca/cmaes_polish_heldout_21_40.json`  
   Polish mean Δ = +0.0075 Mbps, 12/20 wins. CMA-ES finds more local gains than ±10 m TD3.
 
 ---

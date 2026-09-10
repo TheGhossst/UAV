@@ -11,6 +11,10 @@ Move decode is an implementation choice on TD3Settings.move_mode:
 - delta: Δx,Δy × 10 m (Alg. 2 letter; a constant actor cannot hover)
 - setpoint: 10 m/step toward a tanh-mapped field target (can hover)
 - absolute: teleport to the tanh-mapped field target
+- residual: Δ from a frozen origin (k-means or SCA q)
+
+assoc_mode/process_mode "frozen" keep the origin binaries (SCA a,b).
+action_heads "move_only" is Δxy in R^{2J} (residual-on-SCA preset).
 """
 
 from __future__ import annotations
@@ -29,9 +33,12 @@ from uavdt.scenario import make_uav_xyz_m
 from uavdt.td3.settings import TD3Settings
 
 
-def action_size(cfg: SimConfig) -> int:
+def action_size(cfg: SimConfig, settings: TD3Settings | None = None) -> int:
     j = cfg.num_uav
-    return 2 * j + cfg.num_iot * j + cfg.num_processes * j
+    n_move = 2 * j
+    if settings is not None and settings.action_heads == "move_only":
+        return n_move
+    return n_move + cfg.num_iot * j + cfg.num_processes * j
 
 
 def observation_size(cfg: SimConfig) -> int:
@@ -88,12 +95,14 @@ def decode_action(
     settings: TD3Settings | None = None,
     *,
     origin_xyz_m: np.ndarray | None = None,
+    origin_allocation: Allocation | None = None,
 ) -> tuple[np.ndarray, Allocation]:
     """Map actor output to clipped UAV positions and hard a_ij / b_ij."""
     settings = settings or TD3Settings()
     cfg = scenario.cfg
     n_move, n_assoc, n_proc = _slices(cfg)
-    expected = n_move + n_assoc + n_proc
+    move_only = settings.action_heads == "move_only"
+    expected = n_move if move_only else n_move + n_assoc + n_proc
     raw = np.asarray(action, dtype=float).reshape(-1)
     if raw.size != expected:
         raise ValueError(f"action length {raw.size} != {expected}")
@@ -103,10 +112,14 @@ def decode_action(
     xy = _move_xy(raw[:n_move], uav_xyz_m, cfg, settings, origin_xyz_m=origin_xyz_m)
     uav = make_uav_xyz_m(xy, cfg.uav_height_m)
 
-    assoc_logits = raw[n_move : n_move + n_assoc].reshape(i, j)
-    if settings.assoc_mode == "nearest":
+    if settings.assoc_mode == "frozen":
+        if origin_allocation is None:
+            raise ValueError("assoc_mode='frozen' requires origin_allocation")
+        a = origin_allocation.hard_association()
+    elif settings.assoc_mode == "nearest":
         a = nearest_association(scenario.iot_xyz_m, uav)
     else:
+        assoc_logits = raw[n_move : n_move + n_assoc].reshape(i, j)
         scores = assoc_logits
         if settings.assoc_mode == "logits_plus_dist":
             coef = float(settings.assoc_distance_coef)
@@ -117,10 +130,14 @@ def decode_action(
         a = np.zeros((i, j), dtype=float)
         a[np.arange(i), np.argmax(scores, axis=1)] = 1.0
 
-    proc_logits = raw[n_move + n_assoc :].reshape(cfg.num_processes, j)
-    if settings.process_mode == "cpu_stable":
+    if settings.process_mode == "frozen":
+        if origin_allocation is None:
+            raise ValueError("process_mode='frozen' requires origin_allocation")
+        b = origin_allocation.hard_processing()
+    elif settings.process_mode == "cpu_stable":
         b = cpu_stable_processing(scenario, a)
     else:
+        proc_logits = raw[n_move + n_assoc :].reshape(cfg.num_processes, j)
         b = np.zeros((i, j), dtype=float)
         for proc in scenario.processes:
             members = proc.iot_indices

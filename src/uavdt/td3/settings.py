@@ -3,6 +3,11 @@
 Paper Algorithm 2 names σ, d, γ, τ, T, η, N but does not publish values.
 Defaults follow Fujimoto et al. 2018 except total_steps (Fig. 4 ≈ 7000)
 and buffer_size (1e5; T is short). Domain weights match Algorithm 2.
+
+The proposed method is TD3Settings.residual_on_sca() — residual Δq on
+the SCA incumbent, frozen a/b, inner bandwidth LP, feasible-rate reward.
+That is a settings/origin change, not a new swarm. Defaults below stay
+Algorithm 2 (reproduction chapter).
 """
 
 from __future__ import annotations
@@ -73,6 +78,11 @@ class TD3Settings:
     # Algorithm 2: "update bandwidth" inside the env step. leftover-dump is
     # the same QoS-floor + cap heuristic SCA starts with; full LP at export.
     inner_bandwidth: str = "leftover"
+    # "alg2": paper Eq. (34) penalty. "feasible_rate": Problem (P) Mbps gate.
+    reward_mode: str = "alg2"
+    infeasible_reward: float = -100.0
+    # "full": Δxy + assoc/proc logits (Alg. 2). "move_only": Δxy in R^{2J}.
+    action_heads: str = "full"
 
     def __post_init__(self) -> None:
         if self.actor_lr <= 0.0 or self.critic_lr <= 0.0:
@@ -115,13 +125,56 @@ class TD3Settings:
             )
         if self.assoc_distance_coef < 0.0:
             raise ValueError("assoc_distance_coef must be >= 0")
-        if self.process_mode not in {"cpu_stable", "logits"}:
-            raise ValueError("process_mode must be 'cpu_stable' or 'logits'")
-        if self.assoc_mode not in {"nearest", "logits", "logits_plus_dist"}:
-            raise ValueError("assoc_mode must be nearest, logits, or logits_plus_dist")
+        if self.process_mode not in {"cpu_stable", "logits", "frozen"}:
+            raise ValueError("process_mode must be 'cpu_stable', 'logits', or 'frozen'")
+        if self.assoc_mode not in {"nearest", "logits", "logits_plus_dist", "frozen"}:
+            raise ValueError(
+                "assoc_mode must be nearest, logits, logits_plus_dist, or frozen"
+            )
         if self.export_actor not in {"online", "best_checkpoint"}:
             raise ValueError("export_actor must be 'online' or 'best_checkpoint'")
-        if self.uav_init not in {"kmeans", "random"}:
-            raise ValueError("uav_init must be 'kmeans' or 'random'")
+        if self.uav_init not in {"kmeans", "random", "sca"}:
+            raise ValueError("uav_init must be 'kmeans', 'random', or 'sca'")
         if self.inner_bandwidth not in {"leftover", "equal_share", "lp"}:
             raise ValueError("inner_bandwidth must be leftover, equal_share, or lp")
+        if self.reward_mode not in {"alg2", "feasible_rate"}:
+            raise ValueError("reward_mode must be 'alg2' or 'feasible_rate'")
+        if self.action_heads not in {"full", "move_only"}:
+            raise ValueError("action_heads must be 'full' or 'move_only'")
+        if self.action_heads == "move_only" and self.assoc_mode in {
+            "logits",
+            "logits_plus_dist",
+        }:
+            raise ValueError("action_heads='move_only' cannot decode assoc logits")
+        if self.action_heads == "move_only" and self.process_mode == "logits":
+            raise ValueError("action_heads='move_only' cannot decode process logits")
+
+    def is_residual_on_sca(self) -> bool:
+        return (
+            self.uav_init == "sca"
+            and self.assoc_mode == "frozen"
+            and self.process_mode == "frozen"
+            and self.inner_bandwidth == "lp"
+            and self.reward_mode == "feasible_rate"
+        )
+
+    @classmethod
+    def residual_on_sca(cls, **overrides: object) -> TD3Settings:
+        """Proposed method: residual Δq on SCA, frozen a/b, inner LP, (P) reward.
+
+        Algorithm 2 defaults are unchanged; this factory is the opt-in preset.
+        """
+        kwargs: dict = {
+            "uav_init": "sca",
+            "move_mode": "residual",
+            "assoc_mode": "frozen",
+            "process_mode": "frozen",
+            "inner_bandwidth": "lp",
+            "reward_mode": "feasible_rate",
+            "export_mode": "best_snapshot",
+            "discount": 0.0,
+            "critic_move_only": True,
+            "action_heads": "move_only",
+        }
+        kwargs.update(overrides)
+        return cls(**kwargs)

@@ -740,33 +740,33 @@ Zero residual is SCA except by breaking that gate. \(\pm 10\) m is a **local** b
 **CLI / scripts (do not overwrite `campaign_8.8mhz_cap25_si12k.json`).**
 
 ```text
-python scripts/run_sca_multistart.py
-python scripts/run_residual_on_sca.py
-python scripts/run_cmaes_sca_polish.py
+python scripts/experiments/residual_on_sca/run_multistart.py
+python scripts/experiments/residual_on_sca/run_residual_td3.py
+python scripts/experiments/residual_on_sca/run_cmaes_polish.py
 python -m uavdt td3 --td3-preset residual-on-sca --bandwidth-preset 8.8mhz --max-bw-share 0.25
 ```
 
 | Experiment | Seeds | Question | Artifact |
 | --- | --- | --- | --- |
-| **A** | 1–20 | Is \(q\) even the hole? Frozen SCA vs 4 extra SCA inits (2 random + 2 k-means), keep-best extra. Overlap with random-beats-SCA seeds {7, 11, 13, 18, 19}. | `results/sca_multistart_n20.json` |
-| **B** | **21–40 held-out** | Residual-on-SCA vs frozen SCA. Neck-and-neck / FDR win / mean \(\Delta<0\) (construction broken). No seed \(>0.05\) Mbps worse. | `results/residual_on_sca_heldout_21_40.json` |
-| CMA-ES sibling | 21–40 | Same LP fitness + SCA polish. If this matches residual-TD3, the net is not load-bearing. | `results/cmaes_sca_polish_heldout_21_40.json` |
+| **A** | 1–20 | Is \(q\) even the hole? Frozen SCA vs 4 extra SCA inits (2 random + 2 k-means), keep-best extra. Overlap with random-beats-SCA seeds {7, 11, 13, 18, 19}. | `results/residual_on_sca/multistart_n20.json` |
+| **B** | **21–40 held-out** | Residual-on-SCA vs frozen SCA. Neck-and-neck / FDR win / mean \(\Delta<0\) (construction broken). No seed \(>0.05\) Mbps worse. | `results/residual_on_sca/residual_td3_heldout_21_40.json` |
+| CMA-ES sibling | 21–40 | Same LP fitness + SCA polish. If this matches residual-TD3, the net is not load-bearing. | `results/residual_on_sca/cmaes_polish_heldout_21_40.json` |
 | **C** (gated) | — | Association oracle at \(I=10,J=3\). Implement **only if A is flat**. If also flat, no VNS/BCD beats SCA on default Mbps; remaining better-than-SCA slide is \(T_k=0.8\) s process-cohesive \(a\). | (not implemented in this pass) |
 
 **Stop rules (A).** Extras not better (max \(\Delta\lesssim 0.01\) Mbps, no Wilcoxon win): residual RL cannot beat SCA on \(q\); the method is still “same program as SCA / match by construction.” Extras better on the random-beats-SCA seeds: residual-on-SCA is justified; if winning \(q\) is far from the frozen SCA point, use CMA-ES / a larger box, not \(\pm 10\) m TD3.
 
-**Experiment A (measured, 2026-09-09).** `results/sca_multistart_n20.json`, seeds 1–20, 8.8 MHz / 25% cap.
+**Experiment A (measured, 2026-09-09).** `results/residual_on_sca/multistart_n20.json`, seeds 1–20, 8.8 MHz / 25% cap.
 
 - Mean extra−frozen \(\Delta = +0.013 \pm 0.021\) Mbps (max **+0.066** on seed 11). Wilcoxon \(p_{\mathrm{greater}}=0.016\).
 - Extra inits win **13/20** seeds. Overlap with random-beats-SCA **{7, 11, 13, 18, 19}: all five**.
 - Practical bar \(\Delta>0.05\) Mbps: only seeds **11** (+0.066) and **19** (+0.056).
 - **All 13 wins are distant basins** (mean UAV \(xy\) distance to frozen SCA \(q\) is 16–72 m, none \(\le 15\) m). \(\pm 10\) m residual-on-SCA can match SCA by construction; it is **not** the search that reaches those basins. That is why the CMA-ES sibling exists. Do not silently enlarge `move_scale_m`.
 
-**Experiment B (measured, 2026-09-10).** `results/residual_on_sca_heldout_21_40.json`, held-out seeds 21–40, 7000 TD3 steps, 8.8 MHz / 25% cap.
+**Experiment B (measured, 2026-09-10).** `results/residual_on_sca/residual_td3_heldout_21_40.json`, held-out seeds 21–40, 7000 TD3 steps, 8.8 MHz / 25% cap.
 
 - Mean TD3−SCA \(\Delta = +0.0032 \pm 0.0070\) Mbps (max **+0.023** on seed 31). **16/20** exact ties; wins on **{27, 31, 34, 36}**, **0** losses.
 - Wilcoxon \(p_{\mathrm{greater}}=0.0625\). Pre-registered readout: **neck-and-neck**. Construction not broken (no seed \(>0.05\) Mbps worse).
-- CMA-ES sibling (`results/cmaes_sca_polish_heldout_21_40.json`): polish mean \(\Delta = +0.0075\) Mbps, **12/20** wins, max **+0.067** (seed 31). CMA-ES residual bounds are the **field**, not \(\pm 10\) m; extra CMA wins on TD3-tie seeds 23 and 32 sit outside the TD3 box (max per-axis \(|\Delta|=10.7\) m and \(20.5\) m). Inside \(\pm 10\) m, CMA-ES does not find a practical gain that TD3 missed.
+- CMA-ES sibling (`results/residual_on_sca/cmaes_polish_heldout_21_40.json`): polish mean \(\Delta = +0.0075\) Mbps, **12/20** wins, max **+0.067** (seed 31). CMA-ES residual bounds are the **field**, not \(\pm 10\) m; extra CMA wins on TD3-tie seeds 23 and 32 sit outside the TD3 box (max per-axis \(|\Delta|=10.7\) m and \(20.5\) m). Inside \(\pm 10\) m, CMA-ES does not find a practical gain that TD3 missed.
 
 **Tie audit (not zero-action collapse).** Official export is `best_snapshot`. On all 16 ties the exported \(q\) is **exactly** the SCA origin (`best_found_at_step=0`, mean UAV \(xy\) distance \(0\)). That is incumbent bookkeeping, not an actor that learned \(a\approx 0\):
 

@@ -418,12 +418,15 @@ Pre-registered tests for **residual-on-SCA**. Never overwrite
 Runs frozen k-means-init SCA vs four extra SCA starts (2 random + 2 k-means,
 keep-best).
 
+Scripts live in `scripts/experiments/residual_on_sca/`; JSON artifacts in
+`results/residual_on_sca/`. Shims at `scripts/run_*.py` still work.
+
 ```powershell
-python scripts/run_sca_multistart.py
-python scripts/run_sca_multistart.py --n-runs 20 --seed-start 1
+python scripts/experiments/residual_on_sca/run_multistart.py
+python scripts/experiments/residual_on_sca/run_multistart.py --n-runs 20 --seed-start 1
 ```
 
-Output: `results/sca_multistart_n20.json`
+Output: `results/residual_on_sca/multistart_n20.json`
 
 ### B — Residual policy on SCA (TD3)
 
@@ -431,22 +434,22 @@ Held-out seeds 21–40. Trains `residual-on-sca` and compares to frozen SCA on t
 same geometries.
 
 ```powershell
-python scripts/run_residual_on_sca.py
-python scripts/run_residual_on_sca.py --n-runs 20 --seed-start 21 --total-steps 7000
+python scripts/experiments/residual_on_sca/run_residual_td3.py
+python scripts/experiments/residual_on_sca/run_residual_td3.py --n-runs 20 --seed-start 21 --total-steps 7000
 ```
 
-Output: `results/residual_on_sca_heldout_21_40.json`
+Output: `results/residual_on_sca/residual_td3_heldout_21_40.json`
 
 ### B control — CMA-ES + SCA polish (no neural net)
 
 Same fitness as residual-on-SCA; checks whether RL adds anything over derivative-free search.
 
 ```powershell
-python scripts/run_cmaes_sca_polish.py
-python scripts/run_cmaes_sca_polish.py --n-runs 1 --max-evals 40
+python scripts/experiments/residual_on_sca/run_cmaes_polish.py
+python scripts/experiments/residual_on_sca/run_cmaes_polish.py --n-runs 1 --max-evals 40
 ```
 
-Output: `results/cmaes_sca_polish_heldout_21_40.json`
+Output: `results/residual_on_sca/cmaes_polish_heldout_21_40.json`
 
 ---
 
@@ -617,8 +620,8 @@ f_j: 0.5e8 … 2.5e8  cycles/s
 | Plot sum-rate sweeps | `python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k.json --skip-fig11` |
 | SCA vs random p-values | `python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json` |
 | Train proposed TD3 | `python -m uavdt td3 --td3-preset residual-on-sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
-| Multi-start SCA test | `python scripts/run_sca_multistart.py` |
-| Residual-on-SCA held-out | `python scripts/run_residual_on_sca.py` |
+| Multi-start SCA test | `python scripts/experiments/residual_on_sca/run_multistart.py` |
+| Residual-on-SCA held-out | `python scripts/experiments/residual_on_sca/run_residual_td3.py` |
 | Full regeneration | `.\scripts\run_full_regeneration.ps1` |
 | 20 kHz sanity check | `python scripts/check_bsys_20khz.py` |
 | Seed 79 layout map | See [§4 — layout comparison](#one-seed-initial-vs-optimized-uav-layout) |

@@ -94,9 +94,9 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
 # Proposed interface to (P): residual on SCA, inner LP, feasible-rate reward.
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --td3-preset residual-on-sca
-python scripts/run_sca_multistart.py
-python scripts/run_residual_on_sca.py
-python scripts/run_cmaes_sca_polish.py
+python scripts/experiments/residual_on_sca/run_multistart.py
+python scripts/experiments/residual_on_sca/run_residual_td3.py
+python scripts/experiments/residual_on_sca/run_cmaes_polish.py
 
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25
@@ -162,6 +162,11 @@ primary campaign.
 - T_k=0.8 s follow-ups (also separate files):
   `tk08_scajoint_cohesive.json`, `tk08_cohesive_construction.json`,
   `tk08_sync_tradeoff_gap.json`
+- Residual-on-SCA §2.9 experiments (`results/residual_on_sca/`; scripts in
+  `scripts/experiments/residual_on_sca/`):
+  `multistart_n20.json` (Experiment A),
+  `residual_td3_heldout_21_40.json` (Experiment B),
+  `cmaes_polish_heldout_21_40.json` (CMA-ES control)
 - Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
   `cap_binding_diagnostic.json`
 - Paired writeup stats (same seed, champion vs baseline):

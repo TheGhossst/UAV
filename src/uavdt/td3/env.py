@@ -1,7 +1,9 @@
 """UAVAoDTEnv: static Problem (P) search wrapped as an MDP.
 
-Physics stay in evaluate(). Inner bandwidth is equal-share. Best snapshots
-are re-scored with the frozen-q LP at export (solve_td3).
+Physics stay in evaluate(). Inner bandwidth follows TD3Settings
+(leftover by default; LP for residual-on-SCA). Best snapshots are
+re-scored with the frozen-q LP at export unless the inner step already
+used that LP.
 """
 
 from __future__ import annotations
@@ -68,6 +70,14 @@ def violation_penalty(ev: EvalResult, cfg: SimConfig) -> float:
     return float(c.qos_violations) / i + float(c.cpu_unstable_count) / j + bw_bad + out
 
 
+def copy_allocation(allocation: Allocation) -> Allocation:
+    return Allocation(
+        association=np.asarray(allocation.association, dtype=float).copy(),
+        processing=np.asarray(allocation.processing, dtype=float).copy(),
+        bandwidth_hz=np.asarray(allocation.bandwidth_hz, dtype=float).copy(),
+    )
+
+
 def reward_breakdown(
     ev: EvalResult,
     uav_xyz_m: np.ndarray,
@@ -75,17 +85,24 @@ def reward_breakdown(
     settings: TD3Settings,
     r_max: float,
 ) -> tuple[float, dict[str, float]]:
-    """Algorithm 2 terms: sum_rate/R_max − 10 P_AoDT − 5 P_dist − 5 V_viol."""
+    """Alg. 2 penalty, or feasible Mbps (residual-on-SCA / Problem (P))."""
     p_aodt = aodt_penalty(ev.aodt_s, cfg.aodt_threshold_s, settings.aodt_clip_s)
     p_dist = dist_penalty(uav_xyz_m, cfg.uav_min_separation_m)
     v_viol = violation_penalty(ev, cfg)
     rate_term = float(settings.rate_weight * ev.sum_rate_bit_per_s / r_max)
-    reward = float(
-        rate_term
-        - settings.aodt_weight * p_aodt
-        - settings.dist_weight * p_dist
-        - settings.viol_weight * v_viol
-    )
+    if settings.reward_mode == "feasible_rate":
+        reward = (
+            float(ev.sum_rate_mbps)
+            if ev.feasible
+            else float(settings.infeasible_reward)
+        )
+    else:
+        reward = float(
+            rate_term
+            - settings.aodt_weight * p_aodt
+            - settings.dist_weight * p_dist
+            - settings.viol_weight * v_viol
+        )
     return reward, {
         "rate_term": rate_term,
         "p_aodt": float(p_aodt),
@@ -93,6 +110,7 @@ def reward_breakdown(
         "v_viol": float(v_viol),
         "sum_rate_Mbps": float(ev.sum_rate_mbps),
         "feasible": float(ev.feasible),
+        "reward_mode": 1.0 if settings.reward_mode == "feasible_rate" else 0.0,
     }
 
 
@@ -103,7 +121,7 @@ def step_reward(
     settings: TD3Settings,
     r_max: float,
 ) -> float:
-    """Algorithm 2: sum_rate/R_max − 10 P_AoDT − 5 P_dist − 5 V_viol."""
+    """Reward for the configured TD3Settings.reward_mode."""
     return reward_breakdown(ev, uav_xyz_m, cfg, settings, r_max)[0]
 
 
@@ -154,6 +172,7 @@ class BestSnapshot:
     allocation: Allocation
     true_eval: EvalResult
     reward: float
+    found_at_step: int = 0
 
 
 class UAVAoDTEnv:
@@ -170,34 +189,89 @@ class UAVAoDTEnv:
         self.settings = settings or TD3Settings()
         self.seed = int(seed)
         self.obs_dim = observation_size(scenario.cfg)
-        self.act_dim = action_size(scenario.cfg)
+        self.act_dim = action_size(scenario.cfg, self.settings)
         self.n_move = 2 * scenario.cfg.num_uav
-        self.n_assoc = scenario.cfg.num_iot * scenario.cfg.num_uav
+        self.n_assoc = (
+            0
+            if self.settings.action_heads == "move_only"
+            else scenario.cfg.num_iot * scenario.cfg.num_uav
+        )
         self.r_max = zenith_r_max_bit_per_s(scenario.cfg)
         self._episode = 0
         self._ep_step = 0
+        self._global_step = 0
         self._uav: np.ndarray | None = None
         self._alloc: Allocation | None = None
         self._last_info: dict = {}
         self.best: BestSnapshot | None = None
         self.freeze_best: bool = False
         self._uav0: np.ndarray | None = None
+        self._alloc0: Allocation | None = None
+        self.origin_eval: EvalResult | None = None
+        self.origin_wall_clock_s: float = 0.0
+        self.origin_stop_reason: str | None = None
+
+    def _origin_allocation(self) -> Allocation | None:
+        if self._alloc0 is None:
+            return None
+        return copy_allocation(self._alloc0)
+
+    def _init_origin(self) -> None:
+        """One UAV origin per frozen IoT layout. SCA is called at most once."""
+        if self._uav0 is not None:
+            return
+        from time import perf_counter
+
+        cfg = self.scenario.cfg
+        t0 = perf_counter()
+        if self.settings.uav_init == "sca":
+            from uavdt.sca.algorithm import solve_sca
+            from uavdt.sca.settings import SCASettings
+
+            try:
+                result = solve_sca(
+                    self.scenario,
+                    self.seed,
+                    settings=SCASettings(solver=None),
+                )
+            except RuntimeError as exc:
+                if "CPU stability" not in str(exc):
+                    raise
+                self._uav0 = place_kmeans(self.scenario, int(self.seed))
+                self._alloc0 = allocation_from_positions(self.scenario, self._uav0)
+                self.origin_stop_reason = "init_cpu_unstable"
+                self.origin_wall_clock_s = perf_counter() - t0
+                return
+            self._uav0 = np.asarray(result.uav_xyz_m, dtype=float).copy()
+            self._alloc0 = copy_allocation(result.allocation)
+            self.origin_eval = result.true_eval
+            self.origin_stop_reason = str(result.diagnostics.get("stop_reason", ""))
+            self.origin_wall_clock_s = perf_counter() - t0
+            return
+        if self.settings.uav_init == "kmeans":
+            self._uav0 = place_kmeans(self.scenario, int(self.seed))
+        else:
+            self._uav0 = place_random(cfg.num_uav, int(self.seed), cfg)
+        self._alloc0 = allocation_from_positions(self.scenario, self._uav0)
+        self.origin_wall_clock_s = perf_counter() - t0
 
     def reset(self) -> np.ndarray:
         cfg = self.scenario.cfg
         # Per-instance solve: one UAV init for the frozen IoT layout. Re-sampling
         # q every episode trains a multi-start controller and was collapsing to
         # field-corner bang-bang instead of improving this scenario.
-        if self._uav0 is None:
-            if self.settings.uav_init == "kmeans":
-                self._uav0 = place_kmeans(self.scenario, int(self.seed))
-            else:
-                self._uav0 = place_random(cfg.num_uav, int(self.seed), cfg)
+        self._init_origin()
         self._uav = np.asarray(self._uav0, dtype=float).copy()
-        self._alloc = self._inner_bandwidth(
-            self._uav, allocation_from_positions(self.scenario, self._uav)
-        )
+        if self.settings.assoc_mode == "frozen" or self.settings.process_mode == "frozen":
+            if self._alloc0 is None:
+                raise RuntimeError("frozen a/b requested but origin allocation is missing")
+            seed_alloc = copy_allocation(self._alloc0)
+        else:
+            seed_alloc = allocation_from_positions(self.scenario, self._uav)
+        self._alloc = self._inner_bandwidth(self._uav, seed_alloc)
         ev = evaluate(self.scenario, self._uav, self._alloc)
+        if self.origin_eval is None:
+            self.origin_eval = ev
         reward, terms = reward_breakdown(
             ev, self._uav, cfg, self.settings, self.r_max
         )
@@ -217,6 +291,7 @@ class UAVAoDTEnv:
             self.scenario,
             self.settings,
             origin_xyz_m=self._uav0,
+            origin_allocation=self._origin_allocation(),
         )
         alloc = self._inner_bandwidth(uav, alloc)
         ev = evaluate(self.scenario, uav, alloc)
@@ -226,6 +301,7 @@ class UAVAoDTEnv:
         self._uav = uav
         self._alloc = alloc
         self._ep_step += 1
+        self._global_step += 1
         done = self._ep_step >= self.settings.horizon
         self._consider_best(uav, alloc, ev, reward)
         obs = build_observation(self.scenario, uav, alloc, ev, self.settings)
@@ -251,6 +327,8 @@ class UAVAoDTEnv:
                 self.scenario, uav, a, b, SCASettings(solver=None)
             )
             if res.infeasible:
+                if self.settings.reward_mode == "feasible_rate":
+                    return Allocation(a, b, np.zeros_like(a, dtype=float))
                 return Allocation(a, b, equal_share_bandwidth_hz(a, cfg))
             return Allocation(a, b, res.bandwidth_hz)
         se = spectral_efficiency(self.scenario.iot_xyz_m, uav, cfg)
@@ -278,11 +356,8 @@ class UAVAoDTEnv:
         if better:
             self.best = BestSnapshot(
                 uav_xyz_m=np.asarray(uav, dtype=float).copy(),
-                allocation=Allocation(
-                    association=np.asarray(alloc.association, dtype=float).copy(),
-                    processing=np.asarray(alloc.processing, dtype=float).copy(),
-                    bandwidth_hz=np.asarray(alloc.bandwidth_hz, dtype=float).copy(),
-                ),
+                allocation=copy_allocation(alloc),
                 true_eval=ev,
                 reward=float(reward),
+                found_at_step=int(self._global_step),
             )
