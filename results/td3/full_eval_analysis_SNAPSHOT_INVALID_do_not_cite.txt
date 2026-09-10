@@ -1,0 +1,228 @@
+=== n100 means (100 scenarios, 8.8 MHz, 25% cap) ===
+method       mean Mbps       std   feas %  max AoDT
+random          8.9317    0.0440   100.0%     2.800
+kmeans          8.8959    0.0428   100.0%     2.800
+pso             8.9049    0.0391   100.0%     2.800
+sca             8.9457    0.0331   100.0%     2.800
+td3             8.9124    0.0385   100.0%     2.800
+SCA minus other (mean delta Mbps, win fraction):
+  vs random    d=+0.0140  win=71.0%  tie=0.0%
+  vs kmeans    d=+0.0498  win=100.0%  tie=0.0%
+  vs pso       d=+0.0408  win=97.0%  tie=0.0%
+  vs td3       d=+0.0333  win=95.0%  tie=0.0%
+TD3 minus other (mean delta Mbps, win fraction):
+  vs random    d=-0.0193  win=24.0%  tie=0.0%
+  vs kmeans    d=+0.0165  win=94.0%  tie=0.0%
+  vs pso       d=+0.0075  win=72.0%  tie=0.0%
+  vs sca       d=-0.0333  win=5.0%  tie=0.0%
+
+=== campaign means by axis (n_runs=20) ===
+PAPER Fig. 6  I=10  J=1
+  random      8.5001 +/- 0.2378 Mbps  feas=100%
+  kmeans      8.5653 +/- 0.1349 Mbps  feas=100%
+  pso         8.5972 +/- 0.1174 Mbps  feas=100%
+  sca         8.7581 +/- 0.0821 Mbps  feas=100%
+  td3         8.5782 +/- 0.1394 Mbps  feas=100%
+  TD3-SCA mean d=-0.1799 Mbps
+PAPER Fig. 6  I=10  J=2
+  random      8.7975 +/- 0.1061 Mbps  feas=100%
+  kmeans      8.7901 +/- 0.0984 Mbps  feas=100%
+  pso         8.8477 +/- 0.0620 Mbps  feas=100%
+  sca         8.8857 +/- 0.0444 Mbps  feas=100%
+  td3         8.8138 +/- 0.0894 Mbps  feas=100%
+  TD3-SCA mean d=-0.0719 Mbps
+PAPER Fig. 6  I=10  J=3
+  random      8.9276 +/- 0.0351 Mbps  feas=100%
+  kmeans      8.9008 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9464 +/- 0.0253 Mbps  feas=100%
+  td3         8.9169 +/- 0.0262 Mbps  feas=100%
+  TD3-SCA mean d=-0.0296 Mbps
+PAPER Fig. 6  I=10  J=4
+  random      8.9663 +/- 0.0087 Mbps  feas=100%
+  kmeans      8.9391 +/- 0.0318 Mbps  feas=100%
+  pso         8.9422 +/- 0.0204 Mbps  feas=100%
+  sca         8.9706 +/- 0.0091 Mbps  feas=100%
+  td3         8.9519 +/- 0.0226 Mbps  feas=100%
+  TD3-SCA mean d=-0.0186 Mbps
+PAPER Fig. 6  I=10  J=5
+  random      8.9748 +/- 0.0069 Mbps  feas=100%
+  kmeans      8.9636 +/- 0.0116 Mbps  feas=100%
+  pso         8.9625 +/- 0.0112 Mbps  feas=100%
+  sca         8.9772 +/- 0.0054 Mbps  feas=100%
+  td3         8.9675 +/- 0.0084 Mbps  feas=100%
+  TD3-SCA mean d=-0.0096 Mbps
+PAPER Fig. 7  I=10  J=3
+  random      8.9276 +/- 0.0351 Mbps  feas=100%
+  kmeans      8.9008 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9464 +/- 0.0253 Mbps  feas=100%
+  td3         8.9169 +/- 0.0262 Mbps  feas=100%
+  TD3-SCA mean d=-0.0296 Mbps
+PAPER Fig. 7  I=16  J=3
+  random      8.9113 +/- 0.0362 Mbps  feas=100%
+  kmeans      8.8925 +/- 0.0338 Mbps  feas=100%
+  pso         8.8990 +/- 0.0322 Mbps  feas=100%
+  sca         8.9417 +/- 0.0149 Mbps  feas=100%
+  td3         8.9053 +/- 0.0315 Mbps  feas=100%
+  TD3-SCA mean d=-0.0364 Mbps
+PAPER Fig. 7  I=20  J=3
+  random      8.8976 +/- 0.0396 Mbps  feas=100%
+  kmeans      8.8983 +/- 0.0330 Mbps  feas=100%
+  pso         8.9124 +/- 0.0248 Mbps  feas=100%
+  sca         8.9341 +/- 0.0148 Mbps  feas=100%
+  td3         8.9138 +/- 0.0243 Mbps  feas=100%
+  TD3-SCA mean d=-0.0203 Mbps
+PAPER Fig. 7  I=24  J=3
+  random      8.8809 +/- 0.0401 Mbps  feas=100%
+  kmeans      8.8913 +/- 0.0253 Mbps  feas=100%
+  pso         8.8989 +/- 0.0237 Mbps  feas=100%
+  sca         8.9251 +/- 0.0112 Mbps  feas=100%
+  td3         8.9077 +/- 0.0251 Mbps  feas=100%
+  TD3-SCA mean d=-0.0173 Mbps
+PAPER Fig. 7  I=28  J=3
+  random      8.8585 +/- 0.0479 Mbps  feas=100%
+  kmeans      8.8939 +/- 0.0224 Mbps  feas=100%
+  pso         8.8991 +/- 0.0218 Mbps  feas=100%
+  sca         8.9190 +/- 0.0108 Mbps  feas=100%
+  td3         8.9052 +/- 0.0184 Mbps  feas=100%
+  TD3-SCA mean d=-0.0138 Mbps
+PAPER Fig. 7  I=32  J=3
+  random      8.8380 +/- 0.0609 Mbps  feas=100%
+  kmeans      8.8831 +/- 0.0224 Mbps  feas=100%
+  pso         8.8905 +/- 0.0190 Mbps  feas=100%
+  sca         8.9064 +/- 0.0173 Mbps  feas=100%
+  td3         8.8924 +/- 0.0207 Mbps  feas=100%
+  TD3-SCA mean d=-0.0140 Mbps
+PAPER Fig. 8  lambda=1/s  I=10  J=3
+  random      8.9184 +/- 0.0391 Mbps  feas=100%
+  kmeans      8.8975 +/- 0.0300 Mbps  feas=100%
+  pso         8.9021 +/- 0.0331 Mbps  feas=100%
+  sca         8.9438 +/- 0.0237 Mbps  feas=100%
+  td3         8.9110 +/- 0.0261 Mbps  feas=100%
+  TD3-SCA mean d=-0.0328 Mbps
+PAPER Fig. 8  lambda=1.5/s  I=10  J=3
+  random      8.9251 +/- 0.0362 Mbps  feas=100%
+  kmeans      8.8999 +/- 0.0297 Mbps  feas=100%
+  pso         8.9039 +/- 0.0334 Mbps  feas=100%
+  sca         8.9469 +/- 0.0248 Mbps  feas=100%
+  td3         8.9160 +/- 0.0302 Mbps  feas=100%
+  TD3-SCA mean d=-0.0308 Mbps
+PAPER Fig. 8  lambda=2/s  I=10  J=3
+  random      8.9276 +/- 0.0351 Mbps  feas=100%
+  kmeans      8.9008 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9464 +/- 0.0253 Mbps  feas=100%
+  td3         8.9169 +/- 0.0262 Mbps  feas=100%
+  TD3-SCA mean d=-0.0296 Mbps
+PAPER Fig. 8  lambda=2.5/s  I=10  J=3
+  random      8.9290 +/- 0.0346 Mbps  feas=100%
+  kmeans      8.9013 +/- 0.0295 Mbps  feas=100%
+  pso         8.9049 +/- 0.0335 Mbps  feas=100%
+  sca         8.9473 +/- 0.0253 Mbps  feas=100%
+  td3         8.9159 +/- 0.0256 Mbps  feas=100%
+  TD3-SCA mean d=-0.0314 Mbps
+PAPER Fig. 8  lambda=3/s  I=10  J=3
+  random      8.9298 +/- 0.0343 Mbps  feas=100%
+  kmeans      8.9016 +/- 0.0295 Mbps  feas=100%
+  pso         8.9051 +/- 0.0336 Mbps  feas=100%
+  sca         8.9478 +/- 0.0252 Mbps  feas=100%
+  td3         8.9151 +/- 0.0270 Mbps  feas=100%
+  TD3-SCA mean d=-0.0327 Mbps
+PAPER Fig. 8  lambda=3.5/s  I=10  J=3
+  random      8.9304 +/- 0.0341 Mbps  feas=100%
+  kmeans      8.9018 +/- 0.0294 Mbps  feas=100%
+  pso         8.9053 +/- 0.0336 Mbps  feas=100%
+  sca         8.9481 +/- 0.0252 Mbps  feas=100%
+  td3         8.9163 +/- 0.0299 Mbps  feas=100%
+  TD3-SCA mean d=-0.0318 Mbps
+PAPER Fig. 9  Tk=0.8s  I=10  J=3
+  random      8.4319 +/- 0.2716 Mbps  feas=0%
+  kmeans      8.6915 +/- 0.0949 Mbps  feas=0%
+  pso         8.6056 +/- 0.1932 Mbps  feas=10%
+  sca         8.9090 +/- 0.0287 Mbps  feas=0%
+  td3         8.6814 +/- 0.0961 Mbps  feas=0%
+  TD3-SCA mean d=-0.2276 Mbps
+PAPER Fig. 9  Tk=1.2s  I=10  J=3
+  random      8.8221 +/- 0.0961 Mbps  feas=100%
+  kmeans      8.8632 +/- 0.0379 Mbps  feas=100%
+  pso         8.8762 +/- 0.0322 Mbps  feas=100%
+  sca         8.8885 +/- 0.0326 Mbps  feas=100%
+  td3         8.8693 +/- 0.0375 Mbps  feas=100%
+  TD3-SCA mean d=-0.0192 Mbps
+PAPER Fig. 9  Tk=1.6s  I=10  J=3
+  random      8.8873 +/- 0.0554 Mbps  feas=100%
+  kmeans      8.8864 +/- 0.0320 Mbps  feas=100%
+  pso         8.8938 +/- 0.0322 Mbps  feas=100%
+  sca         8.9247 +/- 0.0264 Mbps  feas=100%
+  td3         8.9040 +/- 0.0236 Mbps  feas=100%
+  TD3-SCA mean d=-0.0206 Mbps
+PAPER Fig. 9  Tk=2s  I=10  J=3
+  random      8.9094 +/- 0.0434 Mbps  feas=100%
+  kmeans      8.8943 +/- 0.0305 Mbps  feas=100%
+  pso         8.8997 +/- 0.0328 Mbps  feas=100%
+  sca         8.9382 +/- 0.0241 Mbps  feas=100%
+  td3         8.9139 +/- 0.0229 Mbps  feas=100%
+  TD3-SCA mean d=-0.0243 Mbps
+PAPER Fig. 9  Tk=2.4s  I=10  J=3
+  random      8.9207 +/- 0.0380 Mbps  feas=100%
+  kmeans      8.8984 +/- 0.0299 Mbps  feas=100%
+  pso         8.9027 +/- 0.0332 Mbps  feas=100%
+  sca         8.9453 +/- 0.0236 Mbps  feas=100%
+  td3         8.9160 +/- 0.0227 Mbps  feas=100%
+  TD3-SCA mean d=-0.0293 Mbps
+PAPER Fig. 9  Tk=2.8s  I=10  J=3
+  random      8.9276 +/- 0.0351 Mbps  feas=100%
+  kmeans      8.9008 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9464 +/- 0.0253 Mbps  feas=100%
+  td3         8.9169 +/- 0.0262 Mbps  feas=100%
+  TD3-SCA mean d=-0.0296 Mbps
+PAPER Fig. 9  Tk=3s  I=10  J=3
+  random      8.9302 +/- 0.0342 Mbps  feas=100%
+  kmeans      8.9018 +/- 0.0294 Mbps  feas=100%
+  pso         8.9052 +/- 0.0336 Mbps  feas=100%
+  sca         8.9480 +/- 0.0252 Mbps  feas=100%
+  td3         8.9146 +/- 0.0291 Mbps  feas=100%
+  TD3-SCA mean d=-0.0334 Mbps
+PAPER Fig. 10  fj=5e+07  I=10  J=3
+  random      8.9228 +/- 0.0370 Mbps  feas=100%
+  kmeans      8.8990 +/- 0.0299 Mbps  feas=100%
+  pso         8.9031 +/- 0.0334 Mbps  feas=100%
+  sca         8.9465 +/- 0.0235 Mbps  feas=100%
+  td3         8.9194 +/- 0.0243 Mbps  feas=100%
+  TD3-SCA mean d=-0.0271 Mbps
+PAPER Fig. 10  fj=1e+08  I=10  J=3
+  random      8.9263 +/- 0.0357 Mbps  feas=100%
+  kmeans      8.9003 +/- 0.0296 Mbps  feas=100%
+  pso         8.9042 +/- 0.0334 Mbps  feas=100%
+  sca         8.9476 +/- 0.0248 Mbps  feas=100%
+  td3         8.9142 +/- 0.0257 Mbps  feas=100%
+  TD3-SCA mean d=-0.0333 Mbps
+PAPER Fig. 10  fj=1.5e+08  I=10  J=3
+  random      8.9272 +/- 0.0353 Mbps  feas=100%
+  kmeans      8.9007 +/- 0.0296 Mbps  feas=100%
+  pso         8.9044 +/- 0.0335 Mbps  feas=100%
+  sca         8.9461 +/- 0.0253 Mbps  feas=100%
+  td3         8.9159 +/- 0.0240 Mbps  feas=100%
+  TD3-SCA mean d=-0.0303 Mbps
+PAPER Fig. 10  fj=2e+08  I=10  J=3
+  random      8.9276 +/- 0.0351 Mbps  feas=100%
+  kmeans      8.9008 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9464 +/- 0.0253 Mbps  feas=100%
+  td3         8.9169 +/- 0.0262 Mbps  feas=100%
+  TD3-SCA mean d=-0.0296 Mbps
+PAPER Fig. 10  fj=2.5e+08  I=10  J=3
+  random      8.9279 +/- 0.0350 Mbps  feas=100%
+  kmeans      8.9009 +/- 0.0296 Mbps  feas=100%
+  pso         8.9046 +/- 0.0335 Mbps  feas=100%
+  sca         8.9466 +/- 0.0253 Mbps  feas=100%
+  td3         8.9190 +/- 0.0265 Mbps  feas=100%
+  TD3-SCA mean d=-0.0276 Mbps
+
+=== campaign TD3 vs others (mean over points) ===
+  TD3 vs sca       mean-of-means d=-0.0401  points TD3 higher=0/29
+  TD3 vs random    mean-of-means d=+0.0124  points TD3 higher=10/29
+  TD3 vs kmeans    mean-of-means d=+0.0139  points TD3 higher=28/29
+  TD3 vs pso       mean-of-means d=+0.0093  points TD3 higher=26/29

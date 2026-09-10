@@ -1,0 +1,3221 @@
+{
+  "file": "results/campaign_8.8mhz_cap25_si12k.json",
+  "j3_sca_vs_random": {
+    "mean_delta_Mbps": 0.018778429973196075,
+    "std_delta_Mbps": 0.042308832436695115,
+    "wilcoxon_p": 0.1230926513671875,
+    "t_p": 0.061782588798032285,
+    "t_stat": 1.9849210442577718,
+    "wins": 15,
+    "losses": 5,
+    "n": 20,
+    "loss_seeds": [
+      11,
+      18,
+      7,
+      19,
+      13
+    ],
+    "loss_deltas_Mbps": [
+      -0.03290146245711334,
+      -0.03271670264882687,
+      -0.029908664117440864,
+      -0.02576195910501511,
+      -0.009591085190082893
+    ],
+    "min_delta_Mbps": -0.03290146245711334,
+    "max_delta_Mbps": 0.13019148798777458,
+    "skew": 1.1546762181885022,
+    "all_seeds": [
+      {
+        "seed": 11,
+        "sca_Mbps": 8.879680662013746,
+        "random_Mbps": 8.912582124470859,
+        "delta_Mbps": -0.03290146245711334,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 11,
+          "n_iterations": 26,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.6906443170155399,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 18,
+        "sca_Mbps": 8.920195339740582,
+        "random_Mbps": 8.952912042389409,
+        "delta_Mbps": -0.03271670264882687,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 10,
+          "n_iterations": 25,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.6798085070040543,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 7,
+        "sca_Mbps": 8.913492151625556,
+        "random_Mbps": 8.943400815742997,
+        "delta_Mbps": -0.029908664117440864,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "MAX_ITERATIONS",
+          "accepted_steps": 23,
+          "n_iterations": 30,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7921528479782864,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 19,
+        "sca_Mbps": 8.906952185446894,
+        "random_Mbps": 8.932714144551909,
+        "delta_Mbps": -0.02576195910501511,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 10,
+          "n_iterations": 25,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7125905120046809,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 13,
+        "sca_Mbps": 8.92618140627875,
+        "random_Mbps": 8.935772491468834,
+        "delta_Mbps": -0.009591085190082893,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 13,
+          "n_iterations": 28,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7615264079940971,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 1,
+        "sca_Mbps": 8.960041203177767,
+        "random_Mbps": 8.958413653736208,
+        "delta_Mbps": 0.0016275494415580738,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 11,
+          "n_iterations": 26,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7131000599765684,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 4,
+        "sca_Mbps": 8.966551270044032,
+        "random_Mbps": 8.95747283625775,
+        "delta_Mbps": 0.009078433786282147,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7219200799881946,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 12,
+        "sca_Mbps": 8.960711323763446,
+        "random_Mbps": 8.95106547007455,
+        "delta_Mbps": 0.009645853688896366,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "MAX_ITERATIONS",
+          "accepted_steps": 17,
+          "n_iterations": 30,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.8072554469981696,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 5,
+        "sca_Mbps": 8.95680312649417,
+        "random_Mbps": 8.94334405908827,
+        "delta_Mbps": 0.013459067405900527,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 14,
+          "n_iterations": 29,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7785494469862897,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 2,
+        "sca_Mbps": 8.941111707005613,
+        "random_Mbps": 8.926912573366687,
+        "delta_Mbps": 0.014199133638925332,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 13,
+          "n_iterations": 28,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7942755020048935,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 17,
+        "sca_Mbps": 8.956589731682454,
+        "random_Mbps": 8.93930666044559,
+        "delta_Mbps": 0.017283071236864345,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7214100249984767,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 8,
+        "sca_Mbps": 8.960904566919966,
+        "random_Mbps": 8.942398145963779,
+        "delta_Mbps": 0.018506420956187597,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 14,
+          "n_iterations": 29,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.808812253002543,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 20,
+        "sca_Mbps": 8.97084353922151,
+        "random_Mbps": 8.950342747017471,
+        "delta_Mbps": 0.020500792204039442,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7051379570038989,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 15,
+        "sca_Mbps": 8.970963385879777,
+        "random_Mbps": 8.949210554645274,
+        "delta_Mbps": 0.02175283123450278,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7254146290069912,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 9,
+        "sca_Mbps": 8.934455092519864,
+        "random_Mbps": 8.912652565799322,
+        "delta_Mbps": 0.021802526720541948,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7386495919781737,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 14,
+        "sca_Mbps": 8.969193385135044,
+        "random_Mbps": 8.943194197570735,
+        "delta_Mbps": 0.025999187564309523,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 13,
+          "n_iterations": 28,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7303029790055007,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 6,
+        "sca_Mbps": 8.950698917304166,
+        "random_Mbps": 8.92122789294677,
+        "delta_Mbps": 0.029471024357395237,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 12,
+          "n_iterations": 27,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7106453939923085,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 16,
+        "sca_Mbps": 8.972813315961343,
+        "random_Mbps": 8.91127192588594,
+        "delta_Mbps": 0.06154139007540316,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 13,
+          "n_iterations": 28,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7856236069928855,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 3,
+        "sca_Mbps": 8.95354055651939,
+        "random_Mbps": 8.842150853835571,
+        "delta_Mbps": 0.11138970268381954,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "MAX_ITERATIONS",
+          "accepted_steps": 16,
+          "n_iterations": 30,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.7834450460213702,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      },
+      {
+        "seed": 10,
+        "sca_Mbps": 8.956783709715369,
+        "random_Mbps": 8.826592221727594,
+        "delta_Mbps": 0.13019148798777458,
+        "sca_diag": {
+          "method": "sca",
+          "stop_reason": "CONVERGED",
+          "accepted_steps": 15,
+          "n_iterations": 30,
+          "solver_backend": "cvxpy",
+          "solver_status": "optimal",
+          "se_max_abs_diff": null,
+          "wall_clock_s": 0.8119751779886428,
+          "association_init_equals_final": true,
+          "processing_init_equals_final": true,
+          "rematch_attempts": null,
+          "rematch_accepted": null,
+          "rematch_rejected": null,
+          "rematch_kinds": null,
+          "process_cohesive_candidate": null,
+          "process_cohesive_a": null,
+          "n_forwarding": null
+        }
+      }
+    ]
+  },
+  "j3_three_baselines_bonferroni_m3": [
+    {
+      "baseline": "random",
+      "mean_delta_Mbps": 0.018778429973196075,
+      "std_delta_Mbps": 0.042308832436695115,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.1230926513671875,
+      "t_p": 0.061782588798032285,
+      "bonferroni_p": 0.3692779541015625,
+      "quote": "SCA wins by 0.019+/-0.042 Mbps vs random, p=0.123 (n.s.), 15/20 seeds"
+    },
+    {
+      "baseline": "kmeans",
+      "mean_delta_Mbps": 0.04558627080300006,
+      "std_delta_Mbps": 0.019470739405162592,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "t_p": 2.4969754528046605e-09,
+      "bonferroni_p": 5.7220458984375e-06,
+      "quote": "SCA wins by 0.046+/-0.019 Mbps vs kmeans, p<0.001, 20/20 seeds"
+    },
+    {
+      "baseline": "pso",
+      "mean_delta_Mbps": 0.04187293596548365,
+      "std_delta_Mbps": 0.026026157910099598,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.33514404296875e-05,
+      "t_p": 7.798785260431058e-07,
+      "bonferroni_p": 4.00543212890625e-05,
+      "quote": "SCA wins by 0.042+/-0.026 Mbps vs pso, p<0.001, 19/20 seeds"
+    }
+  ],
+  "regime_sca_vs_random_unique": [
+    {
+      "axis": "uavs",
+      "x": 1.0,
+      "label": "PAPER Fig. 6  I=10  J=1",
+      "mean_delta_Mbps": 0.2580388757730482,
+      "std_delta_Mbps": 0.22969592700825722,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "t_p": 7.535886733780198e-05,
+      "bh_q": 1.5894571940104168e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "uavs",
+      "x": 2.0,
+      "label": "PAPER Fig. 6  I=10  J=2",
+      "mean_delta_Mbps": 0.08817694720005234,
+      "std_delta_Mbps": 0.10336661092618141,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.001689910888671875,
+      "t_p": 0.0011691639697490833,
+      "bh_q": 0.0038407065651633525,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "uavs",
+      "x": 3.0,
+      "label": "PAPER Fig. 6  I=10  J=3",
+      "mean_delta_Mbps": 0.018778429973196075,
+      "std_delta_Mbps": 0.042308832436695115,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.1230926513671875,
+      "t_p": 0.061782588798032285,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "uavs",
+      "x": 4.0,
+      "label": "PAPER Fig. 6  I=10  J=4",
+      "mean_delta_Mbps": 0.00426925060472696,
+      "std_delta_Mbps": 0.006449010942531183,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.009435653686523438,
+      "t_p": 0.008032532952562036,
+      "bh_q": 0.016849381583077565,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "uavs",
+      "x": 5.0,
+      "label": "PAPER Fig. 6  I=10  J=5",
+      "mean_delta_Mbps": 0.0023518986186514823,
+      "std_delta_Mbps": 0.007292681496587921,
+      "wins": 13,
+      "n": 20,
+      "wilcoxon_p": 0.08969497680664062,
+      "t_p": 0.16550877725548552,
+      "bh_q": 0.12457635667588976,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "iots",
+      "x": 16.0,
+      "label": "PAPER Fig. 7  I=16  J=3",
+      "mean_delta_Mbps": 0.030398506257206838,
+      "std_delta_Mbps": 0.0386877602651607,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.000133514404296875,
+      "t_p": 0.002320772051346837,
+      "bh_q": 0.0004172325134277344,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "iots",
+      "x": 20.0,
+      "label": "PAPER Fig. 7  I=20  J=3",
+      "mean_delta_Mbps": 0.036531762569849933,
+      "std_delta_Mbps": 0.04191651360520549,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "t_p": 0.0009680383474128569,
+      "bh_q": 3.9736429850260414e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "iots",
+      "x": 24.0,
+      "label": "PAPER Fig. 7  I=24  J=3",
+      "mean_delta_Mbps": 0.04410587324622526,
+      "std_delta_Mbps": 0.04138683060464964,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 3.814697265625e-06,
+      "t_p": 0.00013438121861954923,
+      "bh_q": 2.384185791015625e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "iots",
+      "x": 28.0,
+      "label": "PAPER Fig. 7  I=28  J=3",
+      "mean_delta_Mbps": 0.060441910363458626,
+      "std_delta_Mbps": 0.05003906547985625,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "t_p": 3.266020353839792e-05,
+      "bh_q": 1.5894571940104168e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "iots",
+      "x": 32.0,
+      "label": "PAPER Fig. 7  I=32  J=3",
+      "mean_delta_Mbps": 0.06839024204391748,
+      "std_delta_Mbps": 0.06697546612463802,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "t_p": 0.0002108180455577982,
+      "bh_q": 3.9736429850260414e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "lambda",
+      "x": 1.0,
+      "label": "PAPER Fig. 8  lambda=1/s  I=10  J=3",
+      "mean_delta_Mbps": 0.025431804566809203,
+      "std_delta_Mbps": 0.04292452515509793,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.0042209625244140625,
+      "t_p": 0.015813131972960904,
+      "bh_q": 0.00879367192586263,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "lambda",
+      "x": 1.5,
+      "label": "PAPER Fig. 8  lambda=1.5/s  I=10  J=3",
+      "mean_delta_Mbps": 0.021743696055382067,
+      "std_delta_Mbps": 0.04153270599297055,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.03623390197753906,
+      "t_p": 0.03026990320972228,
+      "bh_q": 0.056615471839904785,
+      "sig_raw": true,
+      "sig_fdr": false
+    },
+    {
+      "axis": "lambda",
+      "x": 2.5,
+      "label": "PAPER Fig. 8  lambda=2.5/s  I=10  J=3",
+      "mean_delta_Mbps": 0.01827804849122101,
+      "std_delta_Mbps": 0.04187024283943254,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.13272666931152344,
+      "t_p": 0.0658010469613399,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "lambda",
+      "x": 3.0,
+      "label": "PAPER Fig. 8  lambda=3/s  I=10  J=3",
+      "mean_delta_Mbps": 0.017965980590532383,
+      "std_delta_Mbps": 0.041613494659776776,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.13272666931152344,
+      "t_p": 0.06857136876689898,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "lambda",
+      "x": 3.5,
+      "label": "PAPER Fig. 8  lambda=3.5/s  I=10  J=3",
+      "mean_delta_Mbps": 0.01775265208158041,
+      "std_delta_Mbps": 0.04144534966676854,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.13272666931152344,
+      "t_p": 0.07059074428011111,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "aodt",
+      "x": 0.8,
+      "label": "PAPER Fig. 9  Tk=0.8s  I=10  J=3",
+      "mean_delta_Mbps": 0.4771217315994957,
+      "std_delta_Mbps": 0.2755304432291133,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "t_p": 2.706637400139088e-07,
+      "bh_q": 1.5894571940104168e-05,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "aodt",
+      "x": 1.2,
+      "label": "PAPER Fig. 9  Tk=1.2s  I=10  J=3",
+      "mean_delta_Mbps": 0.0663963953264779,
+      "std_delta_Mbps": 0.10361435263401837,
+      "wins": 17,
+      "n": 20,
+      "wilcoxon_p": 4.76837158203125e-05,
+      "t_p": 0.009894883846490739,
+      "bh_q": 0.00017029898507254465,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "aodt",
+      "x": 1.6,
+      "label": "PAPER Fig. 9  Tk=1.6s  I=10  J=3",
+      "mean_delta_Mbps": 0.03737908351750692,
+      "std_delta_Mbps": 0.06018133154903095,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.0003948211669921875,
+      "t_p": 0.011992284539223515,
+      "bh_q": 0.0010967254638671875,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "aodt",
+      "x": 2.0,
+      "label": "PAPER Fig. 9  Tk=2s  I=10  J=3",
+      "mean_delta_Mbps": 0.028826016105179608,
+      "std_delta_Mbps": 0.0472057944061021,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.0014324188232421875,
+      "t_p": 0.01327315122026458,
+      "bh_q": 0.0035810470581054688,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "aodt",
+      "x": 2.4,
+      "label": "PAPER Fig. 9  Tk=2.4s  I=10  J=3",
+      "mean_delta_Mbps": 0.024618193522520305,
+      "std_delta_Mbps": 0.04193586622708951,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.005580902099609375,
+      "t_p": 0.01665831872169597,
+      "bh_q": 0.010732504037710337,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "aodt",
+      "x": 3.0,
+      "label": "PAPER Fig. 9  Tk=3s  I=10  J=3",
+      "mean_delta_Mbps": 0.01781473044563322,
+      "std_delta_Mbps": 0.041495771995558234,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.13272666931152344,
+      "t_p": 0.070005274396201,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "cpu",
+      "x": 50000000.0,
+      "label": "PAPER Fig. 10  fj=5e+07  I=10  J=3",
+      "mean_delta_Mbps": 0.023667398404727626,
+      "std_delta_Mbps": 0.04125358565172561,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.01068878173828125,
+      "t_p": 0.01891828189700512,
+      "bh_q": 0.01781463623046875,
+      "sig_raw": true,
+      "sig_fdr": true
+    },
+    {
+      "axis": "cpu",
+      "x": 100000000.0,
+      "label": "PAPER Fig. 10  fj=1e+08  I=10  J=3",
+      "mean_delta_Mbps": 0.021311077804288557,
+      "std_delta_Mbps": 0.041125648909779794,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.04405403137207031,
+      "t_p": 0.031794439132096286,
+      "bh_q": 0.06478534025304458,
+      "sig_raw": true,
+      "sig_fdr": false
+    },
+    {
+      "axis": "cpu",
+      "x": 150000000.0,
+      "label": "PAPER Fig. 10  fj=1.5e+08  I=10  J=3",
+      "mean_delta_Mbps": 0.018945326566981537,
+      "std_delta_Mbps": 0.042458654031673725,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.13272666931152344,
+      "t_p": 0.060529000862094305,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    },
+    {
+      "axis": "cpu",
+      "x": 250000000.0,
+      "label": "PAPER Fig. 10  fj=2.5e+08  I=10  J=3",
+      "mean_delta_Mbps": 0.018680194899339052,
+      "std_delta_Mbps": 0.04222241675579919,
+      "wins": 15,
+      "n": 20,
+      "wilcoxon_p": 0.1230926513671875,
+      "t_p": 0.0625455207137035,
+      "bh_q": 0.13272666931152344,
+      "sig_raw": false,
+      "sig_fdr": false
+    }
+  ],
+  "regime_kmeans_fdr_sig_count": 25,
+  "regime_pso_fdr_sig_count": 25,
+  "regime_kmeans": [
+    {
+      "axis": "uavs",
+      "x": 1.0,
+      "mean_delta_Mbps": 0.1927869935995326,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 2.0,
+      "mean_delta_Mbps": 0.0955699178423278,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04558627080300006,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 4.0,
+      "mean_delta_Mbps": 0.031449863582414306,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 5.0,
+      "mean_delta_Mbps": 0.013573686983779698,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "iots",
+      "x": 16.0,
+      "mean_delta_Mbps": 0.04919565084637645,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "iots",
+      "x": 20.0,
+      "mean_delta_Mbps": 0.03582556198459619,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "iots",
+      "x": 24.0,
+      "mean_delta_Mbps": 0.0337988684426862,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "iots",
+      "x": 28.0,
+      "mean_delta_Mbps": 0.02505201006741311,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "iots",
+      "x": 32.0,
+      "mean_delta_Mbps": 0.02327502680640974,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "lambda",
+      "x": 1.0,
+      "mean_delta_Mbps": 0.04631517900454698,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "lambda",
+      "x": 1.5,
+      "mean_delta_Mbps": 0.04692337050231501,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "lambda",
+      "x": 2.5,
+      "mean_delta_Mbps": 0.04594271908032814,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "lambda",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04615933284043052,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "lambda",
+      "x": 3.5,
+      "mean_delta_Mbps": 0.04630476084552084,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 0.8,
+      "mean_delta_Mbps": 0.2174924876655447,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 1.2,
+      "mean_delta_Mbps": 0.02537436090828482,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 1.6,
+      "mean_delta_Mbps": 0.03827228596688483,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 2.0,
+      "mean_delta_Mbps": 0.043896949894684664,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 2.4,
+      "mean_delta_Mbps": 0.04697130682532143,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04626079067372135,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "cpu",
+      "x": 50000000.0,
+      "mean_delta_Mbps": 0.04748622266588125,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "cpu",
+      "x": 100000000.0,
+      "mean_delta_Mbps": 0.04723689051355553,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "cpu",
+      "x": 150000000.0,
+      "mean_delta_Mbps": 0.04546817388930187,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    },
+    {
+      "axis": "cpu",
+      "x": 250000000.0,
+      "mean_delta_Mbps": 0.045654938586796236,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 1.9073486328125e-06
+    }
+  ],
+  "regime_pso": [
+    {
+      "axis": "uavs",
+      "x": 1.0,
+      "mean_delta_Mbps": 0.16089818597297106,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 9.5367431640625e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 2.0,
+      "mean_delta_Mbps": 0.03801081355636589,
+      "wins": 17,
+      "n": 20,
+      "wilcoxon_p": 0.0072956085205078125,
+      "bh_q": 0.007599592208862305
+    },
+    {
+      "axis": "uavs",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04187293596548365,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.33514404296875e-05,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "uavs",
+      "x": 4.0,
+      "mean_delta_Mbps": 0.02832026499903506,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 9.5367431640625e-06
+    },
+    {
+      "axis": "uavs",
+      "x": 5.0,
+      "mean_delta_Mbps": 0.01463583251665348,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 9.5367431640625e-06
+    },
+    {
+      "axis": "iots",
+      "x": 16.0,
+      "mean_delta_Mbps": 0.0427161110473099,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 9.5367431640625e-06
+    },
+    {
+      "axis": "iots",
+      "x": 20.0,
+      "mean_delta_Mbps": 0.02165499233387873,
+      "wins": 17,
+      "n": 20,
+      "wilcoxon_p": 0.0042209625244140625,
+      "bh_q": 0.0045880027439283285
+    },
+    {
+      "axis": "iots",
+      "x": 24.0,
+      "mean_delta_Mbps": 0.026174449516769283,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 3.814697265625e-06,
+      "bh_q": 1.5894571940104168e-05
+    },
+    {
+      "axis": "iots",
+      "x": 28.0,
+      "mean_delta_Mbps": 0.019871710911991337,
+      "wins": 18,
+      "n": 20,
+      "wilcoxon_p": 0.0003948211669921875,
+      "bh_q": 0.0004486604170365767
+    },
+    {
+      "axis": "iots",
+      "x": 32.0,
+      "mean_delta_Mbps": 0.015890553104335847,
+      "wins": 18,
+      "n": 20,
+      "wilcoxon_p": 0.0003223419189453125,
+      "bh_q": 0.0003837403796968006
+    },
+    {
+      "axis": "lambda",
+      "x": 1.0,
+      "mean_delta_Mbps": 0.04175783395804826,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 2.6702880859375e-05,
+      "bh_q": 3.708733452690972e-05
+    },
+    {
+      "axis": "lambda",
+      "x": 1.5,
+      "mean_delta_Mbps": 0.04297758424186027,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-05,
+      "bh_q": 2.8049244600183822e-05
+    },
+    {
+      "axis": "lambda",
+      "x": 2.5,
+      "mean_delta_Mbps": 0.04235186375686704,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "lambda",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04264410162342554,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "lambda",
+      "x": 3.5,
+      "mean_delta_Mbps": 0.042840869590554484,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "aodt",
+      "x": 0.8,
+      "mean_delta_Mbps": 0.30345311220970617,
+      "wins": 20,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "bh_q": 9.5367431640625e-06
+    },
+    {
+      "axis": "aodt",
+      "x": 1.2,
+      "mean_delta_Mbps": 0.012300495020383462,
+      "wins": 16,
+      "n": 20,
+      "wilcoxon_p": 0.021484375,
+      "bh_q": 0.021484375
+    },
+    {
+      "axis": "aodt",
+      "x": 1.6,
+      "mean_delta_Mbps": 0.03090484035016816,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 0.0001049041748046875,
+      "bh_q": 0.00013113021850585938
+    },
+    {
+      "axis": "aodt",
+      "x": 2.0,
+      "mean_delta_Mbps": 0.03851647930910138,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 3.62396240234375e-05,
+      "bh_q": 4.76837158203125e-05
+    },
+    {
+      "axis": "aodt",
+      "x": 2.4,
+      "mean_delta_Mbps": 0.04262287406299929,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-05,
+      "bh_q": 2.8049244600183822e-05
+    },
+    {
+      "axis": "aodt",
+      "x": 3.0,
+      "mean_delta_Mbps": 0.04278172142461534,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 9.5367431640625e-06,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "cpu",
+      "x": 50000000.0,
+      "mean_delta_Mbps": 0.0433471140051088,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.9073486328125e-05,
+      "bh_q": 2.8049244600183822e-05
+    },
+    {
+      "axis": "cpu",
+      "x": 100000000.0,
+      "mean_delta_Mbps": 0.04339758279329668,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.33514404296875e-05,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "cpu",
+      "x": 150000000.0,
+      "mean_delta_Mbps": 0.0417141236863662,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.33514404296875e-05,
+      "bh_q": 2.384185791015625e-05
+    },
+    {
+      "axis": "cpu",
+      "x": 250000000.0,
+      "mean_delta_Mbps": 0.04196545353192125,
+      "wins": 19,
+      "n": 20,
+      "wilcoxon_p": 1.33514404296875e-05,
+      "bh_q": 2.384185791015625e-05
+    }
+  ],
+  "inspected_seeds": [
+    {
+      "seed": 11,
+      "kind": "loss",
+      "delta_sca_minus_random": -0.03290146245711334,
+      "iot": {
+        "std_x_m": 30.6907817954365,
+        "std_y_m": 26.289426485978456,
+        "centroid_xy": [
+          45.53644843601672,
+          48.44031450389681
+        ],
+        "min_xy": [
+          7.042057615419683,
+          2.8689008371944547
+        ],
+        "max_xy": [
+          94.8328453291775,
+          92.82110229603695
+        ]
+      },
+      "iot_xy": [
+        [
+          12.857020276919961,
+          49.92778624401149
+        ],
+        [
+          60.14983576233575,
+          2.8689008371944547
+        ],
+        [
+          14.792608457745594,
+          92.82110229603695
+        ],
+        [
+          7.042057615419683,
+          12.977394939929798
+        ],
+        [
+          94.8328453291775,
+          62.188359279638284
+        ],
+        [
+          36.8993123729791,
+          51.139002180326266
+        ],
+        [
+          66.28429525167992,
+          27.530881576112932
+        ],
+        [
+          13.796807286695534,
+          78.80395945039919
+        ],
+        [
+          67.03605841024837,
+          51.23823134831604
+        ],
+        [
+          81.6736435969658,
+          54.90752688700263
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              12.857020276919961,
+              49.92778624401149
+            ],
+            [
+              60.14983576233575,
+              2.8689008371944547
+            ],
+            [
+              14.792608457745594,
+              92.82110229603695
+            ]
+          ],
+          "sum_rate_Mbps": 8.912582124470859,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 106.11809662457397,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.912582124470859,
+          "equal_share_Mbps": 8.26812745144055,
+          "lp_minus_equal_Mbps": 0.6444546730303085,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9395599376636987
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              33.59594668887772,
+              7.923147888562126
+            ],
+            [
+              19.586437098585048,
+              68.17296254269348
+            ],
+            [
+              77.4567106470179,
+              48.966249772767476
+            ]
+          ],
+          "sum_rate_Mbps": 8.858011729593436,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.26505521492766,
+          "mean_assoc_dist_m": 102.18608912158591,
+          "max_assoc_snr": 1.0228691465086464,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.858011729593436,
+          "equal_share_Mbps": 8.689676560789994,
+          "lp_minus_equal_Mbps": 0.16833516880344135,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0164029991899204,
+          "mean_assoc_SE": 0.9874632455443176
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              33.59594668887772,
+              7.923147888562126
+            ],
+            [
+              19.586437098585048,
+              68.17296254269348
+            ],
+            [
+              77.4567106470179,
+              48.966249772767476
+            ]
+          ],
+          "sum_rate_Mbps": 8.858011729593436,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.26505521492766,
+          "mean_assoc_dist_m": 102.18608912158591,
+          "max_assoc_snr": 1.0228691465086464,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.858011729593436,
+          "equal_share_Mbps": 8.689676560789994,
+          "lp_minus_equal_Mbps": 0.16833516880344135,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0164029991899204,
+          "mean_assoc_SE": 0.9874632455443176
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              33.59594668887772,
+              7.923147888562126
+            ],
+            [
+              13.687999598585048,
+              65.71202504269348
+            ],
+            [
+              74.5270231470179,
+              52.911562272767476
+            ]
+          ],
+          "sum_rate_Mbps": 8.879680662013746,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.27491240882185,
+          "mean_assoc_dist_m": 102.31056294326774,
+          "max_assoc_snr": 1.0226409900760312,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 11,
+            "n_iterations": 26,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.49457381799584255,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.879680662013746,
+          "equal_share_Mbps": 8.674794136711757,
+          "lp_minus_equal_Mbps": 0.2048865253019887,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0162402705633113,
+          "mean_assoc_SE": 0.9857720609899726
+        }
+      }
+    },
+    {
+      "seed": 18,
+      "kind": "loss",
+      "delta_sca_minus_random": -0.03271670264882687,
+      "iot": {
+        "std_x_m": 24.592404659714283,
+        "std_y_m": 29.23501001763084,
+        "centroid_xy": [
+          63.02114610257253,
+          50.23778509719328
+        ],
+        "min_xy": [
+          28.08233280360034,
+          2.540392137164371
+        ],
+        "max_xy": [
+          96.97713192928597,
+          88.86019451763877
+        ]
+      },
+      "iot_xy": [
+        [
+          39.93057692175728,
+          71.7414679288216
+        ],
+        [
+          28.08233280360034,
+          8.272491799811633
+        ],
+        [
+          96.97713192928597,
+          56.392674536795205
+        ],
+        [
+          64.43209621512464,
+          57.68714635026091
+        ],
+        [
+          47.536096972993604,
+          12.2401989847857
+        ],
+        [
+          31.359612122321813,
+          73.6208582684992
+        ],
+        [
+          90.73890330483316,
+          88.86019451763877
+        ],
+        [
+          94.83208818699418,
+          2.540392137164371
+        ],
+        [
+          73.8038585199121,
+          67.2600076568488
+        ],
+        [
+          62.51876404890218,
+          63.762418791306565
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              39.93057692175728,
+              71.7414679288216
+            ],
+            [
+              28.08233280360034,
+              8.272491799811633
+            ],
+            [
+              96.97713192928597,
+              56.392674536795205
+            ]
+          ],
+          "sum_rate_Mbps": 8.952912042389409,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 103.12241004711673,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.952912042389409,
+          "equal_share_Mbps": 8.592839258315383,
+          "lp_minus_equal_Mbps": 0.3600727840740259,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9764590066267479
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              56.81683932119605,
+              7.684360973920568
+            ],
+            [
+              49.56026232702648,
+              66.70297283472208
+            ],
+            [
+              87.17329791801042,
+              70.83762557042759
+            ]
+          ],
+          "sum_rate_Mbps": 8.869296513354081,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.53301864817828,
+          "mean_assoc_dist_m": 102.06728549682097,
+          "max_assoc_snr": 1.0168150419185198,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.869296513354081,
+          "equal_share_Mbps": 8.708428885893795,
+          "lp_minus_equal_Mbps": 0.16086762746028604,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0120787833350364,
+          "mean_assoc_SE": 0.9895941915788404
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              55.20134881079666,
+              9.333227319786104
+            ],
+            [
+              49.91280127489476,
+              66.9541031932639
+            ],
+            [
+              87.07455398972071,
+              71.44081762572013
+            ]
+          ],
+          "sum_rate_Mbps": 8.876216792557273,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.3354701488863,
+          "mean_assoc_dist_m": 102.07289894657303,
+          "max_assoc_snr": 1.0212507186194275,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.876216792557273,
+          "equal_share_Mbps": 8.70873297240927,
+          "lp_minus_equal_Mbps": 0.16748382014800178,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0152482866233647,
+          "mean_assoc_SE": 0.9896287468646898
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              47.53949557119605,
+              12.235142223920569
+            ],
+            [
+              50.28291857702648,
+              68.05062908472208
+            ],
+            [
+              73.83345416801042,
+              67.26340682042759
+            ]
+          ],
+          "sum_rate_Mbps": 8.920195339740582,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.00000018560651,
+          "mean_assoc_dist_m": 102.47982055550258,
+          "max_assoc_snr": 1.0297872994249968,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 10,
+            "n_iterations": 25,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.4583950219966937,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.920195339740582,
+          "equal_share_Mbps": 8.665478176706543,
+          "lp_minus_equal_Mbps": 0.254717163034039,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213285559118481,
+          "mean_assoc_SE": 0.9847134291711981
+        }
+      }
+    },
+    {
+      "seed": 7,
+      "kind": "loss",
+      "delta_sca_minus_random": -0.029908664117440864,
+      "iot": {
+        "std_x_m": 28.645903449820068,
+        "std_y_m": 26.0035744093122,
+        "centroid_xy": [
+          51.83411961385654,
+          63.43759144536466
+        ],
+        "min_xy": [
+          0.5265304565574724,
+          22.520718999059184
+        ],
+        "max_xy": [
+          99.55002834343927,
+          98.8960147681885
+        ]
+      },
+      "iot_xy": [
+        [
+          62.5095466604667,
+          89.72138009695755
+        ],
+        [
+          77.56856902451935,
+          22.520718999059184
+        ],
+        [
+          30.016628491122542,
+          87.35534453962619
+        ],
+        [
+          0.5265304565574724,
+          82.12284183827663
+        ],
+        [
+          79.70694287520462,
+          46.79349528437208
+        ],
+        [
+          30.30324268193135,
+          27.84256121007733
+        ],
+        [
+          25.48695876541246,
+          44.50763058826466
+        ],
+        [
+          50.45482589579533,
+          55.34973520744925
+        ],
+        [
+          99.55002834343927,
+          79.26619192137531
+        ],
+        [
+          62.21792294411627,
+          98.8960147681885
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              62.5095466604667,
+              89.72138009695755
+            ],
+            [
+              77.56856902451935,
+              22.520718999059184
+            ],
+            [
+              30.016628491122542,
+              87.35534453962619
+            ]
+          ],
+          "sum_rate_Mbps": 8.943400815742997,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 104.0935901858741,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.943400815742997,
+          "equal_share_Mbps": 8.472314389546236,
+          "lp_minus_equal_Mbps": 0.4710864261967611,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9627629988120724
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              72.00130595725692,
+              65.42458937956697
+            ],
+            [
+              27.895100723671906,
+              36.175095899171
+            ],
+            [
+              15.271579473840008,
+              84.73909318895141
+            ]
+          ],
+          "sum_rate_Mbps": 8.863841846493655,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.37544660939786,
+          "mean_assoc_dist_m": 103.06374031828412,
+          "max_assoc_snr": 1.0203421825551455,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.863841846493655,
+          "equal_share_Mbps": 8.586054207206878,
+          "lp_minus_equal_Mbps": 0.2777876392867764,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0145996609311998,
+          "mean_assoc_SE": 0.9756879780916904
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              73.96774121358158,
+              90.58054078155463
+            ],
+            [
+              54.968456044909786,
+              38.61483339197312
+            ],
+            [
+              17.606118242124463,
+              84.76277141687096
+            ]
+          ],
+          "sum_rate_Mbps": 8.835899926032535,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.65797722733647,
+          "mean_assoc_dist_m": 102.43979873727638,
+          "max_assoc_snr": 1.0140647390091668,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.835899926032535,
+          "equal_share_Mbps": 8.657608409584963,
+          "lp_minus_equal_Mbps": 0.17829151644757246,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0101100573002009,
+          "mean_assoc_SE": 0.9838191374528368
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              62.93880595725692,
+              92.61208937956697
+            ],
+            [
+              27.582600723671906,
+              36.800095899171
+            ],
+            [
+              15.3125,
+              81.30159318895141
+            ]
+          ],
+          "sum_rate_Mbps": 8.913492151625556,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.04269320495348,
+          "mean_assoc_dist_m": 105.23729509136444,
+          "max_assoc_snr": 1.028309602825061,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "MAX_ITERATIONS",
+            "accepted_steps": 23,
+            "n_iterations": 30,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.600010869995458,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.913492151625556,
+          "equal_share_Mbps": 8.370991297583304,
+          "lp_minus_equal_Mbps": 0.5425008540422525,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0202778832925188,
+          "mean_assoc_SE": 0.9512490110890119
+        }
+      }
+    },
+    {
+      "seed": 19,
+      "kind": "loss",
+      "delta_sca_minus_random": -0.02576195910501511,
+      "iot": {
+        "std_x_m": 21.573952036301485,
+        "std_y_m": 25.793712794824337,
+        "centroid_xy": [
+          52.27761604032058,
+          61.887986966930455
+        ],
+        "min_xy": [
+          27.38699878982821,
+          6.0048604122526665
+        ],
+        "max_xy": [
+          92.80755115196574,
+          92.58693448167037
+        ]
+      },
+      "iot_xy": [
+        [
+          42.03787957292609,
+          92.58693448167037
+        ],
+        [
+          27.38699878982821,
+          6.0048604122526665
+        ],
+        [
+          31.054345831311192,
+          71.8185257872077
+        ],
+        [
+          78.0965581768183,
+          53.86998360795929
+        ],
+        [
+          31.16654178238205,
+          91.63497293891496
+        ],
+        [
+          92.80755115196574,
+          43.652097570616085
+        ],
+        [
+          40.969260241546834,
+          61.32452258279074
+        ],
+        [
+          71.36130654072558,
+          62.01178465663858
+        ],
+        [
+          43.29620697161363,
+          44.189808744521706
+        ],
+        [
+          64.59951134408813,
+          91.78637888673249
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              42.03787957292609,
+              92.58693448167037
+            ],
+            [
+              27.38699878982821,
+              6.0048604122526665
+            ],
+            [
+              31.054345831311192,
+              71.8185257872077
+            ]
+          ],
+          "sum_rate_Mbps": 8.932714144551909,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 104.96951719045917,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.932714144551909,
+          "equal_share_Mbps": 8.397974602899646,
+          "lp_minus_equal_Mbps": 0.5347395416522627,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9543152957840506
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              62.5897243261903,
+              41.94570699839767
+            ],
+            [
+              36.30700685704154,
+              79.34123894764595
+            ],
+            [
+              64.59951134408813,
+              91.78637888673249
+            ]
+          ],
+          "sum_rate_Mbps": 8.8880099184672,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 102.66126738955445,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.8880099184672,
+          "equal_share_Mbps": 8.643053738813023,
+          "lp_minus_equal_Mbps": 0.24495617965417615,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9821651975923891
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              43.318839976032095,
+              81.3026150489057
+            ],
+            [
+              81.47281963070691,
+              53.154421923174894
+            ],
+            [
+              37.75187630572711,
+              24.812043883263044
+            ]
+          ],
+          "sum_rate_Mbps": 8.88478446791898,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.05953812570667,
+          "mean_assoc_dist_m": 101.42178173756814,
+          "max_assoc_snr": 1.0278552202334577,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.88478446791898,
+          "equal_share_Mbps": 8.78808453072709,
+          "lp_minus_equal_Mbps": 0.09669993719188952,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0199546540634756,
+          "mean_assoc_SE": 0.9986459694008056
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              62.1990993261903,
+              41.39883199839767
+            ],
+            [
+              34.97888185704154,
+              86.13811394764595
+            ],
+            [
+              64.59951134408813,
+              91.78637888673249
+            ]
+          ],
+          "sum_rate_Mbps": 8.906952185446894,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 102.75739054767185,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 10,
+            "n_iterations": 25,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.4612776860012673,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.906952185446894,
+          "equal_share_Mbps": 8.630838363251087,
+          "lp_minus_equal_Mbps": 0.27611382219580705,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9807770867330781
+        }
+      }
+    },
+    {
+      "seed": 13,
+      "kind": "loss",
+      "delta_sca_minus_random": -0.009591085190082893,
+      "iot": {
+        "std_x_m": 30.766788686417232,
+        "std_y_m": 33.33815525615637,
+        "centroid_xy": [
+          57.95383861861664,
+          53.262306804982074
+        ],
+        "min_xy": [
+          7.7199457718421405,
+          0.263075362629972
+        ],
+        "max_xy": [
+          91.04071780658379,
+          98.48034752375554
+        ]
+      },
+      "iot_xy": [
+        [
+          86.47975870165865,
+          85.5302514932059
+        ],
+        [
+          81.10233987843422,
+          26.14463614164766
+        ],
+        [
+          7.7199457718421405,
+          94.64657804460633
+        ],
+        [
+          61.379169104710186,
+          0.263075362629972
+        ],
+        [
+          91.04071780658379,
+          98.48034752375554
+        ],
+        [
+          28.629660416617043,
+          81.36611230389795
+        ],
+        [
+          8.240794388130823,
+          43.828004730342144
+        ],
+        [
+          81.77037747448075,
+          40.87333326897736
+        ],
+        [
+          51.77497071869771,
+          11.703988347506634
+        ],
+        [
+          81.40065192501118,
+          49.78674083325122
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              86.47975870165865,
+              85.5302514932059
+            ],
+            [
+              81.10233987843422,
+              26.14463614164766
+            ],
+            [
+              7.7199457718421405,
+              94.64657804460633
+            ]
+          ],
+          "sum_rate_Mbps": 8.935772491468834,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 103.03403659912647,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.935772491468834,
+          "equal_share_Mbps": 8.600874801184343,
+          "lp_minus_equal_Mbps": 0.3348976902844907,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9773721364982209
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              40.464978070512906,
+              18.598356146826248
+            ],
+            [
+              81.42445642597538,
+              38.93490341462542
+            ],
+            [
+              53.467520674175404,
+              90.00582234136644
+            ]
+          ],
+          "sum_rate_Mbps": 8.879835509983879,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.01938397966687,
+          "mean_assoc_dist_m": 104.0171499633099,
+          "max_assoc_snr": 1.0289844514190694,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.879835509983879,
+          "equal_share_Mbps": 8.474333172560586,
+          "lp_minus_equal_Mbps": 0.4055023374232931,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.020757809428455,
+          "mean_assoc_SE": 0.9629924059727939
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              70.50335939956341,
+              28.94847492975787
+            ],
+            [
+              15.464578333292955,
+              73.70131504450312
+            ],
+            [
+              88.82687378671677,
+              95.03523826925388
+            ]
+          ],
+          "sum_rate_Mbps": 8.892841106146541,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.08381429142153,
+          "mean_assoc_dist_m": 102.10809106500326,
+          "max_assoc_snr": 1.0272251939457344,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.892841106146541,
+          "equal_share_Mbps": 8.701782546347072,
+          "lp_minus_equal_Mbps": 0.19105855979946895,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0195063592256897,
+          "mean_assoc_SE": 0.9888389257212584
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              55.699353070512906,
+              6.879606146826248
+            ],
+            [
+              81.58070642597538,
+              45.10677841462542
+            ],
+            [
+              52.451895674175404,
+              89.61519734136644
+            ]
+          ],
+          "sum_rate_Mbps": 8.92618140627875,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.08974988932609,
+          "mean_assoc_dist_m": 104.53053129554371,
+          "max_assoc_snr": 1.0270742823889685,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 13,
+            "n_iterations": 28,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.5363776249869261,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.92618140627875,
+          "equal_share_Mbps": 8.43170537229891,
+          "lp_minus_equal_Mbps": 0.49447603397983997,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.019398957512555,
+          "mean_assoc_SE": 0.9581483377612399
+        }
+      }
+    },
+    {
+      "seed": 10,
+      "kind": "win",
+      "delta_sca_minus_random": 0.13019148798777458,
+      "iot": {
+        "std_x_m": 27.322062795627453,
+        "std_y_m": 32.810635935965536,
+        "centroid_xy": [
+          59.24340168684337,
+          59.68621880135818
+        ],
+        "min_xy": [
+          13.935139386782236,
+          13.591960402050663
+        ],
+        "max_xy": [
+          95.60017096289754,
+          95.69260034533661
+        ]
+      },
+      "iot_xy": [
+        [
+          95.60017096289754,
+          20.768181007914688
+        ],
+        [
+          82.84448852745308,
+          14.928212308202028
+        ],
+        [
+          51.28046164365648,
+          13.591960402050663
+        ],
+        [
+          68.90364797811311,
+          84.1747724312279
+        ],
+        [
+          42.55089974049766,
+          95.69260034533661
+        ],
+        [
+          82.53329063847983,
+          33.8215312471576
+        ],
+        [
+          57.57605479445136,
+          75.33018647084769
+        ],
+        [
+          82.71039370247955,
+          93.34384708515813
+        ],
+        [
+          14.49946949362273,
+          74.55802110439375
+        ],
+        [
+          13.935139386782236,
+          90.65287561129269
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              95.60017096289754,
+              20.768181007914688
+            ],
+            [
+              82.84448852745308,
+              14.928212308202028
+            ],
+            [
+              51.28046164365648,
+              13.591960402050663
+            ]
+          ],
+          "sum_rate_Mbps": 8.826592221727594,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 114.90868631190294,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.826592221727594,
+          "equal_share_Mbps": 7.4220360391452465,
+          "lp_minus_equal_Mbps": 1.4045561825823478,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.8434131862665051
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              78.06460294312173,
+              20.77747124133124
+            ],
+            [
+              14.217304440202483,
+              82.60544835784322
+            ],
+            [
+              62.935249053885414,
+              87.13535158314258
+            ]
+          ],
+          "sum_rate_Mbps": 8.93394293883393,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.22168834455681,
+          "mean_assoc_dist_m": 101.27767167892179,
+          "max_assoc_snr": 1.0238803469688862,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.93394293883393,
+          "equal_share_Mbps": 8.8087914788305,
+          "lp_minus_equal_Mbps": 0.1251514600034298,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0171239995493684,
+          "mean_assoc_SE": 1.0009990316852841
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              78.06460294312173,
+              20.77747124133124
+            ],
+            [
+              14.217304440202483,
+              82.60544835784322
+            ],
+            [
+              62.935249053885414,
+              87.13535158314258
+            ]
+          ],
+          "sum_rate_Mbps": 8.93394293883393,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.22168834455681,
+          "mean_assoc_dist_m": 101.27767167892179,
+          "max_assoc_snr": 1.0238803469688862,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.93394293883393,
+          "equal_share_Mbps": 8.8087914788305,
+          "lp_minus_equal_Mbps": 0.1251514600034298,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0171239995493684,
+          "mean_assoc_SE": 1.0009990316852841
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              82.84243497437173,
+              14.930303272581241
+            ],
+            [
+              13.936542721452483,
+              90.64499913909322
+            ],
+            [
+              62.805854522635414,
+              79.74033205189258
+            ]
+          ],
+          "sum_rate_Mbps": 8.956783709715369,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.00000004294606,
+          "mean_assoc_dist_m": 101.55599542381498,
+          "max_assoc_snr": 1.0297879541501442,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 15,
+            "n_iterations": 30,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.5751978580083232,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.956783709715369,
+          "equal_share_Mbps": 8.775672553618994,
+          "lp_minus_equal_Mbps": 0.18111115609637451,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213290212653223,
+          "mean_assoc_SE": 0.9972355174567038
+        }
+      }
+    },
+    {
+      "seed": 3,
+      "kind": "win",
+      "delta_sca_minus_random": 0.11138970268381954,
+      "iot": {
+        "std_x_m": 25.177304758192246,
+        "std_y_m": 24.57907625633265,
+        "centroid_xy": [
+          47.34791882761416,
+          45.26584382443338
+        ],
+        "min_xy": [
+          8.564916714362436,
+          11.367201992140341
+        ],
+        "max_xy": [
+          80.1274465206397,
+          95.62672548360986
+        ]
+      },
+      "iot_xy": [
+        [
+          8.564916714362436,
+          23.68105065960997
+        ],
+        [
+          80.1274465206397,
+          58.21620360643678
+        ],
+        [
+          9.412864224039918,
+          43.31269402364738
+        ],
+        [
+          47.9051298140834,
+          15.973891463707856
+        ],
+        [
+          73.45771514092145,
+          11.367201992140341
+        ],
+        [
+          39.1228190495662,
+          51.674018262136364
+        ],
+        [
+          43.06280204141778,
+          58.679857143814075
+        ],
+        [
+          73.78377872921602,
+          95.62672548360986
+        ],
+        [
+          28.420116374879147,
+          64.85472070798251
+        ],
+        [
+          69.62159966701554,
+          29.27207490124871
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              8.564916714362436,
+              23.68105065960997
+            ],
+            [
+              80.1274465206397,
+              58.21620360643678
+            ],
+            [
+              9.412864224039918,
+              43.31269402364738
+            ]
+          ],
+          "sum_rate_Mbps": 8.842150853835571,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 104.52802789159696,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.842150853835571,
+          "equal_share_Mbps": 8.415013911343772,
+          "lp_minus_equal_Mbps": 0.42713694249179923,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9562515808345194
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              21.960970250828584,
+              27.655878715655067
+            ],
+            [
+              74.24763501444818,
+              48.620551495858926
+            ],
+            [
+              36.86857915528771,
+              58.40286537131099
+            ]
+          ],
+          "sum_rate_Mbps": 8.907288448947813,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.19204120889589,
+          "mean_assoc_dist_m": 102.77460896482373,
+          "max_assoc_snr": 1.024579807148599,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.907288448947813,
+          "equal_share_Mbps": 8.628245734600943,
+          "lp_minus_equal_Mbps": 0.2790427143468701,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0176225139001074,
+          "mean_assoc_SE": 0.9804824698410162
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              76.438914569921,
+              81.05774290511775
+            ],
+            [
+              27.0981823634516,
+              50.49074358483689
+            ],
+            [
+              62.87894098527037,
+              15.017031180963931
+            ]
+          ],
+          "sum_rate_Mbps": 8.85541890875157,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.62421038569127,
+          "mean_assoc_dist_m": 101.70532911188072,
+          "max_assoc_snr": 1.014804520217665,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.85541890875157,
+          "equal_share_Mbps": 8.752078999151665,
+          "lp_minus_equal_Mbps": 0.1033399095999048,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0106398728013586,
+          "mean_assoc_SE": 0.9945544317217804
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              9.480501500828584,
+              43.222284965655064
+            ],
+            [
+              80.08747876444818,
+              58.132270245858926
+            ],
+            [
+              41.14592290528771,
+              55.57083412131099
+            ]
+          ],
+          "sum_rate_Mbps": 8.95354055651939,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.00004321114342,
+          "mean_assoc_dist_m": 103.60146266950801,
+          "max_assoc_snr": 1.0297685078239562,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "MAX_ITERATIONS",
+            "accepted_steps": 16,
+            "n_iterations": 30,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.5753605140198488,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.95354055651939,
+          "equal_share_Mbps": 8.53600639828398,
+          "lp_minus_equal_Mbps": 0.4175341582354104,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213151995000047,
+          "mean_assoc_SE": 0.9700007270777251
+        }
+      }
+    },
+    {
+      "seed": 16,
+      "kind": "win",
+      "delta_sca_minus_random": 0.06154139007540316,
+      "iot": {
+        "std_x_m": 31.287847054277194,
+        "std_y_m": 30.64024825534701,
+        "centroid_xy": [
+          45.58071458141197,
+          52.70761227100685
+        ],
+        "min_xy": [
+          4.430421578828481,
+          2.165500318271052
+        ],
+        "max_xy": [
+          95.86338310644203,
+          98.49849877499477
+        ]
+      },
+      "iot_xy": [
+        [
+          56.691683887936506,
+          43.074414549018556
+        ],
+        [
+          9.407382546152455,
+          34.80795504359955
+        ],
+        [
+          62.15090383806794,
+          2.165500318271052
+        ],
+        [
+          87.46323779455378,
+          85.40495315269422
+        ],
+        [
+          4.430421578828481,
+          80.24209628659041
+        ],
+        [
+          18.47951614868486,
+          69.56239148985941
+        ],
+        [
+          15.50002548656667,
+          69.16197559832665
+        ],
+        [
+          95.86338310644203,
+          98.49849877499477
+        ],
+        [
+          66.32952669932003,
+          16.358816232223695
+        ],
+        [
+          39.49106472756698,
+          27.799521264490146
+        ]
+      ],
+      "methods": {
+        "random": {
+          "uav_xy": [
+            [
+              56.691683887936506,
+              43.074414549018556
+            ],
+            [
+              9.407382546152455,
+              34.80795504359955
+            ],
+            [
+              62.15090383806794,
+              2.165500318271052
+            ]
+          ],
+          "sum_rate_Mbps": 8.91127192588594,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.0,
+          "mean_assoc_dist_m": 105.9540102909292,
+          "max_assoc_snr": 1.0297885591559268,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.91127192588594,
+          "equal_share_Mbps": 8.280086342071264,
+          "lp_minus_equal_Mbps": 0.6311855838146752,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213294512800488,
+          "mean_assoc_SE": 0.9409189025080982
+        },
+        "kmeans": {
+          "uav_xy": [
+            [
+              11.954336440058116,
+              63.443604604594
+            ],
+            [
+              56.16579478822287,
+              22.34956309100086
+            ],
+            [
+              91.6633104504979,
+              91.9517259638445
+            ]
+          ],
+          "sum_rate_Mbps": 8.931146438353153,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.22610277585622,
+          "mean_assoc_dist_m": 101.34988479280386,
+          "max_assoc_snr": 1.0237768099439521,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.931146438353153,
+          "equal_share_Mbps": 8.799344946701327,
+          "lp_minus_equal_Mbps": 0.1318014916518262,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0170501927289473,
+          "mean_assoc_SE": 0.9999255621251507
+        },
+        "pso": {
+          "uav_xy": [
+            [
+              12.348681729917457,
+              64.80309235021463
+            ],
+            [
+              55.978365862449735,
+              22.394836816737058
+            ],
+            [
+              92.38199577921036,
+              91.76519046448479
+            ]
+          ],
+          "sum_rate_Mbps": 8.937015080528662,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.14454968016604,
+          "mean_assoc_dist_m": 101.3531999965039,
+          "max_assoc_snr": 1.0257184743980818,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "bandwidth": "frozen_q_lp"
+          },
+          "lp_Mbps": 8.937015080528662,
+          "equal_share_Mbps": 8.799523510131111,
+          "lp_minus_equal_Mbps": 0.13749157039755033,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0184336885460907,
+          "mean_assoc_SE": 0.9999458534239899
+        },
+        "sca": {
+          "uav_xy": [
+            [
+              16.583242690058114,
+              69.166260854594
+            ],
+            [
+              66.18532603822287,
+              16.43159434100086
+            ],
+            [
+              87.4640917004979,
+              85.4087572138445
+            ]
+          ],
+          "sum_rate_Mbps": 8.972813315961343,
+          "feasible": true,
+          "max_B_Hz": 2200000.0,
+          "n_assoc": 10,
+          "min_assoc_dist_m": 100.00000007600018,
+          "mean_assoc_dist_m": 101.7690800227277,
+          "max_assoc_snr": 1.0297877539360938,
+          "aodt_max_s": 2.8,
+          "diagnostics": {
+            "method": "sca",
+            "stop_reason": "CONVERGED",
+            "accepted_steps": 13,
+            "n_iterations": 28,
+            "solver_backend": "cvxpy",
+            "solver_status": "optimal",
+            "se_max_abs_diff": null,
+            "wall_clock_s": 0.5170199439744465,
+            "association_init_equals_final": true,
+            "processing_init_equals_final": true,
+            "rematch_attempts": null,
+            "rematch_accepted": null,
+            "rematch_rejected": null,
+            "rematch_kinds": null,
+            "process_cohesive_candidate": null,
+            "process_cohesive_a": null,
+            "n_forwarding": null
+          },
+          "lp_Mbps": 8.972813315961343,
+          "equal_share_Mbps": 8.751726193424233,
+          "lp_minus_equal_Mbps": 0.22108712253711005,
+          "n_links_near_cap": 3,
+          "max_assoc_SE": 1.0213288789608852,
+          "mean_assoc_SE": 0.9945143401618445
+        }
+      }
+    }
+  ],
+  "proxy_mismatch_j3": {
+    "random": {
+      "mean_lp_Mbps": 8.927646898849275,
+      "mean_equal_Mbps": 8.431887178183512,
+      "mean_lp_minus_equal_Mbps": 0.4957597206657643
+    },
+    "kmeans": {
+      "mean_lp_Mbps": 8.900839058019471,
+      "mean_equal_Mbps": 8.691516422117463,
+      "mean_lp_minus_equal_Mbps": 0.20932263590200934
+    },
+    "pso": {
+      "mean_lp_Mbps": 8.904552392856989,
+      "mean_equal_Mbps": 8.741776615235489,
+      "mean_lp_minus_equal_Mbps": 0.16277577762150006
+    }
+  },
+  "sca_vs_kmeans_all20": [
+    {
+      "seed": 1,
+      "sca_minus_kmeans_Mbps": 0.05017639460834289,
+      "sca_accepted": 11,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 2,
+      "sca_minus_kmeans_Mbps": 0.047022034545133096,
+      "sca_accepted": 13,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 3,
+      "sca_minus_kmeans_Mbps": 0.04625210757157738,
+      "sca_accepted": 16,
+      "sca_stop": "MAX_ITERATIONS"
+    },
+    {
+      "seed": 4,
+      "sca_minus_kmeans_Mbps": 0.07755829674028902,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 5,
+      "sca_minus_kmeans_Mbps": 0.06307092298425054,
+      "sca_accepted": 14,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 6,
+      "sca_minus_kmeans_Mbps": 0.04415010022075272,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 7,
+      "sca_minus_kmeans_Mbps": 0.04965030513190172,
+      "sca_accepted": 23,
+      "sca_stop": "MAX_ITERATIONS"
+    },
+    {
+      "seed": 8,
+      "sca_minus_kmeans_Mbps": 0.030758863570353512,
+      "sca_accepted": 14,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 9,
+      "sca_minus_kmeans_Mbps": 0.09921767198829023,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 10,
+      "sca_minus_kmeans_Mbps": 0.0228407708814391,
+      "sca_accepted": 15,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 11,
+      "sca_minus_kmeans_Mbps": 0.021668932420309872,
+      "sca_accepted": 11,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 12,
+      "sca_minus_kmeans_Mbps": 0.060467074304760615,
+      "sca_accepted": 17,
+      "sca_stop": "MAX_ITERATIONS"
+    },
+    {
+      "seed": 13,
+      "sca_minus_kmeans_Mbps": 0.046345896294871736,
+      "sca_accepted": 13,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 14,
+      "sca_minus_kmeans_Mbps": 0.03259462129904733,
+      "sca_accepted": 13,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 15,
+      "sca_minus_kmeans_Mbps": 0.024764639955101586,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 16,
+      "sca_minus_kmeans_Mbps": 0.04166687760818988,
+      "sca_accepted": 13,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 17,
+      "sca_minus_kmeans_Mbps": 0.037282694777513115,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 18,
+      "sca_minus_kmeans_Mbps": 0.05089882638650067,
+      "sca_accepted": 10,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 19,
+      "sca_minus_kmeans_Mbps": 0.018942266979694367,
+      "sca_accepted": 10,
+      "sca_stop": "CONVERGED"
+    },
+    {
+      "seed": 20,
+      "sca_minus_kmeans_Mbps": 0.046396117791681846,
+      "sca_accepted": 12,
+      "sca_stop": "CONVERGED"
+    }
+  ],
+  "note": "SCA initializes from k-means (initialize_sca), not from random. PSO inner fitness is equal-share B; campaign score is frozen-q LP."
+}

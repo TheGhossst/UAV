@@ -1,0 +1,732 @@
+{
+  "question": "If SCA-joint also tries process-cohesive a_ij as a rematch candidate, does T_k=0.8s become feasible?",
+  "pre_registered": false,
+  "hypothesis": "Best-SE greedy never proposes grouping N_k. Adding that one candidate should recover feasibility if nothing else blocks the LP / evaluate gate.",
+  "config": {
+    "num_iot": 10,
+    "num_uav": 3,
+    "aodt_threshold_s": 0.8,
+    "b_sys_hz": 8800000.0,
+    "max_bw_share": 0.25,
+    "n_runs": 20,
+    "seed_start": 1,
+    "process_cohesive_candidate": true,
+    "method": "sca_joint"
+  },
+  "note": "Does not overwrite tk08_scajoint_feasibility.json (best-SE-only). Frozen SCA is unchanged. Accept rule is unchanged: newly feasible or true rate improves; newly-feasible ranks first.",
+  "summary": {
+    "n": 20,
+    "n_feasible": 20,
+    "feasible_fraction": 1.0,
+    "mean_sum_rate_Mbps": 8.393191154507106,
+    "mean_wall_clock_s": 0.6876158605999081,
+    "mean_n_iterations": 24.65,
+    "n_process_cohesive_a": 20,
+    "n_accepted_process_cohesive_kind": 20,
+    "n_zero_forwarding": 20
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "feasible": true,
+      "sum_rate_Mbps": 8.482365281198604,
+      "wall_clock_s": 1.5369877530029044,
+      "n_iterations": 21,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 21,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 2,
+      "feasible": true,
+      "sum_rate_Mbps": 8.41688517919202,
+      "wall_clock_s": 0.7657893169962335,
+      "n_iterations": 23,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 23,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 3,
+      "feasible": true,
+      "sum_rate_Mbps": 8.608091327602175,
+      "wall_clock_s": 0.9982160259969532,
+      "n_iterations": 29,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 29,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 4,
+      "feasible": true,
+      "sum_rate_Mbps": 8.51044867096184,
+      "wall_clock_s": 0.7649491119955201,
+      "n_iterations": 22,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 22,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 5,
+      "feasible": true,
+      "sum_rate_Mbps": 8.2404573771185,
+      "wall_clock_s": 0.7644585060188547,
+      "n_iterations": 23,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 23,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 6,
+      "feasible": true,
+      "sum_rate_Mbps": 8.250622365694946,
+      "wall_clock_s": 0.7528248539892957,
+      "n_iterations": 21,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 21,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 7,
+      "feasible": true,
+      "sum_rate_Mbps": 8.342079126246551,
+      "wall_clock_s": 0.861042250005994,
+      "n_iterations": 26,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 26,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 8,
+      "feasible": true,
+      "sum_rate_Mbps": 8.516584601373657,
+      "wall_clock_s": 0.8940152880095411,
+      "n_iterations": 26,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 26,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 9,
+      "feasible": true,
+      "sum_rate_Mbps": 8.359170301598963,
+      "wall_clock_s": 0.8598973110201769,
+      "n_iterations": 25,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 25,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 10,
+      "feasible": true,
+      "sum_rate_Mbps": 8.34643754366826,
+      "wall_clock_s": 0.5347144799889065,
+      "n_iterations": 27,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 27,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "feasible": true,
+      "sum_rate_Mbps": 8.303997762156955,
+      "wall_clock_s": 0.4692583169962745,
+      "n_iterations": 23,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 2,
+      "rematch_rejected": 22,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive",
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 12,
+      "feasible": true,
+      "sum_rate_Mbps": 8.374119268301197,
+      "wall_clock_s": 0.5221187029965222,
+      "n_iterations": 25,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 25,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 13,
+      "feasible": true,
+      "sum_rate_Mbps": 8.201582598309798,
+      "wall_clock_s": 0.5562162260175683,
+      "n_iterations": 28,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 28,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 14,
+      "feasible": true,
+      "sum_rate_Mbps": 8.636802448261506,
+      "wall_clock_s": 0.5578984890016727,
+      "n_iterations": 28,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 28,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 15,
+      "feasible": true,
+      "sum_rate_Mbps": 8.428608832958718,
+      "wall_clock_s": 0.5115914579946548,
+      "n_iterations": 25,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 25,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 16,
+      "feasible": true,
+      "sum_rate_Mbps": 8.23059660212755,
+      "wall_clock_s": 0.48344663600437343,
+      "n_iterations": 25,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 25,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 17,
+      "feasible": true,
+      "sum_rate_Mbps": 8.319562776381607,
+      "wall_clock_s": 0.5384536650090013,
+      "n_iterations": 27,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 27,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 18,
+      "feasible": true,
+      "sum_rate_Mbps": 8.453011863303011,
+      "wall_clock_s": 0.46827433997532353,
+      "n_iterations": 23,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 2,
+      "rematch_rejected": 22,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive",
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            2
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 19,
+      "feasible": true,
+      "sum_rate_Mbps": 8.587010573968081,
+      "wall_clock_s": 0.5078311619872693,
+      "n_iterations": 26,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 26,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            0
+          ],
+          "split": false
+        }
+      ]
+    },
+    {
+      "seed": 20,
+      "feasible": true,
+      "sum_rate_Mbps": 8.25538858971819,
+      "wall_clock_s": 0.4043333189911209,
+      "n_iterations": 20,
+      "stop_reason": "CONVERGED",
+      "rematch_accepted": 1,
+      "rematch_rejected": 20,
+      "rematch_kinds": [
+        "discrete_rematch:process_cohesive"
+      ],
+      "process_cohesive_candidate": true,
+      "process_cohesive_a": true,
+      "n_forwarding": 0,
+      "association_init_equals_final": false,
+      "process_uav_map": [
+        {
+          "process_id": 0,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        },
+        {
+          "process_id": 1,
+          "n_members": 5,
+          "uav_ids": [
+            1
+          ],
+          "split": false
+        }
+      ]
+    }
+  ]
+}

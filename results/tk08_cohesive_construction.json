@@ -1,0 +1,4457 @@
+{
+  "question": "Is process-cohesive feasibility at T_k=0.8s a general property of this scenario, or a single-geometry accident?",
+  "config": {
+    "num_iot": 10,
+    "num_uav": 3,
+    "aodt_threshold_s": 0.8,
+    "b_sys_hz": 8800000.0,
+    "max_bw_share": 0.25,
+    "placement": "kmeans",
+    "association": "centroid_cohesive",
+    "processing": "process_consistent_processing",
+    "campaign_seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "held_out_seeds": [
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40
+    ]
+  },
+  "note": "Construction only: k-means q, N_k on the UAV nearest that process centroid, majority-of-association b_ij, frozen-q bandwidth LP, true evaluate(). Not a solver.",
+  "summary": {
+    "n": 40,
+    "n_cohesive_feasible": 40,
+    "cohesive_feasible_fraction": 1.0,
+    "failed_seeds": [],
+    "campaign": {
+      "n": 20,
+      "n_cohesive_feasible": 20,
+      "cohesive_feasible_fraction": 1.0,
+      "n_nearest_feasible": 0,
+      "n_cohesive_differs_from_nearest": 20,
+      "failed_seeds": []
+    },
+    "held_out": {
+      "n": 20,
+      "n_cohesive_feasible": 20,
+      "cohesive_feasible_fraction": 1.0,
+      "n_nearest_feasible": 0,
+      "n_cohesive_differs_from_nearest": 20,
+      "failed_seeds": []
+    }
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          54.959368767305946,
+          2.7559113243068367
+        ],
+        [
+          79.06078512476242,
+          47.36712247942198
+        ],
+        [
+          27.689088187777536,
+          60.42560731762556
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.354972723990333,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 3,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 3,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 2,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          78.37682392296654,
+          70.581267456071
+        ],
+        [
+          48.90043274553344,
+          12.109435062339982
+        ],
+        [
+          34.799924155756734,
+          56.46014640345882
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.360048977521988,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 3,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          21.960970250828584,
+          27.655878715655067
+        ],
+        [
+          74.24763501444818,
+          48.620551495858926
+        ],
+        [
+          36.86857915528771,
+          58.40286537131099
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.500214299138579,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 4,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          86.95086005850965,
+          36.19998134980568
+        ],
+        [
+          30.409443174569713,
+          69.88991671944385
+        ],
+        [
+          96.89328693162349,
+          92.90263877654195
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.409948974347005,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 3,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 3,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 5,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          85.13402659269644,
+          82.60859136726174
+        ],
+        [
+          44.98654327662715,
+          25.046356468928792
+        ],
+        [
+          24.1852631476155,
+          98.66811541621634
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.017284525810808,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 6,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          83.46593944013064,
+          54.51063747435016
+        ],
+        [
+          3.0312518759604945,
+          91.44794544970418
+        ],
+        [
+          40.88081848584725,
+          26.204481912384637
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.031716386763097,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 7,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          72.00130595725692,
+          65.42458937956697
+        ],
+        [
+          27.895100723671906,
+          36.175095899171
+        ],
+        [
+          15.271579473840008,
+          84.73909318895141
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.18962995019275,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 8,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          84.18620909256185,
+          40.703449734171016
+        ],
+        [
+          24.536793533457928,
+          37.87254012945844
+        ],
+        [
+          41.665180371651104,
+          80.75612687393807
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.439100598939387,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 9,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          92.677572412813,
+          53.57135308801175
+        ],
+        [
+          22.638853506015963,
+          55.582116438721506
+        ],
+        [
+          72.65388096126706,
+          87.03839441531495
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.194264943167871,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 3,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 3,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 10,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          78.06460294312173,
+          20.77747124133124
+        ],
+        [
+          14.217304440202483,
+          82.60544835784322
+        ],
+        [
+          62.935249053885414,
+          87.13535158314258
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.233605872452278,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 11,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          33.59594668887772,
+          7.923147888562126
+        ],
+        [
+          19.586437098585048,
+          68.17296254269348
+        ],
+        [
+          77.4567106470179,
+          48.966249772767476
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.16541239189225,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 12,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          47.90770080006149,
+          26.641225018887667
+        ],
+        [
+          53.842680758567575,
+          91.08000442718865
+        ],
+        [
+          13.944244504306795,
+          29.16506854206075
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.289100147571725,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 13,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          40.464978070512906,
+          18.598356146826248
+        ],
+        [
+          81.42445642597538,
+          38.93490341462542
+        ],
+        [
+          53.467520674175404,
+          90.00582234136644
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.004889105601313,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 14,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          84.95299810603655,
+          24.107455689937826
+        ],
+        [
+          68.83115629025717,
+          71.52133802504233
+        ],
+        [
+          36.488274226747244,
+          57.66118831173197
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.524924085690115,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 15,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          71.87713768754712,
+          34.53565040758397
+        ],
+        [
+          43.52541660588338,
+          14.094124343261013
+        ],
+        [
+          50.65089170082309,
+          90.18400985201198
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.37179396701159,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 16,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          11.954336440058116,
+          63.443604604594
+        ],
+        [
+          56.16579478822287,
+          22.34956309100086
+        ],
+        [
+          91.6633104504979,
+          91.9517259638445
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 7.9180932310490295,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 17,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          80.4602262603964,
+          7.101336847771445
+        ],
+        [
+          51.781628653591504,
+          52.95877290694517
+        ],
+        [
+          13.99115378889548,
+          54.17043617473349
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.28294228861027,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 18,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          56.81683932119605,
+          7.684360973920568
+        ],
+        [
+          49.56026232702648,
+          66.70297283472208
+        ],
+        [
+          87.17329791801042,
+          70.83762557042759
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.293736609390988,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 19,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          62.5897243261903,
+          41.94570699839767
+        ],
+        [
+          36.30700685704154,
+          79.34123894764595
+        ],
+        [
+          64.59951134408813,
+          91.78637888673249
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.476469343823178,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 20,
+      "panel": "campaign",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          9.109064650582228,
+          77.21239480133828
+        ],
+        [
+          33.0293420620956,
+          17.38037952925518
+        ],
+        [
+          71.5850008912344,
+          24.138297639234466
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.251289291756304,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 21,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          45.16271301149887,
+          12.875756284160415
+        ],
+        [
+          41.395357590942496,
+          82.64349793756199
+        ],
+        [
+          90.80284985225906,
+          50.613260026610504
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.139288016374126,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 22,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          23.69780971635193,
+          78.16147242553635
+        ],
+        [
+          85.15680698511308,
+          83.69613232370445
+        ],
+        [
+          46.80095710578928,
+          17.054589807108584
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.236060514056462,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 23,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          56.59032832821471,
+          40.99237376934473
+        ],
+        [
+          62.808219962588716,
+          73.03023682010452
+        ],
+        [
+          17.3932597875353,
+          29.386740160480628
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.44455484374303,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 24,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          90.85351529480118,
+          5.868979864754686
+        ],
+        [
+          67.93051272529613,
+          58.16857149323573
+        ],
+        [
+          24.988923766838695,
+          30.454068513977422
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.362932061517427,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 25,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          21.39833358487975,
+          44.11304551175839
+        ],
+        [
+          67.70929014950981,
+          81.98451503088549
+        ],
+        [
+          9.467618953915736,
+          13.97220769162464
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.31006976656996,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 26,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          47.783383363471835,
+          23.574427556220755
+        ],
+        [
+          31.838423175709305,
+          82.18318248604227
+        ],
+        [
+          88.7766614772398,
+          53.40607644099314
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.34932369696545,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 27,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          86.03407271337802,
+          71.58591181623244
+        ],
+        [
+          29.31136934362363,
+          94.34157116300516
+        ],
+        [
+          38.12816410252623,
+          27.36158875175789
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.152649238371014,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 28,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          64.74464367958313,
+          85.97465423076781
+        ],
+        [
+          79.1789208229923,
+          11.63542894407066
+        ],
+        [
+          11.384790002646467,
+          42.458324968824954
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 7.992085920982944,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 29,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          87.09313271906412,
+          63.33201424380949
+        ],
+        [
+          51.483039562855005,
+          27.730797092165563
+        ],
+        [
+          5.778177086163124,
+          42.93763696309803
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.355090145462372,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 30,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          49.89401435238875,
+          74.63964581336141
+        ],
+        [
+          22.617492095400593,
+          44.385022602806686
+        ],
+        [
+          84.25084995082193,
+          62.93038137747487
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.59891989903607,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 31,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          30.479856601206958,
+          91.3149853415067
+        ],
+        [
+          25.34864568927703,
+          19.4166650873115
+        ],
+        [
+          78.74171802508532,
+          21.841464326669165
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.158103963143486,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 32,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          39.38104271690637,
+          23.766253049403833
+        ],
+        [
+          77.11922690239177,
+          75.40673713244422
+        ],
+        [
+          23.157995040529634,
+          47.472111983971175
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.372908365272743,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 33,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          11.014640459755944,
+          54.38385727253857
+        ],
+        [
+          45.01635588792826,
+          35.229050448641885
+        ],
+        [
+          82.27064494596641,
+          27.263550256453986
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.45389578175899,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 34,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          86.10692698970718,
+          32.43414096498629
+        ],
+        [
+          12.338531554872889,
+          76.16191060661137
+        ],
+        [
+          62.83895306010071,
+          91.5430321828801
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.240358513744003,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 35,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          46.719523959153285,
+          18.75728779813098
+        ],
+        [
+          2.8871525898551353,
+          58.13233404798761
+        ],
+        [
+          73.29503813561529,
+          91.98402268930498
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.008086112772572,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 3,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 3,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 36,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          23.409496416052534,
+          34.2555126219395
+        ],
+        [
+          48.73117525473449,
+          85.69911286532431
+        ],
+        [
+          78.84185132989248,
+          45.72334613641307
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.344926292064375,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 37,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          17.630023187821802,
+          33.99963022185274
+        ],
+        [
+          61.17902046220046,
+          68.90089024197187
+        ],
+        [
+          84.43141298653248,
+          12.854297820561083
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.089482239124933,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 5,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 5,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 38,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          34.52222334126571,
+          42.863953392904925
+        ],
+        [
+          93.25717420086586,
+          3.952515455075356
+        ],
+        [
+          76.36784748783639,
+          60.04659581405095
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.534869108775808,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 39,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          18.079529146269977,
+          31.199443781535614
+        ],
+        [
+          54.857876166870334,
+          76.89028040798506
+        ],
+        [
+          83.29765037184264,
+          48.12599633419055
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.156708305665113,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              1
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 6,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 6,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          -0.09374999999999994
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    },
+    {
+      "seed": 40,
+      "panel": "held_out",
+      "nearest_equals_best_se": true,
+      "cohesive_differs_from_nearest": true,
+      "uav_xy_m": [
+        [
+          50.201379787211785,
+          17.3343342311155
+        ],
+        [
+          50.120309583358335,
+          80.97570424451214
+        ],
+        [
+          72.98984952647176,
+          69.34149568018803
+        ]
+      ],
+      "cohesive": {
+        "label": "centroid_cohesive",
+        "lp_infeasible": false,
+        "feasible": true,
+        "sum_rate_Mbps": 8.379762137876371,
+        "max_aodt_s": 0.8,
+        "n_forwarding": 0,
+        "process_cohesive_a": true,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": 0.20625000000000004,
+        "n_negative_slack": 0,
+        "upload_slacks_s": [
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              2
+            ],
+            "split": false
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0
+            ],
+            "split": false
+          }
+        ],
+        "lp_status": "optimal"
+      },
+      "nearest": {
+        "label": "nearest",
+        "lp_infeasible": true,
+        "feasible": false,
+        "sum_rate_Mbps": null,
+        "max_aodt_s": null,
+        "n_forwarding": 4,
+        "process_cohesive_a": false,
+        "processing_matches_cpu_stable": true,
+        "min_upload_slack_s": -0.09374999999999994,
+        "n_negative_slack": 4,
+        "upload_slacks_s": [
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004,
+          0.20625000000000004,
+          0.20625000000000004,
+          -0.09374999999999994,
+          0.20625000000000004
+        ],
+        "process_uav_map": [
+          {
+            "process_id": 0,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1,
+              2
+            ],
+            "split": true
+          },
+          {
+            "process_id": 1,
+            "n_members": 5,
+            "uav_ids": [
+              0,
+              1
+            ],
+            "split": true
+          }
+        ],
+        "lp_status": "aodt_slack_nonpositive"
+      }
+    }
+  ]
+}

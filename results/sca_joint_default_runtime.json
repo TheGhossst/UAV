@@ -1,0 +1,425 @@
+{
+  "point": "default J=3 I=10 lambda=2 Tk=2.8s CPU=2e8 8.8MHz/25% 100x100m",
+  "by_method": {
+    "sca": {
+      "n": 20,
+      "mean_wall_clock_s": 0.517790311051067,
+      "mean_n_iterations": 27.7,
+      "mean_sum_rate_Mbps": 8.946425328822473,
+      "feasible_fraction": 1.0,
+      "seeds": [
+        {
+          "seed": 1,
+          "feasible": true,
+          "sum_rate_Mbps": 8.960041203177767,
+          "wall_clock_s": 0.4929703760135453,
+          "n_iterations": 26,
+          "accepted_steps": 11,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 2,
+          "feasible": true,
+          "sum_rate_Mbps": 8.941111707005613,
+          "wall_clock_s": 0.5256737360032275,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 3,
+          "feasible": true,
+          "sum_rate_Mbps": 8.95354055651939,
+          "wall_clock_s": 0.5620026120159309,
+          "n_iterations": 30,
+          "accepted_steps": 16,
+          "rematch_accepted": null,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 4,
+          "feasible": true,
+          "sum_rate_Mbps": 8.966551270044032,
+          "wall_clock_s": 0.4924233139900025,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 5,
+          "feasible": true,
+          "sum_rate_Mbps": 8.95680312649417,
+          "wall_clock_s": 0.5445228620083071,
+          "n_iterations": 29,
+          "accepted_steps": 14,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 6,
+          "feasible": true,
+          "sum_rate_Mbps": 8.950698917304166,
+          "wall_clock_s": 0.5094930450140964,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 7,
+          "feasible": true,
+          "sum_rate_Mbps": 8.913492151625556,
+          "wall_clock_s": 0.5627180620213039,
+          "n_iterations": 30,
+          "accepted_steps": 23,
+          "rematch_accepted": null,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 8,
+          "feasible": true,
+          "sum_rate_Mbps": 8.960904566919966,
+          "wall_clock_s": 0.5311808759870473,
+          "n_iterations": 29,
+          "accepted_steps": 14,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 9,
+          "feasible": true,
+          "sum_rate_Mbps": 8.934455092519864,
+          "wall_clock_s": 0.5106886540015694,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 10,
+          "feasible": true,
+          "sum_rate_Mbps": 8.956783709715369,
+          "wall_clock_s": 0.5628644310054369,
+          "n_iterations": 30,
+          "accepted_steps": 15,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 11,
+          "feasible": true,
+          "sum_rate_Mbps": 8.879680662013746,
+          "wall_clock_s": 0.47638763999566436,
+          "n_iterations": 26,
+          "accepted_steps": 11,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 12,
+          "feasible": true,
+          "sum_rate_Mbps": 8.960711323763446,
+          "wall_clock_s": 0.563548276986694,
+          "n_iterations": 30,
+          "accepted_steps": 17,
+          "rematch_accepted": null,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 13,
+          "feasible": true,
+          "sum_rate_Mbps": 8.92618140627875,
+          "wall_clock_s": 0.5272636539884843,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 14,
+          "feasible": true,
+          "sum_rate_Mbps": 8.969193385135044,
+          "wall_clock_s": 0.5276066180085763,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 15,
+          "feasible": true,
+          "sum_rate_Mbps": 8.970963385879777,
+          "wall_clock_s": 0.4930560330103617,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 16,
+          "feasible": true,
+          "sum_rate_Mbps": 8.972813315961343,
+          "wall_clock_s": 0.5275497639959212,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 17,
+          "feasible": true,
+          "sum_rate_Mbps": 8.956589731682454,
+          "wall_clock_s": 0.5088251449924428,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 18,
+          "feasible": true,
+          "sum_rate_Mbps": 8.920195339740582,
+          "wall_clock_s": 0.4563280699949246,
+          "n_iterations": 25,
+          "accepted_steps": 10,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 19,
+          "feasible": true,
+          "sum_rate_Mbps": 8.906952185446894,
+          "wall_clock_s": 0.4721994200081099,
+          "n_iterations": 25,
+          "accepted_steps": 10,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 20,
+          "feasible": true,
+          "sum_rate_Mbps": 8.97084353922151,
+          "wall_clock_s": 0.5085036319796927,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": null,
+          "stop_reason": "CONVERGED"
+        }
+      ]
+    },
+    "sca_joint": {
+      "n": 20,
+      "mean_wall_clock_s": 0.5290091622999171,
+      "mean_n_iterations": 27.9,
+      "mean_sum_rate_Mbps": 8.952363841502425,
+      "feasible_fraction": 1.0,
+      "seeds": [
+        {
+          "seed": 1,
+          "feasible": true,
+          "sum_rate_Mbps": 8.960041203177767,
+          "wall_clock_s": 0.49017283497960307,
+          "n_iterations": 26,
+          "accepted_steps": 11,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 2,
+          "feasible": true,
+          "sum_rate_Mbps": 8.972975500713707,
+          "wall_clock_s": 0.5683669490099419,
+          "n_iterations": 30,
+          "accepted_steps": 16,
+          "rematch_accepted": 1,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 3,
+          "feasible": true,
+          "sum_rate_Mbps": 8.954888281865838,
+          "wall_clock_s": 0.5476407050155103,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": 2,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 4,
+          "feasible": true,
+          "sum_rate_Mbps": 8.966551270044032,
+          "wall_clock_s": 0.5095241010130849,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 5,
+          "feasible": true,
+          "sum_rate_Mbps": 8.95680312649417,
+          "wall_clock_s": 0.5289306969789322,
+          "n_iterations": 29,
+          "accepted_steps": 14,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 6,
+          "feasible": true,
+          "sum_rate_Mbps": 8.952154533881266,
+          "wall_clock_s": 0.5685318949981593,
+          "n_iterations": 30,
+          "accepted_steps": 15,
+          "rematch_accepted": 1,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 7,
+          "feasible": true,
+          "sum_rate_Mbps": 8.945981217039481,
+          "wall_clock_s": 0.573457899998175,
+          "n_iterations": 30,
+          "accepted_steps": 16,
+          "rematch_accepted": 1,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 8,
+          "feasible": true,
+          "sum_rate_Mbps": 8.963034207272804,
+          "wall_clock_s": 0.4094041539938189,
+          "n_iterations": 22,
+          "accepted_steps": 7,
+          "rematch_accepted": 1,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 9,
+          "feasible": true,
+          "sum_rate_Mbps": 8.947869959391907,
+          "wall_clock_s": 0.5739415470161475,
+          "n_iterations": 30,
+          "accepted_steps": 24,
+          "rematch_accepted": 2,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 10,
+          "feasible": true,
+          "sum_rate_Mbps": 8.956783709715369,
+          "wall_clock_s": 0.5636005690030288,
+          "n_iterations": 30,
+          "accepted_steps": 15,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 11,
+          "feasible": true,
+          "sum_rate_Mbps": 8.879680662013746,
+          "wall_clock_s": 0.49340184702305123,
+          "n_iterations": 26,
+          "accepted_steps": 11,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 12,
+          "feasible": true,
+          "sum_rate_Mbps": 8.960711323763446,
+          "wall_clock_s": 0.5567321770067792,
+          "n_iterations": 30,
+          "accepted_steps": 18,
+          "rematch_accepted": 2,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 13,
+          "feasible": true,
+          "sum_rate_Mbps": 8.92618140627875,
+          "wall_clock_s": 0.527139415993588,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 14,
+          "feasible": true,
+          "sum_rate_Mbps": 8.969193385135044,
+          "wall_clock_s": 0.5427421329950448,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": 2,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 15,
+          "feasible": true,
+          "sum_rate_Mbps": 8.970963385879777,
+          "wall_clock_s": 0.49403954498120584,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 16,
+          "feasible": true,
+          "sum_rate_Mbps": 8.972813315961343,
+          "wall_clock_s": 0.5278525789908599,
+          "n_iterations": 28,
+          "accepted_steps": 13,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 17,
+          "feasible": true,
+          "sum_rate_Mbps": 8.956589731682454,
+          "wall_clock_s": 0.5907540429907385,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 18,
+          "feasible": true,
+          "sum_rate_Mbps": 8.956264885069185,
+          "wall_clock_s": 0.556145036011003,
+          "n_iterations": 30,
+          "accepted_steps": 19,
+          "rematch_accepted": 2,
+          "stop_reason": "MAX_ITERATIONS"
+        },
+        {
+          "seed": 19,
+          "feasible": true,
+          "sum_rate_Mbps": 8.906952185446894,
+          "wall_clock_s": 0.45603710899013095,
+          "n_iterations": 25,
+          "accepted_steps": 10,
+          "rematch_accepted": 0,
+          "stop_reason": "CONVERGED"
+        },
+        {
+          "seed": 20,
+          "feasible": true,
+          "sum_rate_Mbps": 8.97084353922151,
+          "wall_clock_s": 0.5017680090095382,
+          "n_iterations": 27,
+          "accepted_steps": 12,
+          "rematch_accepted": 2,
+          "stop_reason": "CONVERGED"
+        }
+      ]
+    }
+  },
+  "wall_clock_ratio_joint_over_frozen": 1.0216667848150285,
+  "iteration_ratio_joint_over_frozen": 1.007220216606498
+}
