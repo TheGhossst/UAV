@@ -504,7 +504,9 @@ The exact seed values are **not specified by the paper**.
 
 These TD3 knobs are now filled in `uavdt.td3.settings.TD3Settings` (Fujimoto et al.
 2018 + Algorithm 2 reward weights). They are **not** on `SimConfig` and are
-**not** Table II.
+**not** Table II. Algorithm 2 remains the default. The proposed method is
+`TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` (residual
+\(\Delta q\) on SCA, frozen \(a,b\), inner LP, feasible-rate reward).
 
 
 ---
@@ -598,6 +600,7 @@ headline field (intentional modification; paper §VII uses 500 × 500 m). A
 - [x] SCA (Algorithm 1) — `src/uavdt/sca/`, CVXPY campaigns, MATLAB spot-check.
 - [x] TD3 (Algorithm 2) — `src/uavdt/td3/`. Paper gaps filled in `TD3Settings`
       (not Table II / not `SimConfig`). Opt-in method, not default campaigns.
+      Reproduction default; proposed method is `TD3Settings.residual_on_sca()`.
 
 ### Reporting & artifacts
 

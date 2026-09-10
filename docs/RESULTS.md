@@ -31,10 +31,11 @@
 11. [Paper field 500 m](#26-paper-field-500--500-m-88-mhz-25-cap)
 12. [Primary campaign 25%](#27-primary-campaign-88-mhz-25-cap)
 13. [SCA-joint probe](#28-sca-joint-methodology-probe)
-14. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
-15. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
-16. [How to regenerate](#9-how-to-regenerate)
-17. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
+14. [Residual policy on SCA](#29-residual-policy-on-sca)
+15. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
+16. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
+17. [How to regenerate](#9-how-to-regenerate)
+18. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
 
 ---
 
@@ -719,6 +720,65 @@ Paper Fig. 5 flags SCA’s iteration/scalability cost as the gap TD3 is meant to
 
 The extra work is an \(O(IJ)\) SE argmax plus an occasional frozen-\(q\) bandwidth LP when the ranking actually changes. At I = 10, J = 3 that is lost in the noise of the joint Taylor LP (~28 iterations, ~0.9 s). SCA’s scalability weakness for a later TD3 comparison remains the **convexified (q, B) loop**, not this greedy discrete search. The process-cohesive candidate is one extra frozen-\(q\) LP per rematch attempt; at T_k = 0.8 s that probe averaged **1.23 s / 24.7 iters** because it actually entered the \((q,B)\) loop after grouping. That is still the convex loop, not a combinatorial association search.
 
+### 2.9 Residual policy on SCA
+
+**Claim (falsifiable).** On the same `evaluate()` and primary 8.8 MHz / 25% cap geometry, a search that starts at the SCA point and proposes \(\Delta q\) only, with hard frozen SCA \(a,b\) and the exact frozen-\(q\) bandwidth LP, matches SCA on every seed and can beat it only where k-means-init SCA is locally stuck.
+
+**Not the claim.** “We used TD3.” Not a 1 Mbps headline at default \(I=10\), \(J=3\). Expected \(\Delta\) is 0.00–0.05 Mbps. Do not pitch rate until Experiment A says there is a \(q\) hole.
+
+**Mechanism.** Paper Algorithm 2 (reproduction default on `TD3Settings`) trains a weaker program: residual from **k-means**, leftover inner \(B\), penalty reward, last-N \(xy\) policy export. The proposed method is a **settings/origin change** on `uavdt.td3`, not a new swarm:
+
+- Origin = SCA \(q\) (one `solve_sca` per seed; never per env step).
+- Action = \(\Delta xy\) only (`action_heads="move_only"`).
+- \(a,b\) frozen to the SCA incumbent (nearest-at-SCA-\(q\) would be a different \(a\)).
+- Inner \(B\) = `solve_bandwidth_at_fixed_q` during training. Infeasible LP → zero \(B\), not equal-share.
+- Reward = `sum_rate_Mbps` if `evaluate().feasible` else \(-100\).
+- Official export = incumbent best snapshot (feasibility then rate).
+
+Zero residual is SCA except by breaking that gate. \(\pm 10\) m is a **local** box; distant basins are Experiment A / the CMA-ES sibling.
+
+**CLI / scripts (do not overwrite `campaign_8.8mhz_cap25_si12k.json`).**
+
+```text
+python scripts/run_sca_multistart.py
+python scripts/run_residual_on_sca.py
+python scripts/run_cmaes_sca_polish.py
+python -m uavdt td3 --td3-preset residual-on-sca --bandwidth-preset 8.8mhz --max-bw-share 0.25
+```
+
+| Experiment | Seeds | Question | Artifact |
+| --- | --- | --- | --- |
+| **A** | 1–20 | Is \(q\) even the hole? Frozen SCA vs 4 extra SCA inits (2 random + 2 k-means), keep-best extra. Overlap with random-beats-SCA seeds {7, 11, 13, 18, 19}. | `results/sca_multistart_n20.json` |
+| **B** | **21–40 held-out** | Residual-on-SCA vs frozen SCA. Neck-and-neck / FDR win / mean \(\Delta<0\) (construction broken). No seed \(>0.05\) Mbps worse. | `results/residual_on_sca_heldout_21_40.json` |
+| CMA-ES sibling | 21–40 | Same LP fitness + SCA polish. If this matches residual-TD3, the net is not load-bearing. | `results/cmaes_sca_polish_heldout_21_40.json` |
+| **C** (gated) | — | Association oracle at \(I=10,J=3\). Implement **only if A is flat**. If also flat, no VNS/BCD beats SCA on default Mbps; remaining better-than-SCA slide is \(T_k=0.8\) s process-cohesive \(a\). | (not implemented in this pass) |
+
+**Stop rules (A).** Extras not better (max \(\Delta\lesssim 0.01\) Mbps, no Wilcoxon win): residual RL cannot beat SCA on \(q\); the method is still “same program as SCA / match by construction.” Extras better on the random-beats-SCA seeds: residual-on-SCA is justified; if winning \(q\) is far from the frozen SCA point, use CMA-ES / a larger box, not \(\pm 10\) m TD3.
+
+**Experiment A (measured, 2026-09-09).** `results/sca_multistart_n20.json`, seeds 1–20, 8.8 MHz / 25% cap.
+
+- Mean extra−frozen \(\Delta = +0.013 \pm 0.021\) Mbps (max **+0.066** on seed 11). Wilcoxon \(p_{\mathrm{greater}}=0.016\).
+- Extra inits win **13/20** seeds. Overlap with random-beats-SCA **{7, 11, 13, 18, 19}: all five**.
+- Practical bar \(\Delta>0.05\) Mbps: only seeds **11** (+0.066) and **19** (+0.056).
+- **All 13 wins are distant basins** (mean UAV \(xy\) distance to frozen SCA \(q\) is 16–72 m, none \(\le 15\) m). \(\pm 10\) m residual-on-SCA can match SCA by construction; it is **not** the search that reaches those basins. That is why the CMA-ES sibling exists. Do not silently enlarge `move_scale_m`.
+
+**Experiment B (measured, 2026-09-10).** `results/residual_on_sca_heldout_21_40.json`, held-out seeds 21–40, 7000 TD3 steps, 8.8 MHz / 25% cap.
+
+- Mean TD3−SCA \(\Delta = +0.0032 \pm 0.0070\) Mbps (max **+0.023** on seed 31). **16/20** exact ties; wins on **{27, 31, 34, 36}**, **0** losses.
+- Wilcoxon \(p_{\mathrm{greater}}=0.0625\). Pre-registered readout: **neck-and-neck**. Construction not broken (no seed \(>0.05\) Mbps worse).
+- CMA-ES sibling (`results/cmaes_sca_polish_heldout_21_40.json`): polish mean \(\Delta = +0.0075\) Mbps, **12/20** wins, max **+0.067** (seed 31). CMA-ES residual bounds are the **field**, not \(\pm 10\) m; extra CMA wins on TD3-tie seeds 23 and 32 sit outside the TD3 box (max per-axis \(|\Delta|=10.7\) m and \(20.5\) m). Inside \(\pm 10\) m, CMA-ES does not find a practical gain that TD3 missed.
+
+**Tie audit (not zero-action collapse).** Official export is `best_snapshot`. On all 16 ties the exported \(q\) is **exactly** the SCA origin (`best_found_at_step=0`, mean UAV \(xy\) distance \(0\)). That is incumbent bookkeeping, not an actor that learned \(a\approx 0\):
+
+- Residual decode is origin \(+ 10\,\mathrm{m}\times a\) every step (not chained). Warmup already draws \(256\) uniform samples of the full \(\pm 10\) m box; \(7000\) steps never produced a strictly better \((\mathrm{feasible}, \mathrm{rate})\) pair on those seeds.
+- Noise-free policy \(\|a\|_2\) on ties is \(0.51\)–\(1.24\) (mean \(0.81\)). Collapse to zero would be \(\approx 0\); rail saturation (the Alg. 2 tanh failure) would be \(\|1_6\|_2\approx 2.45\); uniform random in \([-1,1]^6\) is \(\approx 1.39\). None of the 16 ties are near either degenerate rail.
+- The **policy** export is slightly *worse* than origin on every tie (mean \(-0.012\) Mbps). The actor did not “give up and match origin”; it outputs a moderate residual that does not improve (P), and the snapshot correctly keeps SCA.
+- On the 4 wins the snapshot *did* move (\(3.4\)–\(11.3\) m mean UAV \(xy\); `best_found_at_step` \(247\)–\(6849\)), so the same loop records improvements when they exist in the box.
+
+The 16 ties are “no exploitable slack in \(\pm 10\) m,” not “training collapsed.” The Alg. 2 saturation mode (actions pinned at \(\pm 1\)) is not the residual-on-SCA failure mode.
+
+**What this will not do.** 1 Mbps win at 100 m / 25% cap (leftover-dump headroom ~0.03–0.05 Mbps; A’s two practical wins are 0.06 Mbps from **re-init**, not a 10 m residual). Fix \(T_k=0.8\) s (same frozen nearest-\(a\)). Replace frozen SCA or change `SimConfig`. SAC/MAPPO without this interface.
+
 ---
 
 ## 3. Paired statistics (SCA vs baselines, same seed)
@@ -879,7 +939,8 @@ Algorithm 1 as implemented freezes \(a_{ij}\) and \(b_{ij}\) after nearest-UAV /
 | Item                          | Status                                                    |
 | ----------------------------- | --------------------------------------------------------- |
 | Area 100 × 100 m (headline)   | **By design.** 20 kHz also checked at 500 × 500 m (§0.3)  |
-| TD3 (Algorithm 2)             | Not implemented                                           |
+| TD3 (Algorithm 2)             | Implemented as the **reproduction** default on `uavdt.td3` (`--td3-preset alg2`) |
+| TD3 residual-on-SCA (proposed) | Same stack, different interface to (P). Scripts in §2.9; not a new swarm        |
 | Paper Mbps targets            | Explicitly not pursued                                    |
 | 20 kHz as (27) cap            | **Real** model infeasibility — not a solver artifact (§0) |
 | 15% per-link cap (sensitivity) | Search-selected from cap×J grid; FDR-sig at all J but practical Δ fails at J = 4–5 (§2.7) |

@@ -18,8 +18,8 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
-| TD3 (`uavdt.td3`, method=`td3`) | Opt-in Algorithm 2 fill-in. Does **not** change `SimConfig`. Knobs are `TD3Settings` (Fujimoto + Alg. 2 reward). Per-instance train. Not in default `METHODS`. |
-| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 |
+| TD3 (`uavdt.td3`, method=`td3`) | Opt-in. Default `TD3Settings` is Algorithm 2 **reproduction** (k-means residual, leftover inner \(B\), penalty reward, policy export). `TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` is the **proposed interface to (P)**: residual \(\Delta q\) on the SCA incumbent, frozen SCA \(a,b\), inner frozen-\(q\) LP, feasible-Mbps reward, incumbent snapshot export. Does **not** change `SimConfig`. Not in default `METHODS`. |
+| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 (Alg. 2 + residual-on-SCA preset) |
 
 ---
 
@@ -62,7 +62,7 @@ list. Hyperparameters are `TD3Settings`, not Table II.
 | Placement baselines + frozen-`q` bandwidth LP | IMPLEMENTATION CHOICE | Same B LP as SCA’s bandwidth step so the comparison is placement |
 | PSO inner fitness with equal-share `B` | IMPLEMENTATION CHOICE | Final score still uses the LP + `evaluate()` |
 | Campaign SCA solver default CVXPY | IMPLEMENTATION CHOICE | MATLAB CVX/MOSEK is spot-validated |
-| TD3 | IMPLEMENTATION CHOICE | Alg. 2 fill-in; `TD3Settings`; opt-in `--methods td3` |
+| TD3 | IMPLEMENTATION CHOICE | Default: Alg. 2 fill-in. Proposed: `--td3-preset residual-on-sca` (same stack, different interface to (P)) |
 
 Default grids (`src/uavdt/experiments/grids.py`):
 
@@ -92,6 +92,11 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth
 
 # TD3 opt-in (per-instance train; needs PyTorch). Not in the default --methods list.
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
+# Proposed interface to (P): residual on SCA, inner LP, feasible-rate reward.
+python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --td3-preset residual-on-sca
+python scripts/run_sca_multistart.py
+python scripts/run_residual_on_sca.py
+python scripts/run_cmaes_sca_polish.py
 
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25

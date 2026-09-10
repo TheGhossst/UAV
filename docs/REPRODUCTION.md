@@ -66,9 +66,10 @@ Do **not** carry these forward from the old tree:
 ### 0.4 Equations implemented (core milestone)
 
 See §2. **SCA (Algorithm 1)** is implemented in `src/uavdt/sca/` (CVXPY
-default; MATLAB CVX+MOSEK spot-validated). **TD3 (Algorithm 2)** is
-implemented in `src/uavdt/td3/` as an opt-in method; knobs are
-`TD3Settings`, not `SimConfig`.
+default; MATLAB CVX+MOSEK spot-validated). **TD3** is implemented in
+`src/uavdt/td3/` as an opt-in method; knobs are `TD3Settings`, not
+`SimConfig`. Default knobs reproduce Algorithm 2; the proposed method is
+`--td3-preset residual-on-sca`.
 
 ### 0.5–0.7 Parameters, unspecified values, ambiguities
 
@@ -88,17 +89,21 @@ src/uavdt/
     resources.py       a_ij, b_ij, B_ij helpers
     constraints.py     Problem (P) checks
     evaluator.py       one evaluation of a deployment
-    placement/         random (θ), k-means, PSO (external)
+    placement/         random (θ), k-means, PSO, CMA-ES residual (external)
     sca/               Algorithm 1 SCA (CVXPY + MATLAB bridge)
     sca_joint/         Methodology probe: SCA + discrete a_ij/b_ij re-match
-    td3/               Algorithm 2 TD3 (opt-in; TD3Settings, not SimConfig)
+    td3/               TD3 (opt-in; TD3Settings). Default = Algorithm 2
+                       reproduction. residual_on_sca() = proposed (P) interface.
     experiments/       CLI, campaigns, Fig. 11, spot-validate
 tests/                 unit tests for the validation items in §0.9
 docs/REPRODUCTION.md   this file
 ```
 
-TD3 is opt-in (`method="td3"` / `python -m uavdt td3`). SCA remains the
-headline per-instance optimizer for default campaigns.
+TD3 is opt-in (`method="td3"` / `python -m uavdt td3`). Default knobs
+reproduce Algorithm 2. `--td3-preset residual-on-sca` is the proposed
+interface to Problem (P) (residual on the SCA incumbent, inner LP,
+feasible-rate reward). SCA remains the headline per-instance optimizer
+for default campaigns.
 
 ### 0.9 Validation / test plan
 
@@ -553,4 +558,6 @@ Problem (P) as written:
 - SCA solver is **frozen**. Characterization vs `J`, `I`, `λ`, `T_k`,
   CPU, and Random/K-means/PSO lives in `docs/EXPERIMENTS.md`.
 - Fig. 11 heterogeneous-λ AoDT check: `python -m uavdt fig11`.
-- TD3 (Algorithm 2) is opt-in (`uavdt.td3`); hyperparameters are not Table II.
+- TD3 is opt-in (`uavdt.td3`); hyperparameters are not Table II.
+  Algorithm 2 is the reproduction default; residual-on-SCA is the
+  proposed interface to (P).
