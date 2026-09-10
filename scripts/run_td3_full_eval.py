@@ -31,16 +31,14 @@ from uavdt.td3.solve import format_eta
 
 BANK = Path("data/scenario_bank/n100_i10_j3_100m.json")
 SRC_CKPT = Path("results/n100/eval.checkpoint.json")
-N100_CKPT = Path("results/n100/eval_td3_SNAPSHOT_INVALID_do_not_cite.checkpoint.json")
-N100_OUT = Path("results/n100/eval_td3_SNAPSHOT_INVALID_do_not_cite.json")
-N100_FIG = Path("results/figures/n100_td3_SNAPSHOT_INVALID_do_not_cite")
+N100_CKPT = Path("results/n100/eval_td3.checkpoint.json")
+N100_OUT = Path("results/n100/eval_td3.json")
+N100_FIG = Path("results/figures/n100_td3")
 SRC_CAMP = Path("results/campaign_8.8mhz_cap25_si12k.json")
-CAMP_CKPT = Path(
-    "results/campaign_8.8mhz_cap25_td3_SNAPSHOT_INVALID_do_not_cite.checkpoint.json"
-)
-CAMP_OUT = Path("results/campaign_8.8mhz_cap25_td3_SNAPSHOT_INVALID_do_not_cite.json")
-CAMP_FIG = Path("results/figures/td3_campaign_SNAPSHOT_INVALID_do_not_cite")
-ANALYSIS = Path("results/td3/full_eval_analysis_SNAPSHOT_INVALID_do_not_cite.txt")
+CAMP_CKPT = Path("results/campaign_8.8mhz_cap25_td3.checkpoint.json")
+CAMP_OUT = Path("results/campaign_8.8mhz_cap25_td3.json")
+CAMP_FIG = Path("results/figures/td3_campaign")
+ANALYSIS = Path("results/td3/full_eval_analysis.txt")
 EVAL_LOG = Path("results/td3/full_eval.log")
 METHODS = ("random", "kmeans", "pso", "sca", "td3")
 BASELINE_METHODS = ("random", "kmeans", "pso", "sca")

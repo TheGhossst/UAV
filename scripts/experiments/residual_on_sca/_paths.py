@@ -15,6 +15,7 @@ PROTECTED = ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
 OUT_MULTISTART = OUT_DIR / "multistart_n20.json"
 OUT_RESIDUAL_TD3 = OUT_DIR / "residual_td3_heldout_21_40.json"
 OUT_CMAES_POLISH = OUT_DIR / "cmaes_polish_heldout_21_40.json"
+OUT_ASSOC_ORACLE = OUT_DIR / "assoc_oracle_n20.json"
 
 
 def bootstrap() -> None:

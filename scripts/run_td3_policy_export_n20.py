@@ -29,11 +29,7 @@ from uavdt.td3.solve import format_eta, log_td3
 
 ROOT = Path(__file__).resolve().parents[1]
 CAMP = ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
-OLD_TD3 = (
-    ROOT
-    / "results"
-    / "campaign_8.8mhz_cap25_td3_SNAPSHOT_INVALID_do_not_cite.json"
-)
+OLD_TD3 = ROOT / "results" / "campaign_8.8mhz_cap25_td3.json"
 CKPT = ROOT / "results" / "td3" / "policy_export_n20_sca_align.checkpoint.json"
 OUT = ROOT / "results" / "td3" / "policy_export_n20_sca_align.json"
 ANALYSIS = ROOT / "results" / "td3" / "policy_export_n20_sca_align.txt"

@@ -19,7 +19,7 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
 | TD3 (`uavdt.td3`, method=`td3`) | Opt-in. Default `TD3Settings` is Algorithm 2 **reproduction** (k-means residual, leftover inner \(B\), penalty reward, policy export). `TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` is the **proposed interface to (P)**: residual \(\Delta q\) on the SCA incumbent, frozen SCA \(a,b\), inner frozen-\(q\) LP, feasible-Mbps reward, incumbent snapshot export. Does **not** change `SimConfig`. Not in default `METHODS`. |
-| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 (Alg. 2 + residual-on-SCA preset) |
+| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
 
 ---
 
@@ -166,7 +166,11 @@ primary campaign.
   `scripts/experiments/residual_on_sca/`):
   `multistart_n20.json` (Experiment A),
   `residual_td3_heldout_21_40.json` (Experiment B),
-  `cmaes_polish_heldout_21_40.json` (CMA-ES control)
+  `cmaes_polish_heldout_21_40.json` (CMA-ES control),
+  `assoc_oracle_n20.json` (Experiment C)
+- TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
+  `results/n100/eval_td3.json`; analysis `scripts/analyze_td3_vs_methods.py`).
+  Policy export. Do not cite `*_SNAPSHOT_INVALID_*`.
 - Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
   `cap_binding_diagnostic.json`
 - Paired writeup stats (same seed, champion vs baseline):

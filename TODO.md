@@ -2,40 +2,46 @@
 
 Last updated: 2026-09-10
 
-Quick reference. Details in `docs/RESULTS.md` §2.9 and `docs/EXPERIMENTS.md`.
+Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMENTS.md`.
 
 **§2.9 layout:** scripts → `scripts/experiments/residual_on_sca/`; JSON → `results/residual_on_sca/`. Old `scripts/run_*.py` shims still work.
+
+**§2.10 artifacts:** `results/campaign_8.8mhz_cap25_td3.json`, `results/n100/eval_td3.json`. Do not cite `*_SNAPSHOT_INVALID_*`.
 
 ---
 
 ## In progress
 
-- [ ] **TD3 Alg 2 training** (~5 h left) — paper reproduction preset (default / `--td3-preset alg2`)
-  - k-means init, full action space, penalty reward, policy export
-  - Not the same as residual-on-SCA (see below)
+_(none)_
+
+---
+
+## Done — TD3 Algorithm 2 full eval (2026-09-10)
+
+- [x] College-server CUDA run finished (`results-server` → citable names in `results/`)
+- [x] Policy export on every seed; official Mbps == `policy_export`
+- [x] Default J=3: TD3 **8.917** Mbps, TD3−SCA **−0.030** (2/20, p<0.001)
+- [x] **0/29** sweep points with TD3 mean > SCA; gap vs SCA shrinks as I grows but does not change sign
+- [x] `docs/RESULTS.md` §2.10 + `python scripts/analyze_td3_vs_methods.py`
 
 ---
 
 ## Done — residual-on-SCA evaluation (2026-09-10)
 
-- [x] **Experiment B** — `results/residual_on_sca/residual_td3_heldout_21_40.json`  
+- [x] **Experiment B** — `results/residual_on_sca/residual_td3_heldout_21_40.json`
   Readout: **neck_and_neck**. Mean Δ = +0.0032 Mbps, 4/20 wins, 0 losses, construction OK.
 
-- [x] **CMA-ES control** — `results/residual_on_sca/cmaes_polish_heldout_21_40.json`  
+- [x] **CMA-ES control** — `results/residual_on_sca/cmaes_polish_heldout_21_40.json`
   Polish mean Δ = +0.0075 Mbps, 12/20 wins. CMA-ES finds more local gains than ±10 m TD3.
 
 ---
 
 ## Optional (after core runs)
 
-- [ ] Add TD3 to paper-style campaign sweeps:
-
-  ```powershell
-  python -m uavdt campaign --axis all --methods random,kmeans,pso,sca,td3 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20
-  ```
-
+- [x] Add TD3 to the paper-style 25% grid — done via `run_td3_full_eval.py` (baselines reused; does not overwrite `campaign_8.8mhz_cap25_si12k.json`)
 - [x] Update `docs/RESULTS.md` §2.9 with Experiment B + CMA-ES + tie-audit (2026-09-10)
-- [ ] Runtime in published tables (optional per `docs/param.md`)
+- [x] Experiment C + §2.9 readout (2026-09-10; `assoc_oracle_n20.json`, **flat_at_frozen_q**)
+- [ ] Runtime in published tables (optional per `docs/param.md`; Alg. 2 vs SCA wall-clock is in §2.10)
 
 ---
 
@@ -43,17 +49,19 @@ Quick reference. Details in `docs/RESULTS.md` §2.9 and `docs/EXPERIMENTS.md`.
 
 - SCA (frozen), baselines (random / k-means / PSO), primary campaigns (8.8 MHz / 25% cap)
 - Experiment A — SCA multistart (seeds 1–20, measured 2026-09-09)
+- Experiment C — association oracle at frozen SCA \(q\) (seeds 1–20, measured 2026-09-10). Readout **flat_at_frozen_q**.
 - Residual-on-SCA **code** (`--td3-preset residual-on-sca`) — implemented + tested
 - CMA-ES polish **code** — implemented
 - SCA-joint probe, Fig. 11, AoDT compare, n100 figures
+- TD3 Algorithm 2 **measured** (policy export; §2.10)
 
 ---
 
 ## Skip
 
-- **Experiment C** (association oracle) — gated off; multistart A was not flat
-- VNS / BCD — docs say unlikely path
+- VNS / BCD as a default-Mbps method — Experiment C is flat at frozen SCA \(q\) (mean LP \(\Delta=+0.001\) Mbps)
 - Chasing 1 Mbps win at 100 m / 25% cap — headroom is ~0.03–0.05 Mbps
+- Citing `SNAPSHOT_INVALID` TD3 files — old best-snapshot bookkeeping
 
 ---
 
@@ -67,5 +75,6 @@ Quick reference. Details in `docs/RESULTS.md` §2.9 and `docs/EXPERIMENTS.md`.
 | a, b | recomputed | **frozen SCA** |
 | Bandwidth | leftover heuristic | **frozen-q LP** |
 | Reward | Alg 2 penalty | **feasible Mbps** |
+| Default J=3 vs SCA | **−0.030 Mbps** (2/20) | **+0.003 Mbps** (4/20, 16 origin ties) |
 
 Residual-on-SCA = TD3 that nudges SCA positions locally; zero action reproduces SCA exactly.

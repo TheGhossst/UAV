@@ -395,8 +395,11 @@ python scripts/run_td3_train.py --seed 1 --total-steps 7000 --out results/td3/tr
 python scripts/run_td3_full_eval.py          # n100 bank + campaign; long; CUDA if available
 python scripts/run_td3_policy_export_small.py
 python scripts/run_td3_policy_export_n20.py
-python scripts/analyze_td3_vs_methods.py
+python scripts/analyze_td3_vs_methods.py     # writes results/td3/full_eval_analysis.txt
 ```
+
+Citable Alg. 2 artifacts: `results/campaign_8.8mhz_cap25_td3.json`,
+`results/n100/eval_td3.json`. Do not cite `*_SNAPSHOT_INVALID_*`.
 
 ### Diagnostics
 
@@ -450,6 +453,18 @@ python scripts/experiments/residual_on_sca/run_cmaes_polish.py --n-runs 1 --max-
 ```
 
 Output: `results/residual_on_sca/cmaes_polish_heldout_21_40.json`
+
+### C — Association oracle at frozen SCA \(q\)
+
+1-opt + best-SE + random legal maps at the SCA geometry, then SCA polish.
+Default \(T_k=2.8\) s / 8.8 MHz / 25% cap, seeds 1–20.
+
+```powershell
+python scripts/experiments/residual_on_sca/run_assoc_oracle.py
+python scripts/experiments/residual_on_sca/run_assoc_oracle.py --n-runs 20 --n-random 200
+```
+
+Output: `results/residual_on_sca/assoc_oracle_n20.json`
 
 ---
 
@@ -622,6 +637,7 @@ f_j: 0.5e8 … 2.5e8  cycles/s
 | Train proposed TD3 | `python -m uavdt td3 --td3-preset residual-on-sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
 | Multi-start SCA test | `python scripts/experiments/residual_on_sca/run_multistart.py` |
 | Residual-on-SCA held-out | `python scripts/experiments/residual_on_sca/run_residual_td3.py` |
+| Association oracle (Experiment C) | `python scripts/experiments/residual_on_sca/run_assoc_oracle.py` |
 | Full regeneration | `.\scripts\run_full_regeneration.ps1` |
 | 20 kHz sanity check | `python scripts/check_bsys_20khz.py` |
 | Seed 79 layout map | See [§4 — layout comparison](#one-seed-initial-vs-optimized-uav-layout) |
