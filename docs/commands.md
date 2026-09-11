@@ -229,6 +229,39 @@ python -m uavdt campaign --axis uavs --bandwidth-preset 8.8mhz --max-bw-share 0.
 | `--solver` | `cvxpy` | `cvxpy` (fast) or `matlab` (MOSEK, slow) |
 | `--out` | `results/campaign.json` | Writes JSON + CSV |
 
+### 7 MHz extra B_sys (no TD3)
+
+Same five-axis, 20-seed protocol at 7 MHz: no cap, 15%, 25%. Does not run TD3.
+
+```powershell
+.\scripts\run_7mhz_campaigns.ps1
+python scripts/analyze_7mhz.py
+python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.json `
+  --skip-fig11 --out-dir results/figures/7mhz_cap25
+```
+
+Or one config:
+
+```powershell
+python -m uavdt campaign --axis all --bandwidth-preset 7mhz --max-bw-share 0.25 `
+  --methods random,kmeans,pso,sca --n-runs 20 --seed-start 1 --solver cvxpy `
+  --out results/campaign_7mhz_cap25_n20.json
+```
+
+Omit `--max-bw-share` for no cap. Use `0.15` for the tighter-cap sensitivity.
+
+### Fine B_sys search 7.1–8.8 MHz (long, no TD3)
+
+Full five-axis campaigns at every 0.1 MHz from 7.1 to 8.8, caps none / 10% / 12% / 15% / 18% / 20% / 22% / 25%. Resume-safe. Reuses existing 7 MHz and 8.8 MHz files. Does **not** overwrite `campaign_8.8mhz_cap25_si12k.json`.
+
+```powershell
+python scripts/run_bw_fine_search.py --estimate
+python scripts/run_bw_fine_search.py --run --resume
+python scripts/run_bw_fine_search.py --report
+```
+
+Leaderboard: `results/bw_fine_7p1_8p8/index.json`. At a fixed cap fraction, method spread is expected to scale linearly with `B_sys`; the cap is the ranking lever.
+
 ### High-statistics replay (100 seeds per point)
 
 Same five axes, but `--n-runs 100` for tighter error bars. Checkpoints per axis;
@@ -399,7 +432,8 @@ python scripts/analyze_td3_vs_methods.py     # writes results/td3/full_eval_anal
 ```
 
 Citable Alg. 2 artifacts: `results/campaign_8.8mhz_cap25_td3.json`,
-`results/n100/eval_td3.json`. Do not cite `*_SNAPSHOT_INVALID_*`.
+`results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`.
+Do not cite `*_SNAPSHOT_INVALID_*`.
 
 ### Diagnostics
 
@@ -581,7 +615,7 @@ python scripts/cap_binding_diagnostic.py
 python scripts/se_spread_by_j.py
 python scripts/bw_cap_by_j_grid.py
 python scripts/bw_boundary_refine_j3.py
-python scripts/bw_grid_search.py
+python scripts/run_bw_fine_search.py
 python scripts/bw_threshold_refine.py
 python scripts/sweep_bandwidth_screen.py
 python scripts/run_sca_bw_matrix.py

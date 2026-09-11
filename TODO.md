@@ -1,18 +1,27 @@
 # UAV project — what to do next
 
-Last updated: 2026-09-10
+Last updated: 2026-09-11
 
 Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMENTS.md`.
 
 **§2.9 layout:** scripts → `scripts/experiments/residual_on_sca/`; JSON → `results/residual_on_sca/`. Old `scripts/run_*.py` shims still work.
 
-**§2.10 artifacts:** `results/campaign_8.8mhz_cap25_td3.json`, `results/n100/eval_td3.json`. Do not cite `*_SNAPSHOT_INVALID_*`.
+**§2.10 artifacts:** `results/campaign_8.8mhz_cap25_td3.json`, `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`. Do not cite `*_SNAPSHOT_INVALID_*`.
 
 ---
 
 ## In progress
 
-_(none)_
+- [ ] Fine B_sys search 7.1–8.8 MHz × caps (`scripts/run_bw_fine_search.py`, no TD3)
+
+---
+
+## Done — 7 MHz campaigns (2026-09-11)
+
+- [x] `--axis all`, 20 seeds, methods random/k-means/PSO/SCA (**no TD3**)
+- [x] No cap / 15% / 25% → `results/campaign_7mhz_n20.json`, `_cap15_n20.json`, `_cap25_n20.json`
+- [x] SCA at J=3: **7.132 / 7.073 / 7.115** Mbps; linear vs 8.8 MHz to **0.001–0.003 Mbps**
+- [x] `docs/RESULTS.md` §2.11
 
 ---
 
@@ -23,6 +32,7 @@ _(none)_
 - [x] Default J=3: TD3 **8.917** Mbps, TD3−SCA **−0.030** (2/20, p<0.001)
 - [x] **0/29** sweep points with TD3 mean > SCA; gap vs SCA shrinks as I grows but does not change sign
 - [x] `docs/RESULTS.md` §2.10 + `python scripts/analyze_td3_vs_methods.py`
+- [x] 500 m n100 TD3 (2026-09-11): **7.510 Mbps**, TD3−SCA **−0.718** (0/100). Stays with k-means.
 
 ---
 

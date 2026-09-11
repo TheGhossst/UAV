@@ -54,6 +54,7 @@ list. Hyperparameters are `TD3Settings`, not Table II.
 | Axes and 20-run rule | PAPER | Tick lists below when the PDF omits them |
 | Area 100 × 100 m | Intentional modification | Paper 500 × 500 m; 20 kHz also checked at 500 m |
 | `B_sys` 8.8 MHz (headline) | Intentional modification | Table II 20 kHz as (27) cap is infeasible (ceiling 0.997 Mbps) |
+| `B_sys` 7 MHz | EXTERNAL PARAMETER | Extra experimental point between 2.4 and 8.8 MHz; not Table II |
 | 25% per-link cap | EXTERNAL PARAMETER | **Primary** leftover-dump stress test (2.20 MHz/link) |
 | 15% per-link cap | EXTERNAL PARAMETER | Tighter-cap **sensitivity** kept for experiments (1.32 MHz/link) |
 | `S_i`, `L` | EXTERNAL PARAMETER | Settled: 12,000 bytes, `L=3.75×10⁶` |
@@ -114,6 +115,7 @@ python scripts/run_tk08_followup.py
 # One-command replay of docs/RESULTS.md §9 (primary + cap15 + 500 m + sca-joint + analysis)
 # scripts/run_full_regeneration.ps1
 # Full bandwidth preset sweep (long, 7 configs): scripts/run_all_bandwidth_campaigns.ps1
+# Extra 7 MHz trio (no TD3): scripts/run_7mhz_campaigns.ps1
 ```
 
 `--solver matlab` on `campaign` runs frozen SCA in MATLAB CVX+MOSEK
@@ -169,8 +171,9 @@ primary campaign.
   `cmaes_polish_heldout_21_40.json` (CMA-ES control),
   `assoc_oracle_n20.json` (Experiment C)
 - TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
-  `results/n100/eval_td3.json`; analysis `scripts/analyze_td3_vs_methods.py`).
-  Policy export. Do not cite `*_SNAPSHOT_INVALID_*`.
+  `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`;
+  analysis `scripts/analyze_td3_vs_methods.py`). Policy export. Do not cite
+  `*_SNAPSHOT_INVALID_*`.
 - Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
   `cap_binding_diagnostic.json`
 - Paired writeup stats (same seed, champion vs baseline):
@@ -225,6 +228,7 @@ sensitivity and other `(B_sys, share)` cells. Outputs land in `results/`
 | `scripts/compare_cap15_vs_cap25.py` | Primary 25% vs 15% sensitivity |
 | `scripts/analyze_nocap_8p8mhz.py` | No-cap vs 25% primary (15% still a sensitivity) |
 | `scripts/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
+| `scripts/run_bw_fine_search.py` | 7.1–8.8 MHz × caps, full axes, no TD3 (long; resume-safe) |
 | `scripts/bw_cap_by_j_grid.py` | Cap × J table with FDR |
 | `scripts/bw_boundary_refine_j3.py` | J=3 cap bisection + 33-test FDR |
 | `scripts/bw_threshold_refine.py` | Refine cap threshold near 25% |

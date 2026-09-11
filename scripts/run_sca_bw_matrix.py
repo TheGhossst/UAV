@@ -58,9 +58,9 @@ def _row(preset: str, share: float | None, result) -> dict:
 def main() -> None:
     RESULTS.mkdir(parents=True, exist_ok=True)
     rows = []
-    for preset, hz in BANDWIDTH_PRESETS.items():
+    for preset, stem in STEM.items():
+        hz = BANDWIDTH_PRESETS[preset]
         for share in (None, 0.25):
-            stem = STEM[preset]
             suffix = "" if share is None else "_cap25"
             cfg = SimConfig(b_sys_hz=hz, max_bw_share=share)
             sc = generate_scenario(1, cfg)

@@ -11,7 +11,7 @@ from dataclasses import dataclass, replace
 from typing import Literal
 
 
-# --- Paper scenario (IEEE TNSM 2026, §VII / Table II) ---
+# --- Paper scenario ---
 PAPER_AREA_X_M = 500.0
 PAPER_AREA_Y_M = 500.0
 NUM_IOT = 10
@@ -30,7 +30,7 @@ C_LIGHT_M_PER_S = 3.0e8
 AODT_THRESHOLD_S = 2.8
 ETA_LOS = 1.0
 ETA_NLOS = 21.0
-SIGMA = 0.01  # Table II; Eq. (6) uses sigma**2
+SIGMA = 0.01
 P_I_W = 0.2
 ENV_A = 9.61
 ENV_B = 0.16
@@ -43,17 +43,19 @@ AREA_Y_M = 100.0
 # "Minimum bandwidth allocation"). Constraint (27) uses that symbol as a
 # sum ceiling. Under that reading, Eq. (6)+(27) bound 20 kHz at
 # B_sys·log2(1+SNR_max) — even SNR_max=1e15 is ~1 Mbps, not 7–14 Mbps.
-# Headline B_sys: 2.4 MHz and 8.8 MHz. Optional per-link caps are
+# Headline B_sys: 2.4 MHz and 8.8 MHz. 7 MHz is an extra experimental
+# point between those two (not Table II). Optional per-link caps are
 # EXTERNAL (not Problem (P)): 25% is the primary leftover-dump stress
 # test; 15% is a tighter-cap sensitivity kept for experiments. 20 kHz
 # is a Table II diagnostic.
 BANDWIDTH_PRESETS: dict[str, float] = {
     "20khz": 20_000.0,
     "2.4mhz": 2_400_000.0,
+    "7mhz": 7_000_000.0,
     "8.8mhz": 8_800_000.0,
 }
 
-# --- External (not in Table II). Settled experimental choices. ---
+# --- External Settled experimental choices. ---
 # Paper labels S_i in bytes (Eq. 11); store bits so D = S/r is in seconds.
 # S_i = 12_000 bytes, L = 3.75e6 cycles/task (μ = f_j/L ≈ 53.3 /s).
 EXTERNAL_TASK_SIZE_BYTES = 12_000.0
@@ -63,7 +65,6 @@ EXTERNAL_TASK_CYCLES = 3.75e6
 PAPER_N_RUNS = 20
 
 # Optional per-link B_ij caps as a fraction of B_sys. Neither is in
-# Problem (P) or Table II. CLI default remains None (paper (26)–(27) only).
 PRIMARY_MAX_BW_SHARE = 0.25
 SENSITIVITY_MAX_BW_SHARE = 0.15
 

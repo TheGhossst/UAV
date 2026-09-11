@@ -1,7 +1,7 @@
 # Novelty — beat SCA on Problem (P)
 
 Last updated: 2026-09-10  
-Status: **Experiment C measured** (flat at frozen SCA \(q\)). Residual-on-SCA is closed. TD3 Algorithm 2 **measured** (below SCA; does not overtake at large \(I\)).
+Status: **Experiment C measured** (flat at frozen SCA \(q\)). Residual-on-SCA is closed. TD3 Algorithm 2 **measured** (below SCA; does not overtake at large \(I\); at 500 m n100 stays with k-means, −0.72 Mbps vs SCA).
 
 **Goals (in order):** (1) **beat frozen SCA** on the same `evaluate()` (2) **novelty** that is not another \(q\)-nudge.
 
@@ -211,7 +211,7 @@ Block coordinate descent on Problem (P):
 | \(a,b\) | v1 slack test + v2 host enumeration + `cpu_stable_processing` | **Proposed** |
 | \(q,B\) | Frozen Algorithm 1 SCA + exact \(B\) LP | **Reuse** |
 
-TD3 Algorithm 2 stays a **baseline** (paper fill-in). Frozen SCA is the thing to **beat**, not the thing to copy at loose \(T_k\).
+TD3 Algorithm 2 stays a **baseline** (paper fill-in). On the 500 m n100 bank it sits with k-means, not SCA. Frozen SCA is the thing to **beat**, not the thing to copy at loose \(T_k\).
 
 **SPA-SCA = v1 cliff + v5 search on the legal set + one SCA.**  
 Without v5 it does not beat SCA on rate. Without v1 it does not beat SCA at \(T_k=0.8\) s (SCA is infeasible; a rate comparison is invalid).

@@ -93,20 +93,7 @@ def run_point(
     }
 
 
-def run_campaign(
-    axes: tuple[str, ...] | list[str],
-    cfg: SimConfig,
-    settings: CampaignSettings | None = None,
-) -> dict:
-    settings = settings or CampaignSettings()
-    wanted = tuple(a.lower().strip() for a in axes)
-    for a in wanted:
-        if a not in AXES:
-            raise ValueError(f"unknown axis {a!r}; expected {AXES}")
-    points_out = []
-    for axis in wanted:
-        for point in iter_axis(axis, cfg):
-            points_out.append(run_point(point, settings))
+def _campaign_header(cfg: SimConfig, settings: CampaignSettings) -> dict:
     return {
         "paper": "Khalaf et al. IEEE TNSM 2026 §VII Figs. 6–10 axes",
         "sca_frozen": True,
@@ -127,8 +114,76 @@ def run_campaign(
         "b_sys_hz": cfg.b_sys_hz,
         "max_bw_share": cfg.max_bw_share,
         "area_m": [cfg.area_x_m, cfg.area_y_m],
-        "points": points_out,
     }
+
+
+def _checkpoint_matches(old: dict, cfg: SimConfig, settings: CampaignSettings) -> bool:
+    return (
+        float(old.get("b_sys_hz", -1)) == float(cfg.b_sys_hz)
+        and old.get("max_bw_share") == cfg.max_bw_share
+        and int(old.get("n_runs", -1)) == int(settings.n_runs)
+        and int(old.get("seed_start", -1)) == int(settings.seed_start)
+        and list(old.get("methods", [])) == list(settings.methods)
+        and list(old.get("area_m", [])) == [cfg.area_x_m, cfg.area_y_m]
+    )
+
+
+def _load_checkpoint(
+    path: Path, cfg: SimConfig, settings: CampaignSettings
+) -> dict[tuple, dict]:
+    if not path.exists():
+        return {}
+    try:
+        old = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not _checkpoint_matches(old, cfg, settings):
+        _log(f"  checkpoint mismatch, ignoring {path}")
+        return {}
+    done: dict[tuple, dict] = {}
+    for pt in old.get("points", []):
+        done[(pt["axis"], float(pt["x"]))] = pt
+    if done:
+        _log(f"  resume {len(done)} point(s) from {path}")
+    return done
+
+
+def _write_checkpoint(path: Path, header: dict, points: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = dict(header)
+    payload["points"] = points
+    payload["checkpoint"] = True
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def run_campaign(
+    axes: tuple[str, ...] | list[str],
+    cfg: SimConfig,
+    settings: CampaignSettings | None = None,
+    checkpoint_path: str | Path | None = None,
+) -> dict:
+    settings = settings or CampaignSettings()
+    wanted = tuple(a.lower().strip() for a in axes)
+    for a in wanted:
+        if a not in AXES:
+            raise ValueError(f"unknown axis {a!r}; expected {AXES}")
+    header = _campaign_header(cfg, settings)
+    ckpt = Path(checkpoint_path) if checkpoint_path is not None else None
+    completed = _load_checkpoint(ckpt, cfg, settings) if ckpt is not None else {}
+    points_out: list[dict] = []
+    for axis in wanted:
+        for point in iter_axis(axis, cfg):
+            key = (point.axis, float(point.x_value))
+            if key in completed:
+                _log(f"  resume skip {point.label}")
+                points_out.append(completed[key])
+            else:
+                points_out.append(run_point(point, settings))
+            if ckpt is not None:
+                _write_checkpoint(ckpt, header, points_out)
+    payload = dict(header)
+    payload["points"] = points_out
+    return payload
 
 
 def replace_points(payload: dict, new_points: list[dict]) -> dict:

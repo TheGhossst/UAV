@@ -74,6 +74,25 @@ def test_campaign_uavs_smoke(tmp_path):
     _ = run_campaign
 
 
+def test_campaign_checkpoint_resumes(tmp_path):
+    from uavdt.experiments.campaign import run_campaign as _run
+    from uavdt.sca.settings import SCASettings
+
+    cfg = SimConfig(b_sys_hz=7e6)
+    settings = CampaignSettings(
+        n_runs=1,
+        methods=("kmeans",),
+        sca_settings=SCASettings(solver=None, max_iterations=1),
+    )
+    ckpt = tmp_path / "camp.checkpoint.json"
+    first = _run(("uavs",), cfg, settings, checkpoint_path=ckpt)
+    assert ckpt.exists()
+    assert len(first["points"]) == 5
+    second = _run(("uavs",), cfg, settings, checkpoint_path=ckpt)
+    assert [p["x"] for p in second["points"]] == [p["x"] for p in first["points"]]
+    assert second["b_sys_hz"] == 7e6
+
+
 def test_replace_points_swaps_matching_rows_only():
     from uavdt.experiments.campaign import replace_points
 

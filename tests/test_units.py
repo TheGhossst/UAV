@@ -13,6 +13,7 @@ from uavdt.scenario import generate_scenario
 def test_bandwidth_presets_are_hz_not_khz():
     assert BANDWIDTH_PRESETS["20khz"] == 20_000.0
     assert BANDWIDTH_PRESETS["2.4mhz"] == 2_400_000.0
+    assert BANDWIDTH_PRESETS["7mhz"] == 7_000_000.0
     assert BANDWIDTH_PRESETS["8.8mhz"] == 8_800_000.0
 
 

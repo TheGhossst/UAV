@@ -63,13 +63,13 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         "--bandwidth",
         type=float,
         default=DEFAULT.b_sys_hz,
-        help="B_sys in Hz (20000, 2400000, or 8800000)",
+        help="B_sys in Hz (20000, 2400000, 7000000, or 8800000)",
     )
     p.add_argument(
         "--bandwidth-preset",
         choices=sorted(BANDWIDTH_PRESETS),
         default=None,
-        help="Named B_sys: 20khz, 2.4mhz, 8.8mhz (overrides --bandwidth)",
+        help="Named B_sys: 20khz, 2.4mhz, 7mhz, 8.8mhz (overrides --bandwidth)",
     )
     p.add_argument(
         "--task-size-bits",
@@ -497,8 +497,14 @@ def cmd_campaign(args: argparse.Namespace) -> int:
         pso_settings=PSOSettings(),
         td3_settings=_td3_settings_from_args(args),
     )
-    payload = run_campaign(_parse_axes(args.axis), cfg, settings)
-    out = write_campaign(payload, args.out)
+    out_path = Path(args.out)
+    ckpt = out_path.with_name(out_path.stem + ".checkpoint.json")
+    payload = run_campaign(
+        _parse_axes(args.axis), cfg, settings, checkpoint_path=ckpt
+    )
+    out = write_campaign(payload, out_path)
+    if ckpt.exists():
+        ckpt.unlink()
     print(f"wrote {out}")
     print(f"wrote {out.with_suffix('.csv')}")
     return 0
