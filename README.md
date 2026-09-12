@@ -293,7 +293,7 @@ python -m uavdt campaign --axis uavs,iots --bandwidth-preset 8.8mhz --max-bw-sha
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--axis` | `all` | Comma-separated axes or `all`. Choices: `uavs`, `iots`, `lambda`, `aodt`, `cpu`. |
-| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods. Opt-in: `sca_joint`, `sca_multistart`, `td3`. |
+| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods. Opt-in: `sca_joint`, `sca_multistart`, `sca_anchor`, `td3`. |
 | `--n-runs` | `5` | Seeds per sweep point. Paper uses **20**; default is 5 for faster runs. |
 | `--seed-start` | `1` | First seed. |
 | `--max-iterations` | `30` | SCA iterations (only affects the `sca` method). |

@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-12
 
-Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMENTS.md`.
+Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMENTS.md`.
 
 **§2.9 layout:** scripts → `scripts/experiments/residual_on_sca/`; JSON → `results/residual_on_sca/`. Old `scripts/run_*.py` shims still work.
 
@@ -10,9 +10,33 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMEN
 
 ---
 
-## In progress
+## In progress — zenith-anchor (axes other than J/I)
 
-- *(none)*
+- [ ] λ / CPU / AoDT axes with `sca_anchor` merged (optional; only UAV and IoT 500 m are measured)
+
+---
+
+## Done — zenith-anchor remaining-before-headline (2026-09-12)
+
+- [x] Four-cell paired Wilcoxon + random-beats: anchor **0/100** on multi-start’s 8/100 list
+- [x] J-axis 500 m (Fig. 6): gap max at J=2 (+0.358), shrinks at J=5 (+0.106)
+- [x] I-axis 500 m full enum (`campaign_sca_anchor_iots_500m.json`): gap 0.13–0.19 Mbps through I=32; vs PSO 20/20
+- [x] 15% cap at 500 m: n20 **7.783** vs SCA 7.538 / PSO 7.585; n100 **7.816** vs 7.542 / 7.556
+- [x] \(T_k=0.8\) + process-cohesive: **20/20** feasible, **8.430** vs cohesive SCA-joint **8.393**
+- Remaining-before-headline bar is cleared. Default `--methods` still excludes `sca_anchor`. Frozen Algorithm 1 remains the paper’s solver.
+
+---
+
+## Done — zenith-anchor SCA (2026-09-12)
+
+- [x] `uavdt.sca_anchor` / `method="sca_anchor"` (LP-scored zenith J-subsets + SCA polish; does not edit frozen SCA)
+- [x] Four default-point cases + UAV-axis J=1–5 at 100 m and 500 m (`scripts/run_sca_anchor_cases.py`)
+- [x] n20 100 m: vs SCA **+0.017** (18/20), 2/20 practical; leftover-dump nick
+- [x] n20 500 m: vs SCA **+0.190** (20/20), **14/20** practical; vs multi-start +0.087
+- [x] n100 100 m: vs SCA **+0.017** (87/100); n100 500 m: vs SCA **+0.253** (92/100), **71/100** practical
+- [x] 500 m J=2: PSO beats k-means SCA; zenith-anchor restores ranking (7.844 vs 7.486 / 7.522)
+- [x] Analysis `scripts/analyze_sca_anchor_cases.py` → `results/sca_anchor_cases_analysis.txt`
+- Frozen SCA stays the paper’s Algorithm 1. Zenith-anchor is the proposed ranking prior; remaining-before-headline probes are measured.
 
 ---
 

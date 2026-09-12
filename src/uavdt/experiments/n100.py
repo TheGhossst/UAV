@@ -19,6 +19,7 @@ from uavdt.experiments.scenario_bank import (
 )
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca.settings import SCASettings
+from uavdt.sca_anchor import AnchorSettings
 from uavdt.sca_multistart import MultiStartSettings
 from uavdt.td3.settings import TD3Settings
 
@@ -143,6 +144,7 @@ def evaluate_bank(
     pso_settings: PSOSettings | None = None,
     td3_settings: TD3Settings | None = None,
     multistart_settings: MultiStartSettings | None = None,
+    anchor_settings: AnchorSettings | None = None,
     checkpoint_path: str | Path | None = None,
     resume: bool = True,
     bank_path: str | Path | None = None,
@@ -175,13 +177,14 @@ def evaluate_bank(
                 pso_settings=pso_settings,
                 td3_settings=td3_settings,
                 multistart_settings=multistart_settings,
+                anchor_settings=anchor_settings,
                 uav_xyz_m=uav_arg,
             )
             run.diagnostics.setdefault("wall_clock_s", perf_counter() - t0)
             done[key] = run_to_record(run, scenario_id=int(rec["id"]))
             if ckpt is not None:
                 _atomic_write_json(ckpt, {"runs": done})
-            if method in {"td3", "sca_multistart"}:
+            if method in {"td3", "sca_multistart", "sca_anchor"}:
                 _log(
                     f"           done {perf_counter() - t0:.1f}s  "
                     f"{run.sum_rate_mbps:.4f} Mbps  "

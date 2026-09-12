@@ -3,8 +3,9 @@
 SCA code is frozen: this module only *calls* solve_sca.
 SCA-joint is a methodology probe (method=\"sca_joint\").
 Multi-start SCA is opt-in (method=\"sca_multistart\"): keep-best extra
-inits of frozen SCA. TD3 is opt-in (method=\"td3\"); knobs are
-TD3Settings, not SimConfig.
+inits of frozen SCA. Zenith-anchor SCA is opt-in (method=\"sca_anchor\"):
+LP-scored IoT-subset placement + SCA polish. TD3 is opt-in
+(method=\"td3\"); knobs are TD3Settings, not SimConfig.
 """
 
 from __future__ import annotations
@@ -22,13 +23,14 @@ from uavdt.placement.random import place_random
 from uavdt.resources import cpu_stable_processing, nearest_association
 from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
 from uavdt.sca.settings import SCASettings
+from uavdt.sca_anchor import AnchorSettings
 from uavdt.sca_multistart import MultiStartSettings
 from uavdt.td3.settings import TD3Settings
 
 
-# Headline campaign methods. sca_joint, sca_multistart, and td3 are opt-in.
+# Headline campaign methods. Opt-in: sca_joint, sca_multistart, sca_anchor, td3.
 METHODS = ("random", "kmeans", "pso", "sca")
-KNOWN_METHODS = METHODS + ("sca_joint", "sca_multistart", "td3")
+KNOWN_METHODS = METHODS + ("sca_joint", "sca_multistart", "sca_anchor", "td3")
 
 
 @dataclass
@@ -200,6 +202,58 @@ def _run_sca_multistart(
     )
 
 
+def _run_sca_anchor(
+    scenario: Scenario,
+    seed: int,
+    sca_settings: SCASettings | None,
+    anchor_settings: AnchorSettings | None,
+) -> MethodRun:
+    from uavdt.sca_anchor import solve_sca_anchor
+
+    t0 = perf_counter()
+    try:
+        result = solve_sca_anchor(
+            scenario,
+            seed,
+            settings=sca_settings,
+            anchor=anchor_settings,
+        )
+    except RuntimeError as exc:
+        if "CPU stability" not in str(exc) and "every candidate failed" not in str(exc):
+            raise
+        uav = place_kmeans(scenario, seed)
+        alloc = _alloc_at_positions(scenario, uav)
+        ev = evaluate(scenario, uav, alloc)
+        return MethodRun(
+            method="sca_anchor",
+            seed=seed,
+            uav_xyz_m=uav,
+            allocation=alloc,
+            true_eval=ev,
+            diagnostics={
+                "method": "sca_anchor",
+                "stop_reason": "init_cpu_unstable",
+                "accepted_steps": 0,
+                "n_iterations": 0,
+                "solver_backend": "skipped",
+                "solver_status": "init_cpu_unstable",
+                "wall_clock_s": perf_counter() - t0,
+            },
+        )
+    elapsed = perf_counter() - t0
+    diag = dict(result.diagnostics)
+    diag.setdefault("wall_clock_s", elapsed)
+    diag["method"] = "sca_anchor"
+    return MethodRun(
+        method="sca_anchor",
+        seed=seed,
+        uav_xyz_m=result.uav_xyz_m,
+        allocation=result.allocation,
+        true_eval=result.true_eval,
+        diagnostics=diag,
+    )
+
+
 def _run_td3(
     scenario: Scenario,
     seed: int,
@@ -230,6 +284,7 @@ def run_method(
     pso_settings: PSOSettings | None = None,
     td3_settings: TD3Settings | None = None,
     multistart_settings: MultiStartSettings | None = None,
+    anchor_settings: AnchorSettings | None = None,
     uav_xyz_m: np.ndarray | None = None,
 ) -> MethodRun:
     name = method.lower().strip()
@@ -243,6 +298,9 @@ def run_method(
         return _run_sca_multistart(
             scenario, seed, sca_settings, multistart_settings
         )
+
+    if name == "sca_anchor":
+        return _run_sca_anchor(scenario, seed, sca_settings, anchor_settings)
 
     if name == "td3":
         return _run_td3(scenario, seed, td3_settings)

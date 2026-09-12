@@ -6,9 +6,19 @@ from pathlib import Path
 
 import numpy as np
 
-METHOD_ORDER = ("sca", "sca_multistart", "td3", "kmeans", "random", "pso", "sca_joint")
+METHOD_ORDER = (
+    "sca",
+    "sca_anchor",
+    "sca_multistart",
+    "td3",
+    "kmeans",
+    "random",
+    "pso",
+    "sca_joint",
+)
 METHOD_LABELS = {
     "sca": "SCA",
+    "sca_anchor": "SCA zenith-anchor",
     "sca_multistart": "SCA multi-start",
     "td3": "TD3",
     "kmeans": "K-means",
@@ -18,6 +28,7 @@ METHOD_LABELS = {
 }
 METHOD_STYLES = {
     "sca": {"color": "#1f77b4", "marker": "o"},
+    "sca_anchor": {"color": "#e377c2", "marker": "*"},
     "sca_multistart": {"color": "#8c564b", "marker": "v"},
     "td3": {"color": "#17becf", "marker": "P"},
     "kmeans": {"color": "#ff7f0e", "marker": "s"},
@@ -191,6 +202,7 @@ def _per_scenario(plt, payload, methods, note, out: Path) -> Path:
     fig, ax = plt.subplots(figsize=(8.5, 4.8))
     line_styles = {
         "sca": {"linewidth": 2.4, "alpha": 1.0, "zorder": 5},
+        "sca_anchor": {"linewidth": 2.2, "alpha": 0.95, "zorder": 4.5},
         "sca_multistart": {"linewidth": 2.0, "alpha": 0.9, "zorder": 4},
         "random": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
         "kmeans": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},

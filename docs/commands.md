@@ -328,6 +328,12 @@ python -m uavdt n100 --methods random,kmeans,pso,sca,td3 --td3-preset residual-o
 python -m uavdt n100 --methods random,kmeans,pso,sca,sca_multistart --out results/n100/eval_multistart.json --checkpoint results/n100/eval_multistart.checkpoint.json --fig-dir results/figures/n100_multistart
 python scripts/run_sca_multistart_cases.py
 python scripts/analyze_sca_multistart_cases.py
+python -m uavdt n100 --methods random,kmeans,pso,sca,sca_anchor --out results/n100/eval_anchor.json --checkpoint results/n100/eval_anchor.checkpoint.json --fig-dir results/figures/n100_anchor
+python scripts/run_sca_anchor_cases.py
+python scripts/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
+python scripts/analyze_sca_anchor_cases.py
+python scripts/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
+python scripts/paired_winrate.py results/campaign_sca_anchor_iots_500m.json --champion sca_anchor
 python -m uavdt n100 --force-generate         # overwrite bank
 python -m uavdt n100 --no-resume              # ignore checkpoint
 ```
@@ -667,7 +673,7 @@ python scripts/summarize_local_diag.py
 | `--download-time` | `0` | UAV→BS download delay Z (s) |
 
 **Methods** (campaign / n100): `random`, `kmeans`, `pso`, `sca`, optional
-`sca_joint`, `sca_multistart`, `td3`.
+`sca_joint`, `sca_multistart`, `sca_anchor`, `td3`.
 
 **Default sweep grids** (`src/uavdt/experiments/grids.py`):
 

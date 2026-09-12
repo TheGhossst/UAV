@@ -13,8 +13,9 @@
 | **Paper-field test**        | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m, 25% cap)                                                                                 |
 | **TD3 Algorithm 2**         | `results/campaign_8.8mhz_cap25_td3.json` (policy export; 100 m) · n100 bank: [§2.12](#212-n100-monte-carlo-bank-88-mhz)                            |
 | **n100 Monte Carlo**        | 100 frozen layouts, I=10 J=3, 8.8 MHz, caps 12% / 15% / 25%, fields 100 m & 500 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz)                      |
+| **Zenith-anchor SCA**       | Opt-in `sca_anchor`; default-point + J/I 500 m + 15% + \(T_k=0.8\) — [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement)                             |
 | **7 MHz extra B_sys**       | `results/campaign_7mhz_n20.json` + `_cap15_n20` + `_cap25_n20` (no TD3; [§2.11](#211-7-mhz-no-cap-15-25))                                        |
-| **Related docs**            | `[EXPERIMENTS.md](EXPERIMENTS.md)` · `[REPRODUCTION.md](REPRODUCTION.md)` · `[param.md](param.md)`                                               |
+| **Related docs**            | `[EXPERIMENTS.md](EXPERIMENTS.md)` · `[REPRODUCTION.md](REPRODUCTION.md)` · `[param.md](param.md)` · `[novelty.md](novelty.md)` (zenith-anchor)   |
 
 
 ---
@@ -42,10 +43,11 @@
 17. [n100 Monte Carlo bank](#212-n100-monte-carlo-bank-88-mhz)
 18. [Fine B_sys × cap search](#213-fine-b_sys--cap-search-71-88-mhz)
 19. [12% vs 25% four-test rematch](#214-88-mhz-12-vs-25-four-test-rematch)
-20. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
-21. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
-22. [How to regenerate](#9-how-to-regenerate)
-23. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
+20. [Zenith-anchor SCA](#215-zenith-anchor-sca-cap-aware-subset-placement)
+21. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
+22. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
+23. [How to regenerate](#9-how-to-regenerate)
+24. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
 
 ---
 
@@ -94,7 +96,11 @@ The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-fiel
 
 **7 MHz extra B_sys** (no TD3, 2026-09-11): SCA 7.132 / 7.115 / 7.073 Mbps at no-cap / 25% / 15%. Matches `(7/8.8)×` the 8.8 MHz SCA to 0.001–0.003 Mbps. See [§2.11](#211-7-mhz-no-cap-15-25).
 
+**Zenith-anchor SCA** (opt-in, 2026-09-12): LP-scored IoT-subset placement + frozen-SCA polish. Never worse than one-shot SCA by construction. At 500 m / J=3 it is **8.490** Mbps vs SCA **8.300** and multi-start **8.404** (+0.190 / +0.087); n100 500 m **+0.253** vs SCA, **71/100** practical. Remaining-before-headline probes now measured: I-axis 500 m gap 0.13–0.19 Mbps through I=32; 15% 500 m still ranks first vs SCA and PSO; \(T_k=0.8\) **20/20** feasible at **8.430** vs cohesive SCA-joint **8.393**. At 100 m leftover dump compresses it to **+0.017**. See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
+
 ### Last regeneration
+
+**2026-09-12 (zenith-anchor SCA)** — Opt-in `sca_anchor`. pytest **168/168**. Four default-point tests + UAV-axis + I-axis at 500 m, 15% 500 m, \(T_k=0.8\) process-cohesive. Did not overwrite headline 25% campaigns or `n100/eval.json`. See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
 
 **2026-09-08 (full pipeline)** — Re-ran the complete regeneration ledger ([§9](#9-how-to-regenerate)) on current code:
 
@@ -351,6 +357,13 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/n100/eval_multistart.json`                        | n100 + multi-start (100 m, 25% cap; baselines reused)       |
 | `results/n100_500m_cap25/eval_multistart.json`             | n100 + multi-start (500 m, 25% cap; baselines reused)       |
 | `results/sca_multistart_cases_analysis.json` / `.txt`      | Paired readout of the four default-point cases              |
+| `results/sca_anchor_n20.json`                              | Zenith-anchor SCA vs SCA / multi-start / baselines (100 m)  |
+| `results/sca_anchor_n20_500m.json`                         | Same 20-seed eval at 500 × 500 m                            |
+| `results/n100/eval_anchor.json`                            | n100 + zenith-anchor (100 m, 25% cap; baselines reused)     |
+| `results/n100_500m_cap25/eval_anchor.json`                 | n100 + zenith-anchor (500 m, 25% cap; baselines reused)     |
+| `results/campaign_sca_anchor_uavs.json`                    | UAV-axis merge: headline 100 m campaign + `sca_anchor`      |
+| `results/campaign_sca_anchor_uavs_500m.json`               | UAV-axis merge: headline 500 m campaign + `sca_anchor`      |
+| `results/sca_anchor_cases_analysis.json` / `.txt`          | Paired readout of four tests + J-sweep                      |
 | `results/campaign_8.8mhz_cap25_si12k_scajoint.json`        | SCA-joint probe (full axes; method=`sca_joint` only)        |
 | `results/tk08_scajoint_feasibility.json`                   | T_k=0.8 s frozen SCA vs best-SE SCA-joint (20 seeds)        |
 | `results/tk08_scajoint_cohesive.json`                      | T_k=0.8 s SCA-joint + process-cohesive candidate (20 seeds) |
@@ -374,10 +387,12 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/td3/n100_500m_analysis.txt`                       | 500 m n100 TD3 paired readout                               |
 | `results/figures/td3_campaign/` · `figures/n100_td3/`      | Figs. 6–10 + 100 m n100 plots with TD3                      |
 | `results/figures/n100_multistart/` · `figures/n100_500m_multistart/` | n100 plots with SCA multi-start |
+| `results/figures/n100_anchor/` · `figures/n100_500m_anchor/` | n100 plots with zenith-anchor SCA |
+| `results/figures/anchor_uavs/` · `figures/anchor_uavs_500m/` | Fig. 6 UAV-axis with `sca_anchor` (merged campaign) |
 | `results/figures/`                                         | Primary plots (25%); `figures/cap15/` holds 15%             |
 
 
-**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/analyze_td3_vs_methods.py`, `scripts/analyze_n100_500m.py`, `scripts/analyze_sca_multistart_cases.py`, `scripts/analyze_bw_fine_search.py`, `scripts/run_cap12_rematch.py`, `scripts/compare_cap12_vs_cap25.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
+**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/analyze_td3_vs_methods.py`, `scripts/analyze_n100_500m.py`, `scripts/analyze_sca_multistart_cases.py`, `scripts/analyze_sca_anchor_cases.py`, `scripts/analyze_bw_fine_search.py`, `scripts/run_cap12_rematch.py`, `scripts/compare_cap12_vs_cap25.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
 
 ---
 
@@ -1035,13 +1050,14 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 ### 2.12 n100 Monte Carlo bank (8.8 MHz)
 
-**Not the 20-seed campaign.** Frozen 100-layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`), I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; TD3 (Algorithm 2) and SCA multi-start only at **25% cap**. All runs **100% feasible**. Analysis: `python scripts/analyze_n100_500m.py`, `python scripts/analyze_sca_multistart_cases.py`.
+**Not the 20-seed campaign.** Frozen 100-layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`), I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; TD3 (Algorithm 2), SCA multi-start, and zenith-anchor SCA only at **25% cap**. All runs **100% feasible**. Analysis: `python scripts/analyze_n100_500m.py`, `python scripts/analyze_sca_multistart_cases.py`, `python scripts/analyze_sca_anchor_cases.py`.
 
 #### 100 × 100 m
 
 
 | Method  | 25% cap (Mbps) | 15% cap (Mbps) |
 | ------- | -------------- | -------------- |
+| SCA zenith-anchor (opt-in) | 8.963 ± 0.009 | — |
 | SCA multi-start (opt-in) | 8.959 ± 0.013 | — |
 | **SCA** | **8.946 ± 0.033** | **8.891 ± 0.044** |
 | Random  | 8.932 ± 0.044 | 8.799 ± 0.140 |
@@ -1050,7 +1066,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | K-means | 8.896 ± 0.043 | 8.832 ± 0.067 |
 
 
-**Artifacts:** `results/n100/eval.json` (25%), `results/n100/eval_multistart.json` (25% + multi-start), `results/n100_cap15/eval.json` (15%), `results/n100/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100/eval.json` (25%), `results/n100/eval_multistart.json` (25% + multi-start), `results/n100/eval_anchor.json` (25% + zenith-anchor), `results/n100_cap15/eval.json` (15%), `results/n100/eval_td3.json` (25% + TD3).
 
 **Multi-start paired (25% only):** vs SCA **+0.013 ± 0.029** Mbps, **66/100**, 0 losses, p<0.001; vs random +0.027 (92/100); vs PSO +0.054 (100/100). Practical >0.05 Mbps: **6/100**. Mean wall **5.5 s**. See [§2.9](#29-residual-policy-on-sca).
 
@@ -1061,6 +1077,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 | Method  | 25% cap (Mbps) | 15% cap (Mbps) |
 | ------- | -------------- | -------------- |
+| SCA zenith-anchor (opt-in) | 8.481 ± 0.177 | — |
 | SCA multi-start (opt-in) | 8.393 ± 0.234 | — |
 | **SCA** | **8.228 ± 0.352** | 7.542 ± 0.447 |
 | PSO     | 8.088 ± 0.285 | **7.556 ± 0.398** |
@@ -1069,7 +1086,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | K-means | 7.438 ± 0.577 | 6.749 ± 0.657 |
 
 
-**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap25/eval_multistart.json` (25% + multi-start), `results/n100_500m_cap15/eval.json` (15%), `results/n100_500m_cap25/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap25/eval_multistart.json` (25% + multi-start), `results/n100_500m_cap25/eval_anchor.json` (25% + zenith-anchor), `results/n100_500m_cap15/eval.json` (15%), `results/n100_500m_cap25/eval_td3.json` (25% + TD3).
 
 **Multi-start paired (25% only):** vs SCA **+0.165 ± 0.241** Mbps, **62/100**, 0 losses, p<0.001; vs random +0.401 (92/100); vs PSO **+0.305** (94/100). Practical >0.05 Mbps: **48/100**. Mean wall **6.5 s**. See [§2.9](#29-residual-policy-on-sca).
 
@@ -1085,7 +1102,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | 25% → 15% @ 500 m | −0.686 | −1.102 | −0.690 |
 
 
-**Readout.** At 100 m the bank matches the 20-seed campaign to ~0.001 Mbps (leftover-dump saturation); multi-start adds only **+0.013** Mbps. At 500 m / 25% the same wrapper adds **+0.165** Mbps vs SCA and **+0.305** vs PSO — extra inits are load-bearing once leftover dump is not saturating. At 500 m / 15%, PSO (7.556) slightly edges SCA (7.542) on the mean. At **12%** that inversion is the ranking: PSO first on both n100 fields ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)). TD3 was not run at 15% or 12%. Do not mix n100 banks with the 20-seed campaign tables in [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap) / [§2.7](#27-primary-campaign-88-mhz-25-cap). TD3 detail: [§2.10](#210-td3-algorithm-2-reproduction). Multi-start detail: [§2.9](#29-residual-policy-on-sca).
+**Readout.** At 100 m the bank matches the 20-seed campaign to ~0.001 Mbps (leftover-dump saturation); multi-start adds only **+0.013** Mbps and zenith-anchor **+0.017**. At 500 m / 25% multi-start adds **+0.165** Mbps vs SCA and zenith-anchor adds **+0.253** (71/100 practical) — structured subset search is load-bearing once leftover dump is not saturating. At 500 m / 15%, PSO (7.556) slightly edges SCA (7.542) on the mean; zenith-anchor **7.816** still ranks first (+0.274 vs SCA, +0.259 vs PSO, 72/100 practical vs SCA). At **12%** that inversion is the ranking: PSO first on both n100 fields among the four original methods ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)); zenith-anchor 7.216 still ranks first there too. TD3 was not run at 15% or 12%. Do not mix n100 banks with the 20-seed campaign tables in [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap) / [§2.7](#27-primary-campaign-88-mhz-25-cap). TD3 detail: [§2.10](#210-td3-algorithm-2-reproduction). Multi-start detail: [§2.9](#29-residual-policy-on-sca). Zenith-anchor detail: [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
 
 ---
 
@@ -1182,6 +1199,119 @@ At 100 m leftover dump already saturates, so 12% only nicks ~0.13 Mbps of SCA. A
 4. `PRIMARY_MAX_BW_SHARE = 0.25` stays the leftover-dump stress test adopted independently of p=0.123. 15% stays the tighter-cap **sensitivity**. 12% is a diagnostic rematch, not a third headline.
 
 **Artifacts.** `results/campaign_8.8mhz_cap12_n20.json`, `_n20_500m.json`, `results/n100_cap12/eval.json`, `results/n100_500m_cap12/eval.json`, `results/compare_cap12_vs_cap25.json`. Protected 25% files were not overwritten.
+
+---
+
+
+
+### 2.15 Zenith-anchor SCA (cap-aware subset placement)
+
+Standalone method note (algorithm, novelty boundaries, full tables): [`novelty.md`](novelty.md).
+
+**Verdict.** Under leftover-dump (27) plus the **external** 25% per-link cap, k-means is the wrong placement prior. Enumerating zenith J-subsets of IoTs, scoring each with one frozen-q bandwidth LP, polishing the top-3 with unmodified Algorithm 1, and keep-besting against frozen k-means SCA is never worse than one-shot SCA **by construction**. It is a **ranking** method at 500 m (J-axis, I-axis, 15% cap) and a leftover-dump nick at 100 m. With `process_cohesive_candidate=True` it is also **20/20** feasible at \(T_k=0.8\) s and **8.430** Mbps vs cohesive SCA-joint **8.393**. Khalaf’s Algorithm 1 remains the paper’s solver and the default campaign method; this wrapper is the proposed ranking prior. This is **not** a claim that we solved Khalaf’s Problem (P) better than Algorithm 1 on the paper’s own model: the paper has no per-link cap.
+
+**Mechanism.** The leftover-dump LP puts leftover Hertz on about `1/cap` highest-SE links. SE is maximal at zenith, so a natural prior is “UAV `j` hovers over a distinct IoT.” K-means puts UAVs *between* IoTs; SCA’s Taylor step only pulls toward links that already hold `B`. That matches Experiment A’s 16–72 m basins ([§2.9](#29-residual-policy-on-sca)). Closest priors in this repo: frozen SCA (local, k-means init), multi-start (unstructured extra inits), Experiment C (search `a` at frozen `q` — flat). Hovering-over-users is a common UAV placement prior in the wider literature; the load-bearing piece here is coupling that prior to the leftover-dump LP as an exact subset oracle, then Algorithm 1 polish.
+
+**Setup.** `python scripts/run_sca_anchor_cases.py`. Method `sca_anchor` / `uavdt.sca_anchor`. Default `C(10,3)=120` full enum; I-axis uses `max_enumerate=10000` so `C(32,3)=4960` is full enum, not beam. Keep-best includes frozen k-means SCA. Wilcoxon `p_greater` is the exact one-sided test from `scripts/paired_winrate.py` (same functions as `analyze_sca_anchor_cases.py`). Did **not** overwrite `campaign_8.8mhz_cap25_si12k.json`, `_500m.json`, or `n100/eval.json`. Analysis: `python scripts/analyze_sca_anchor_cases.py`.
+
+Quoted point is default **J=3, I=10, 8.8 MHz, 25% cap**. All four tests **100% feasible**. Practical bar **0.05 Mbps**.
+
+#### Four default-point tests (J=3)
+
+
+| Test | Anchor | Multi-start | SCA | PSO | Random | K-means | vs SCA | vs MS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| n20 100 m | **8.964** | 8.961 | 8.946 | 8.905 | 8.928 | 8.901 | **+0.017**, 18/20, 2/20 prac. | +0.003, 18/20, 0/20 prac. |
+| n20 500 m | **8.490** | 8.404 | 8.300 | 8.122 | 7.947 | 7.474 | **+0.190**, 20/20, **14/20** prac. | +0.087, 19/20, 9/20 prac. |
+| n100 100 m | **8.963** | 8.959 | 8.946 | 8.905 | 8.932 | 8.896 | **+0.017**, 87/100, 8/100 prac. | +0.004, 72/100, 0/100 prac. |
+| n100 500 m | **8.481** | 8.393 | 8.228 | 8.088 | 7.991 | 7.438 | **+0.253**, 92/100, **71/100** prac. | +0.088, 83/100, 45/100 prac. |
+
+n20 500 m vs multi-start has one “loss” (seed 15, **−1.5×10⁻⁸** Mbps) — a float tie. Winner kind is **anchor on 20/20** there; at 100 m n20 frozen wins seeds 5 and 16. n100 100 m vs multi-start has 15 tiny losses (none practical): keep-best is only vs frozen SCA, so an extra k-means start can still nick leftover-dump Hertz that the top-3 zenith polish missed.
+
+**Random-beats list (the 8/100 line).** Same test as multi-start: on layouts where the bank’s saved random UAV beats frozen SCA, does the wrapper still lose? Multi-start still lost **8/100** at both fields. Anchor: **0/100** at both fields.
+
+| Test | SCA lose to random | Multi-start still lose | Anchor still lose |
+| --- | ---: | ---: | ---: |
+| n20 100 m | 5/20 {7,11,13,18,19} | 1 (seed 18) | **0** |
+| n20 500 m | 2/20 {7,13} | 0 | **0** |
+| n100 100 m | 29/100 | **8/100** {18,46,56,64,71,77,91,93} | **0/100** |
+| n100 500 m | 27/100 | **8/100** {31,32,35,42,64,66,91,93} | **0/100** |
+
+That is the strong line: unstructured extra inits left eight bank geometries on the table; zenith-subset search closed all of them.
+
+**LP-only already moves the mean.** n20 500 m LP-without-polish **8.443** vs SCA **8.300** (+0.143). Polish takes it to 8.490. The combinatorial prior does most of the work; SCA is a local cleanup.
+
+**Cost.** **6.5 s/seed** at 100 m, **7.3 s** at 500 m — about **7×** one-shot SCA, similar to multi-start’s five SCA solves (~5–6 s). Algorithm 2 TD3 remains ~110× for a *worse* point ([§2.10](#210-td3-algorithm-2-reproduction)).
+
+#### UAV-count sweep (I=10, 20 seeds)
+
+100 m leftover dump: the gap is largest at **J=2** (+0.042, 7/20 practical) and shrinks to +0.005 at J=5.
+
+| J | 100 m anchor | 100 m SCA | Δ | 500 m anchor | 500 m SCA | Δ | 500 m PSO |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 8.774 | 8.758 | +0.016 | 6.238 | 6.025 | +0.213 | 6.018 |
+| 2 | 8.928 | 8.886 | +0.042 | **7.844** | 7.486 | **+0.358** | **7.522** |
+| 3 | 8.964 | 8.946 | +0.017 | 8.490 | 8.300 | +0.190 | 8.122 |
+| 4 | 8.979 | 8.971 | +0.008 | 8.778 | 8.580 | +0.197 | 8.413 |
+| 5 | 8.982 | 8.977 | +0.005 | 8.871 | 8.765 | +0.106 | 8.607 |
+
+At **500 m / J=2**, PSO **beats** k-means SCA (7.522 vs 7.486). Zenith-anchor **7.844** restores the SCA-family ranking and is **+0.322** vs PSO. That is the load-bearing geometry: too few UAVs, too large a field, k-means sits between IoTs, leftover dump still has room.
+
+#### IoT-count sweep (J=3, 500 m, full enum)
+
+Fig. 7 analogue. `max_enumerate=10000` so \(\binom{32}{3}=4960\) is exhaustive (20/20 `enum_mode=full`). Absolute rates fall with \(I\). The vs-SCA gap stays practical at every \(I\) (0.13–0.19 Mbps).
+
+| I | \(\binom{I}{3}\) | Anchor | SCA | PSO | Δ vs SCA | prac. | Δ vs PSO |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 120 | **8.490** | 8.300 | 8.122 | **+0.190** | 14/20 | +0.369 |
+| 16 | 560 | 8.239 | 8.065 | 7.892 | +0.173 | 13/20 | +0.347 |
+| 20 | 1140 | 8.054 | 7.885 | 7.745 | +0.169 | 12/20 | +0.309 |
+| 24 | 2024 | 7.849 | 7.664 | 7.500 | +0.185 | 15/20 | +0.349 |
+| 28 | 3276 | 7.611 | 7.484 | 7.332 | +0.127 | 11/20 | +0.279 |
+| 32 | 4960 | **7.351** | 7.201 | 7.106 | +0.150 | 10/20 | +0.245 |
+
+Vs PSO is 20/20 at every \(I\) (p=9.5e-7). Ranking at I=32: **anchor > SCA > PSO > k-means > random**.
+
+#### 15% cap at 500 m
+
+Tighter cap (\(k=\lceil 1/0.15\rceil=7\)) was the generalization test: top-\(k\) zenith structure is weaker, PSO already beats SCA on the mean. Anchor still ranks first.
+
+| Test | Anchor | SCA | PSO | vs SCA | vs PSO |
+| --- | ---: | ---: | ---: | --- | --- |
+| n20 500 m 15% | **7.783** | 7.538 | 7.585 | +0.244, **13/20** prac. | +0.198, **20/20** prac., p=9.5e-7 |
+| n100 500 m 15% | **7.816** | 7.542 | 7.556 | +0.274, **72/100** prac. | +0.259, **97/100** prac., p=7.9e-31 |
+
+Random-beats: n20 0/2, n100 **0/11**. Winner polish walks **~21–22 m** off zenith (vs ~6 m at 25%); LP-only is only +0.060 vs SCA on n20, polish adds +0.185. The subset is the right start, not a freeze-at-zenith.
+
+#### \(T_k=0.8\) s + process-cohesive \(a\)
+
+Flag off on all 25% / 15% artifacts. `process_cohesive_candidate=True` on `results/sca_anchor_tk08.json`.
+
+| | Feasible | Mean Mbps |
+| --- | ---: | ---: |
+| Frozen SCA (nearest \(a\)) | **0/20** | — |
+| SCA-joint + process-cohesive | **20/20** | 8.393 |
+| **Zenith-anchor + process-cohesive** | **20/20** | **8.430** |
+
+Vs cohesive SCA-joint: +0.037, 10/20 moved, 0 losses, **6/20** practical, p=9.8e-4. Winners: 11 zenith / 9 frozen-cohesive; all 20 `process_cohesive`. Cohesive \(a\) recovers feasibility; zenith \(q\) is the extra 0.037.
+
+**What this is allowed to claim.** *Under leftover-dump (27) plus this reproduction’s per-link cap, the placement problem is combinatorial zenith-subset selection, and k-means + one-shot SCA is the wrong prior.* That is novelty **versus this repo’s Algorithm 1, k-means, random, PSO, unstructured multi-start, and Algorithm 2 TD3**.
+
+**What this is not.** It is not “we beat Khalaf on (P).” The 25% cap is **external**. Hovering over users is not a new UAV idea.
+
+**Headline remaining (must measure before calling this a headline method).**
+
+| Probe | Status | Pass line |
+| --- | --- | --- |
+| Four-cell paired Wilcoxon + random-beats | **Done.** Anchor **0/100** on the multi-start 8/100 list. | — |
+| J-axis 500 m (Fig. 6) | **Done.** Gap largest at J=2 (+0.358), shrinks at J=5 (+0.106). | Shrink is the expected leftover-dump story. |
+| I-axis 500 m (Fig. 7), full enum | **Done.** Gap 0.13–0.19 Mbps through I=32; 10–15/20 practical; vs PSO 20/20. | Full enum, not beam. |
+| 15% cap at 500 m | **Done.** n20 7.783 vs SCA 7.538 / PSO 7.585; n100 7.816 vs 7.542 / 7.556. | Still ranks first vs both. |
+| \(T_k=0.8\) + process-cohesive | **Done.** **20/20** feasible, **8.430** vs cohesive SCA-joint **8.393**. | Feasible > 0/20 and above 8.393. |
+
+The remaining-before-headline bar is cleared. Default `--methods` is unchanged. Do not overwrite protected headline JSON.
+
+**Artifacts.** `results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json`, `results/campaign_sca_anchor_uavs.json`, `_500m.json`, `results/campaign_sca_anchor_iots_500m.json`, `results/sca_anchor_tk08.json`, `results/sca_anchor_cases_analysis.txt`. Figures: `results/figures/n100_anchor/`, `n100_500m_anchor/`, `n100_500m_cap15_anchor/`, `anchor_uavs/fig06_sum_rate.png`, `anchor_uavs_500m/fig06_sum_rate.png`, `anchor_iots_500m/fig07_sum_rate.png`.
 
 ---
 
@@ -1359,6 +1489,7 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 | Area 100 × 100 m (headline)                 | **By design.** 20 kHz also checked at 500 × 500 m (§0.3)                                                                                                                                                                                                                                                                                                                                                                                              |
 | TD3 (Algorithm 2)                           | **Measured** (2026-09-10 college-server CUDA). Policy export; default J=3 **8.917 Mbps**, TD3−SCA **−0.030** (2/20, p<0.001); **0/29** sweep points with TD3 mean > SCA. See [§2.10](#210-td3-algorithm-2-reproduction).                                                                                                                                                                                                                              |
 | TD3 residual-on-SCA (proposed)              | Same stack, different interface to (P). Scripts in §2.9; not a new swarm                                                                                                                                                                                                                                                                                                                                                                              |
+| Zenith-anchor SCA (opt-in)                  | **Measured** (2026-09-12), remaining-before-headline probes included. Never worse than frozen SCA by construction. Ranking method at 500 m across J, I, and 15% cap ([§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement)); leftover-dump nick at 100 m; \(T_k=0.8\) **20/20** with process-cohesive flag. Does not replace default campaign SCA. Exploits this reproduction’s per-link cap, not Khalaf’s (P).                                                                                                                                                                 |
 | Paper Mbps targets                          | Explicitly not pursued                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 20 kHz as (27) cap                          | **Real** model infeasibility — not a solver artifact (§0)                                                                                                                                                                                                                                                                                                                                                                                             |
 | 15% per-link cap (sensitivity)              | Search-selected from cap×J grid; FDR-sig at all J but practical Δ fails at J = 4–5 (§2.7)                                                                                                                                                                                                                                                                                                                                                             |
@@ -1399,6 +1530,12 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 ### Multi-start SCA (keep-best extra inits)
 
 > Keep-best of one-shot k-means SCA plus four extra inits is never worse than frozen SCA **by construction** (the frozen candidate is in the pool). At the default point it scores 8.961 Mbps vs SCA 8.946 and random 8.928 (+0.014 vs SCA, 13/20 strictly better; +0.033 vs random, 19/20). Cost is 5.6 s/seed, **~5×** SCA, against Algorithm 2 TD3’s **~110×** for a worse point. Cheap classical search buys a small improvement; expensive RL search does not.
+
+
+
+### Zenith-anchor SCA (opt-in; leftover-dump structure)
+
+> Under leftover-dump (27) plus a 25% per-link cap, k-means is the wrong prior: the LP dumps leftover Hertz onto the highest-SE links, and SE is maximal at zenith. Enumerating those J-subsets, scoring each with one frozen-q LP, and polishing the top-3 with unmodified Algorithm 1 is never worse than one-shot SCA by construction. At 500 × 500 m / J=3 it scores **8.490 Mbps** vs SCA 8.300 and multi-start 8.404 (+0.190 / +0.087; 14/20 practical vs SCA). The 100-layout bank is **+0.253 Mbps** vs SCA (71/100 practical). At 100 × 100 m leftover dump compresses the same wrapper to +0.017 Mbps. This exploits a cap this reproduction added; it is not a claim that Algorithm 1 is wrong on Khalaf’s uncapped (P).
 
 
 
@@ -1569,6 +1706,12 @@ python scripts/run_sca_multistart_cases.py
 python scripts/analyze_sca_multistart_cases.py
 python scripts/plot_sca_multistart_n100.py
 
+# Zenith-anchor SCA (opt-in; does not overwrite headline campaigns or n100/eval.json)
+python scripts/run_sca_anchor_cases.py
+python scripts/analyze_sca_anchor_cases.py
+python scripts/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs.json --skip-fig11 --out-dir results/figures/anchor_uavs
+python scripts/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs_500m.json --skip-fig11 --out-dir results/figures/anchor_uavs_500m
+
 # Fine B_sys x cap search (long; does not overwrite headline campaign)
 python scripts/run_bw_fine_search.py --run --resume
 python scripts/analyze_bw_fine_search.py
@@ -1604,6 +1747,7 @@ One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regenerati
 | Full bandwidth sweep (7 configs)    | ~36 min                                 |
 | TD3 Alg. 2 full eval (n100 + 29×20) | ~college-server overnight (~108 s/seed) |
 | Multi-start four default-point cases | ~22 min (n20 100 m reused; n20 500 m + n100×2) |
+| Zenith-anchor four tests + J-sweep | ~48 min (n20×2 + n100×2 + UAV axis both fields) |
 | Fine B_sys × cap grid (144 cells) | ~13 h |
 
 

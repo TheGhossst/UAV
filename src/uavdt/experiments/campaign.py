@@ -13,6 +13,7 @@ from uavdt.experiments.grids import AXES, SweepPoint, iter_axis
 from uavdt.experiments.methods import METHODS, MethodRun, run_method
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca.settings import SCASettings
+from uavdt.sca_anchor import AnchorSettings
 from uavdt.sca_multistart import MultiStartSettings
 from uavdt.scenario import generate_scenario
 from uavdt.td3.settings import TD3Settings
@@ -27,6 +28,7 @@ class CampaignSettings:
     pso_settings: PSOSettings | None = None
     td3_settings: TD3Settings | None = None
     multistart_settings: MultiStartSettings | None = None
+    anchor_settings: AnchorSettings | None = None
 
 
 def _seed_list(settings: CampaignSettings) -> tuple[int, ...]:
@@ -80,6 +82,7 @@ def run_point(
                     pso_settings=settings.pso_settings,
                     td3_settings=settings.td3_settings,
                     multistart_settings=settings.multistart_settings,
+                    anchor_settings=settings.anchor_settings,
                 )
             )
         by_method[method] = _summarize(runs)
@@ -102,6 +105,7 @@ def _campaign_header(cfg: SimConfig, settings: CampaignSettings) -> dict:
         "sca_frozen": True,
         "sca_joint_probe": "sca_joint" in settings.methods,
         "sca_multistart": "sca_multistart" in settings.methods,
+        "sca_anchor": "sca_anchor" in settings.methods,
         "td3_opt_in": "td3" in settings.methods,
         "n_runs": settings.n_runs,
         "seed_start": settings.seed_start,

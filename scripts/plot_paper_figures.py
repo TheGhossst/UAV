@@ -20,10 +20,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Paper methods first (SCA, TD3), then k-means/random, then external PSO.
-METHOD_ORDER = ("sca", "td3", "kmeans", "random", "pso")
+# Paper methods first (SCA), then opt-in solvers, then k-means/random, then external PSO.
+METHOD_ORDER = ("sca", "sca_anchor", "sca_multistart", "td3", "kmeans", "random", "pso")
 METHOD_LABELS = {
     "sca": "SCA",
+    "sca_anchor": "SCA zenith-anchor",
+    "sca_multistart": "SCA multi-start",
     "td3": "TD3",
     "kmeans": "K-means",
     "random": "Random",
@@ -31,6 +33,8 @@ METHOD_LABELS = {
 }
 METHOD_STYLES = {
     "sca": {"color": "#1f77b4", "marker": "o", "linewidth": 2.2, "zorder": 5},
+    "sca_anchor": {"color": "#e377c2", "marker": "*", "linewidth": 2.1, "zorder": 4.5},
+    "sca_multistart": {"color": "#8c564b", "marker": "v", "linewidth": 2.0, "zorder": 4.2},
     "td3": {"color": "#17becf", "marker": "P", "linewidth": 2.0, "zorder": 4},
     "kmeans": {"color": "#ff7f0e", "marker": "s", "linewidth": 1.8, "zorder": 3},
     "random": {"color": "#2ca02c", "marker": "^", "linewidth": 1.8, "zorder": 2},

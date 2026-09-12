@@ -19,8 +19,9 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
 | Multi-start SCA (`uavdt.sca_multistart`, method=`sca_multistart`) | Opt-in keep-best extra inits of frozen SCA (Experiment A: 2 random + 2 k-means **plus** the frozen k-means start). Never worse than one-shot SCA **by construction** while `include_frozen` is True (default). Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA. Writes separately named files (`results/sca_multistart_n20.json`, `_n20_500m.json`, `n100/eval_multistart.json`, `n100_500m_cap25/eval_multistart.json`). |
+| Zenith-anchor SCA (`uavdt.sca_anchor`, method=`sca_anchor`) | Opt-in: enumerate (or beam-search) zenith J-subsets of IoTs, score each with the frozen-q bandwidth LP, polish top-K with unmodified `solve_sca`, keep-best with frozen k-means SCA. Never worse than one-shot SCA **by construction** while `include_frozen` is True. Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA as the default campaign method. Remaining-before-headline probes (I-axis 500 m, 15% 500 m, \(T_k=0.8\)) are measured — [`novelty.md`](novelty.md), [`RESULTS.md`](RESULTS.md) §2.15. Writes separately named files (`results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`, `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`, `_500m.json`, `campaign_sca_anchor_iots_500m.json`, `sca_anchor_tk08.json`). |
 | TD3 (`uavdt.td3`, method=`td3`) | Opt-in. Default `TD3Settings` is Algorithm 2 **reproduction** (k-means residual, leftover inner \(B\), penalty reward, policy export). `TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` is the **proposed interface to (P)**: residual \(\Delta q\) on the SCA incumbent, frozen SCA \(a,b\), inner frozen-\(q\) LP, feasible-Mbps reward, incumbent snapshot export. Does **not** change `SimConfig`. Not in default `METHODS`. |
-| New work | Baselines, sweeps, reporting, SCA-joint probe, multi-start SCA, TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
+| New work | Baselines, sweeps, reporting, SCA-joint probe, multi-start SCA, zenith-anchor SCA ([`novelty.md`](novelty.md)), TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
 
 ---
 
@@ -101,6 +102,10 @@ python scripts/run_sca_multistart_eval.py
 python scripts/run_sca_multistart_cases.py
 python scripts/analyze_sca_multistart_cases.py
 python scripts/plot_sca_multistart_n100.py
+python scripts/run_sca_anchor_cases.py
+python scripts/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
+python scripts/analyze_sca_anchor_cases.py
+python scripts/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
 python scripts/run_bw_fine_search.py --report
 python scripts/analyze_bw_fine_search.py
 python scripts/experiments/residual_on_sca/run_residual_td3.py
@@ -183,6 +188,15 @@ primary campaign.
   `scripts/run_sca_multistart_eval.py`, `scripts/run_sca_multistart_cases.py`).
   Keep-best extra inits. Does not overwrite Experiment A, n100/eval.json, or
   the headline campaigns.
+- Zenith-anchor SCA method (`results/sca_anchor_n20.json`,
+  `sca_anchor_n20_500m.json`, `sca_anchor_n20_500m_cap15.json`,
+  `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`,
+  `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`,
+  `_500m.json`, `campaign_sca_anchor_iots_500m.json`,
+  `sca_anchor_tk08.json`; scripts `scripts/run_sca_anchor_eval.py`,
+  `scripts/run_sca_anchor_cases.py`, `scripts/analyze_sca_anchor_cases.py`).
+  LP-scored zenith J-subsets + SCA polish. Method note: [`novelty.md`](novelty.md).
+  Does not overwrite n100/eval.json or the headline campaigns.
 - TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
   `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`;
   analysis `scripts/analyze_td3_vs_methods.py`). Policy export. Do not cite
