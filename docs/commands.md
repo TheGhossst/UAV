@@ -258,9 +258,29 @@ Full five-axis campaigns at every 0.1 MHz from 7.1 to 8.8, caps none / 10% / 12%
 python scripts/run_bw_fine_search.py --estimate
 python scripts/run_bw_fine_search.py --run --resume
 python scripts/run_bw_fine_search.py --report
+python scripts/analyze_bw_fine_search.py
 ```
 
-Leaderboard: `results/bw_fine_7p1_8p8/index.json`. At a fixed cap fraction, method spread is expected to scale linearly with `B_sys`; the cap is the ranking lever.
+Leaderboard: `results/bw_fine_7p1_8p8/index.json`. Analysis:
+`python scripts/analyze_bw_fine_search.py`. At a fixed cap fraction, method
+spread scales linearly with `B_sys` (measured r²=1.000 except 25%); the cap
+is the ranking lever. Do not promote the search-selected 8.8 MHz / 12% cell.
+
+### 8.8 MHz / 12% four-test rematch (not headline)
+
+Replays the four 25% tests at 12%: 20-seed campaigns at 100 m and 500 m,
+plus both frozen n100 banks. Reuses the fine-search 100 m campaign. Does
+**not** overwrite `campaign_8.8mhz_cap25_si12k.json` or `n100/eval.json`.
+
+```powershell
+python scripts/run_cap12_rematch.py --skip-plot
+python scripts/compare_cap12_vs_cap25.py
+```
+
+Outputs: `results/campaign_8.8mhz_cap12_n20.json`,
+`campaign_8.8mhz_cap12_n20_500m.json`, `results/n100_cap12/eval.json`,
+`results/n100_500m_cap12/eval.json`, `results/compare_cap12_vs_cap25.txt`.
+Keep `PRIMARY_MAX_BW_SHARE = 0.25`. See `docs/RESULTS.md` §2.14.
 
 ### High-statistics replay (100 seeds per point)
 
@@ -305,6 +325,9 @@ python -m uavdt n100 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver cvxp
 python -m uavdt n100 --generate-only          # write bank only
 python -m uavdt n100 --skip-eval              # re-plot from eval.json
 python -m uavdt n100 --methods random,kmeans,pso,sca,td3 --td3-preset residual-on-sca
+python -m uavdt n100 --methods random,kmeans,pso,sca,sca_multistart --out results/n100/eval_multistart.json --checkpoint results/n100/eval_multistart.checkpoint.json --fig-dir results/figures/n100_multistart
+python scripts/run_sca_multistart_cases.py
+python scripts/analyze_sca_multistart_cases.py
 python -m uavdt n100 --force-generate         # overwrite bank
 python -m uavdt n100 --no-resume              # ignore checkpoint
 ```
@@ -588,6 +611,7 @@ read the plot title for the swept parameter.
 
 ```powershell
 python scripts/compare_cap15_vs_cap25.py
+python scripts/compare_cap12_vs_cap25.py
 python scripts/compare_bw_configs.py
 python scripts/analyze_nocap_8p8mhz.py
 ```
@@ -643,7 +667,7 @@ python scripts/summarize_local_diag.py
 | `--download-time` | `0` | UAV→BS download delay Z (s) |
 
 **Methods** (campaign / n100): `random`, `kmeans`, `pso`, `sca`, optional
-`sca_joint`, `td3`.
+`sca_joint`, `sca_multistart`, `td3`.
 
 **Default sweep grids** (`src/uavdt/experiments/grids.py`):
 

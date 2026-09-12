@@ -13,6 +13,7 @@ from uavdt.experiments.grids import AXES, SweepPoint, iter_axis
 from uavdt.experiments.methods import METHODS, MethodRun, run_method
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca.settings import SCASettings
+from uavdt.sca_multistart import MultiStartSettings
 from uavdt.scenario import generate_scenario
 from uavdt.td3.settings import TD3Settings
 
@@ -25,6 +26,7 @@ class CampaignSettings:
     sca_settings: SCASettings | None = None
     pso_settings: PSOSettings | None = None
     td3_settings: TD3Settings | None = None
+    multistart_settings: MultiStartSettings | None = None
 
 
 def _seed_list(settings: CampaignSettings) -> tuple[int, ...]:
@@ -77,6 +79,7 @@ def run_point(
                     sca_settings=settings.sca_settings,
                     pso_settings=settings.pso_settings,
                     td3_settings=settings.td3_settings,
+                    multistart_settings=settings.multistart_settings,
                 )
             )
         by_method[method] = _summarize(runs)
@@ -98,6 +101,7 @@ def _campaign_header(cfg: SimConfig, settings: CampaignSettings) -> dict:
         "paper": "Khalaf et al. IEEE TNSM 2026 §VII Figs. 6–10 axes",
         "sca_frozen": True,
         "sca_joint_probe": "sca_joint" in settings.methods,
+        "sca_multistart": "sca_multistart" in settings.methods,
         "td3_opt_in": "td3" in settings.methods,
         "n_runs": settings.n_runs,
         "seed_start": settings.seed_start,

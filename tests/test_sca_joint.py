@@ -27,6 +27,7 @@ cvxpy = pytest.importorskip("cvxpy")
 def test_known_methods_keep_sca_joint_opt_in():
     assert "sca_joint" not in METHODS
     assert "sca_joint" in KNOWN_METHODS
+    assert "sca_multistart" in KNOWN_METHODS
     assert METHODS == ("random", "kmeans", "pso", "sca")
 
 

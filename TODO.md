@@ -1,6 +1,6 @@
 # UAV project — what to do next
 
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMENTS.md`.
 
@@ -12,7 +12,36 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.10 and `docs/EXPERIMEN
 
 ## In progress
 
-- [ ] Fine B_sys search 7.1–8.8 MHz × caps (`scripts/run_bw_fine_search.py`, no TD3)
+- *(none)*
+
+---
+
+## Done — fine B_sys × cap search (2026-09-12)
+
+- [x] 144/144 cells, 7.1–8.8 MHz × {none,10,12,15,18,20,22,25}%, no TD3
+- [x] Null confirmed: at fixed cap, J=3 spread ∝ `B_sys` (r²=1.000 except 25%)
+- [x] Perfect 42 = all 12% + all 15% + 18% at 8.3–8.8 MHz. Score-best 8.8/12% is an artifact — do not promote
+- [x] 10% PSO best 18/18. Headline 8.8/25% unchanged (spread 0.046, p=0.123)
+- [x] `scripts/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt` · `docs/RESULTS.md` §2.13
+
+---
+
+## Done — multi-start four default-point cases (2026-09-11)
+
+- [x] Driver `scripts/run_sca_multistart_cases.py` (does not overwrite headline campaigns / n100/eval.json)
+- [x] 20-seed 100 m: reused `sca_multistart_n20.json` — vs SCA **+0.014** (13/20), 2/20 practical
+- [x] 20-seed 500 m: `sca_multistart_n20_500m.json` — vs SCA **+0.103** (11/20), **8/20** practical, 20/20 vs random
+- [x] n100 100 m: `results/n100/eval_multistart.json` — vs SCA **+0.013** (66/100), 6/100 practical
+- [x] n100 500 m (the “n500” bank): `results/n100_500m_cap25/eval_multistart.json` — vs SCA **+0.165** (62/100), **48/100** practical
+- [x] Analysis `scripts/analyze_sca_multistart_cases.py` → `results/sca_multistart_cases_analysis.txt`
+- Frozen SCA stays the headline solver. 15% cap not rerun.
+
+---
+
+## Done — multi-start SCA method (2026-09-11)
+
+- [x] `uavdt.sca_multistart` / `method="sca_multistart"` (keep-best extra inits; does not edit frozen SCA)
+- [x] Default-point eval `results/sca_multistart_n20.json`: vs SCA **+0.014** (13/20), vs random **+0.033** (19/20). Closes 4/5 random-loss seeds; seed 18 still −0.003 Mbps.
 
 ---
 

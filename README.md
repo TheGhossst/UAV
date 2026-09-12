@@ -117,6 +117,7 @@ python -m uavdt sca --help
 | `bandwidth-sweep` | Run all three `B_sys` presets on one seed |
 | `sca` | Algorithm 1 SCA; writes iteration history to `results/` |
 | `sca-joint` | Methodology probe: SCA plus discrete \(a_{ij}/b_{ij}\) re-match (`method="sca_joint"`). Optional `--process-cohesive-candidate`. |
+| `sca-multistart` | Keep-best extra SCA inits (2 random + 2 k-means). Opt-in; does not replace frozen SCA. |
 | `td3` | Algorithm 2 TD3 (opt-in). Per-instance train; knobs are `TD3Settings`, not `SimConfig`. |
 | `sca-seq-debug` | Per-iteration SCA log with true-feasibility gate |
 | `campaign` | §VII sweeps over UAV count, IoT count, λ, AoDT threshold, CPU |
@@ -292,7 +293,7 @@ python -m uavdt campaign --axis uavs,iots --bandwidth-preset 8.8mhz --max-bw-sha
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--axis` | `all` | Comma-separated axes or `all`. Choices: `uavs`, `iots`, `lambda`, `aodt`, `cpu`. |
-| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods. Opt-in: `sca_joint`, `td3`. |
+| `--methods` | `random,kmeans,pso,sca` | Comma-separated methods. Opt-in: `sca_joint`, `sca_multistart`, `td3`. |
 | `--n-runs` | `5` | Seeds per sweep point. Paper uses **20**; default is 5 for faster runs. |
 | `--seed-start` | `1` | First seed. |
 | `--max-iterations` | `30` | SCA iterations (only affects the `sca` method). |

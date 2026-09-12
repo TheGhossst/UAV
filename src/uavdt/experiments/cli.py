@@ -27,6 +27,7 @@ from uavdt.experiments.spot import spot_validate_sca
 from uavdt.placement.pso import PSOSettings
 from uavdt.sca import SCASettings, solve_sca
 from uavdt.sca.algorithm import write_history
+from uavdt.sca_multistart import MultiStartSettings, solve_sca_multistart
 from uavdt.sca.debug import print_human_table, run_sca_seq_debug
 from uavdt.scenario import generate_scenario
 from uavdt.td3.settings import TD3Settings
@@ -187,6 +188,29 @@ def _td3_settings_from_args(args: argparse.Namespace) -> TD3Settings:
     if updates:
         settings = replace(settings, **updates)
     return settings
+
+
+def _add_multistart_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--multistart-random",
+        type=int,
+        default=2,
+        help="Extra random-placement SCA inits (Experiment A default 2).",
+    )
+    p.add_argument(
+        "--multistart-kmeans",
+        type=int,
+        default=2,
+        help="Extra k-means SCA inits with offset seeds (Experiment A default 2).",
+    )
+
+
+def _multistart_from_args(args: argparse.Namespace) -> MultiStartSettings:
+    return MultiStartSettings(
+        n_random=int(getattr(args, "multistart_random", 2)),
+        n_kmeans=int(getattr(args, "multistart_kmeans", 2)),
+        include_frozen=not bool(getattr(args, "no_frozen_start", False)),
+    )
 
 
 def _print_eval(seed: int, cfg: SimConfig, uav, result, *, verbose: bool) -> None:
@@ -444,6 +468,56 @@ def cmd_td3(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sca_multistart(args: argparse.Namespace) -> int:
+    cfg = _cfg_from_args(args)
+    scenario = generate_scenario(args.seed, cfg)
+    solver = args.solver
+    if solver in {None, "cvxpy", "python", "none"}:
+        solver = None
+    settings = SCASettings(
+        max_iterations=int(args.max_iterations),
+        epsilon=float(args.epsilon),
+        step_size_m=float(args.step_size),
+        solver=solver,
+    )
+    ms = MultiStartSettings(
+        n_random=int(args.multistart_random),
+        n_kmeans=int(args.multistart_kmeans),
+        include_frozen=not bool(args.no_frozen_start),
+    )
+    result = solve_sca_multistart(
+        scenario, args.seed, settings=settings, multistart=ms
+    )
+    write_history(result, args.history_json)
+    write_history(result, args.history_csv)
+    ev = result.true_eval
+    c = ev.constraints
+    d = result.diagnostics
+    print("method                sca_multistart (keep-best extra inits; not headline SCA)")
+    print(f"B_sys                 {_fmt_hz(cfg.b_sys_hz)}")
+    print(f"n_starts              {d.get('n_starts')}")
+    print(f"winner_kind           {d.get('winner_kind')}")
+    print(f"winner_init_seed      {d.get('winner_init_seed')}")
+    frozen = d.get("frozen_Mbps")
+    if frozen is not None:
+        print(f"frozen_SCA_Mbps       {float(frozen):.6g}")
+        print(f"delta_vs_frozen_Mbps  {float(d.get('delta_vs_frozen_Mbps') or 0.0):+.6g}")
+    print(f"true_sum_rate_Mbps    {ev.sum_rate_mbps:.6g}")
+    print(f"feasible              {ev.feasible}")
+    print(f"stop_reason           {d.get('stop_reason')}")
+    print(f"n_iterations          {result.n_iterations}")
+    print(
+        "violations            "
+        f"qos={c.qos_violations} aodt={c.aodt_violations} "
+        f"sep={c.sep_violations} cpu={c.cpu_unstable_count} "
+        f"bw_excess_Hz={c.bw_excess_hz:.4g}"
+    )
+    print("uav_xyz_m")
+    print(result.uav_xyz_m)
+    print(f"history_json          {args.history_json}")
+    return 0
+
+
 def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
     cfg = _cfg_from_args(args)
     solver = args.solver
@@ -496,6 +570,7 @@ def cmd_campaign(args: argparse.Namespace) -> int:
         ),
         pso_settings=PSOSettings(),
         td3_settings=_td3_settings_from_args(args),
+        multistart_settings=_multistart_from_args(args),
     )
     out_path = Path(args.out)
     ckpt = out_path.with_name(out_path.stem + ".checkpoint.json")
@@ -665,6 +740,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
             ),
             pso_settings=PSOSettings(),
             td3_settings=_td3_settings_from_args(args),
+            multistart_settings=_multistart_from_args(args),
             checkpoint_path=args.checkpoint,
             resume=not args.no_resume,
             bank_path=bank_path,
@@ -768,6 +844,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sj.set_defaults(func=cmd_sca_joint)
 
+    sm = sub.add_parser(
+        "sca-multistart",
+        help="Keep-best extra SCA inits (Experiment A). Does not replace frozen SCA.",
+    )
+    _add_shared(sm)
+    _add_multistart_args(sm)
+    sm.add_argument("--seed", type=int, default=1)
+    sm.add_argument("--max-iterations", type=int, default=30)
+    sm.add_argument("--epsilon", type=float, default=1e-4)
+    sm.add_argument("--step-size", type=float, default=20.0)
+    sm.add_argument(
+        "--solver",
+        type=str,
+        default="cvxpy",
+        help="SCA backend for each start: cvxpy (default) or matlab/MOSEK",
+    )
+    sm.add_argument(
+        "--no-frozen-start",
+        action="store_true",
+        help="Skip the k-means-seed frozen SCA start (extras only).",
+    )
+    sm.add_argument(
+        "--history-json",
+        type=str,
+        default="results/sca_multistart_history.json",
+    )
+    sm.add_argument(
+        "--history-csv",
+        type=str,
+        default="results/sca_multistart_history.csv",
+    )
+    sm.set_defaults(func=cmd_sca_multistart)
+
     td = sub.add_parser(
         "td3",
         help="TD3 (opt-in). Default preset is Algorithm 2; residual-on-sca is the proposed (P) interface.",
@@ -818,6 +927,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_shared(camp)
     _add_td3_preset_args(camp)
+    _add_multistart_args(camp)
     camp.add_argument(
         "--axis",
         type=str,
@@ -828,7 +938,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,td3]. sca_joint and td3 are opt-in.",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,td3]. Opt-in: sca_joint, sca_multistart, td3.",
     )
     camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
     camp.add_argument("--seed-start", type=int, default=1)
@@ -894,6 +1004,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_shared(n100)
     _add_td3_preset_args(n100)
+    _add_multistart_args(n100)
     n100.add_argument("--n-scenarios", type=int, default=100)
     n100.add_argument("--seed-start", type=int, default=1)
     n100.add_argument("--num-iot", type=int, default=10)
@@ -915,7 +1026,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,td3]",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,td3]",
     )
     n100.add_argument("--max-iterations", type=int, default=30)
     n100.add_argument("--epsilon", type=float, default=1e-4)

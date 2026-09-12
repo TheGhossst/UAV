@@ -9,10 +9,10 @@
 | **Not in scope**            | Numeric comparison of Mbps figures to the paper’s §VII plots                                                                                     |
 | **Last full regeneration**  | 2026-09-08 (full pipeline: pytest 125/125, primary + cap15 + 500 m campaigns, SCA-joint + tk08 follow-ups, fig11, spot-validate, analysis/plots) |
 | **Primary campaign**        | `results/campaign_8.8mhz_cap25_si12k.json` (100 m, 25% per-link cap)                                                                             |
-| **Tighter-cap sensitivity** | `results/campaign_8.8mhz_cap15_n20.json` (100 m, 15% per-link cap)                                                                               |
+| **Tighter-cap sensitivity** | `results/campaign_8.8mhz_cap15_n20.json` (100 m, 15% per-link cap). **12% is not headline** ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch))     |
 | **Paper-field test**        | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m, 25% cap)                                                                                 |
 | **TD3 Algorithm 2**         | `results/campaign_8.8mhz_cap25_td3.json` (policy export; 100 m) · n100 bank: [§2.12](#212-n100-monte-carlo-bank-88-mhz)                            |
-| **n100 Monte Carlo**        | 100 frozen layouts, I=10 J=3, 8.8 MHz, caps 15% / 25%, fields 100 m & 500 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz)                            |
+| **n100 Monte Carlo**        | 100 frozen layouts, I=10 J=3, 8.8 MHz, caps 12% / 15% / 25%, fields 100 m & 500 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz)                      |
 | **7 MHz extra B_sys**       | `results/campaign_7mhz_n20.json` + `_cap15_n20` + `_cap25_n20` (no TD3; [§2.11](#211-7-mhz-no-cap-15-25))                                        |
 | **Related docs**            | `[EXPERIMENTS.md](EXPERIMENTS.md)` · `[REPRODUCTION.md](REPRODUCTION.md)` · `[param.md](param.md)`                                               |
 
@@ -40,10 +40,12 @@
 15. [TD3 Algorithm 2](#210-td3-algorithm-2-reproduction)
 16. [7 MHz extra B_sys](#211-7-mhz-no-cap-15-25)
 17. [n100 Monte Carlo bank](#212-n100-monte-carlo-bank-88-mhz)
-18. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
-19. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
-20. [How to regenerate](#9-how-to-regenerate)
-21. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
+18. [Fine B_sys × cap search](#213-fine-b_sys--cap-search-71-88-mhz)
+19. [12% vs 25% four-test rematch](#214-88-mhz-12-vs-25-four-test-rematch)
+20. [Suggested writeup sentences](#7-suggested-writeup-sentences-copy-ready)
+21. [AoDT extras & Fig. 11](#8-aodt-extras-eqs-1017-fcfs--fcfs-p--lcfs-s-fig-11)
+22. [How to regenerate](#9-how-to-regenerate)
+23. [S_i / L correction](#10-s_i--l-correction--settled-defaults-vs-old-placeholders)
 
 ---
 
@@ -306,6 +308,8 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/campaign_8.8mhz_cap25_si12k.json`      | **8.8 MHz** | **25%**      | **20** | **Primary campaign** (100 × 100 m, leftover-dump stress test)              |
 | `results/campaign_8.8mhz_cap25_td3.json`        | 8.8 MHz     | 25%          | 20     | **TD3 Algorithm 2** opt-in (policy export; baselines reused)               |
 | `results/campaign_8.8mhz_cap15_n20.json`        | 8.8 MHz     | 15%          | 20     | Tighter-cap **sensitivity** (100 m; search-selected)                       |
+| `results/campaign_8.8mhz_cap12_n20.json`        | 8.8 MHz     | 12%          | 20     | 12% rematch (100 m; copy of fine-search cell; **not** headline)            |
+| `results/campaign_8.8mhz_cap12_n20_500m.json`   | 8.8 MHz     | 12%          | 20     | 12% rematch (500 m; PSO ranks first at J=3)                                |
 | `results/campaign_8.8mhz_cap25_si12k_500m.json` | 8.8 MHz     | 25%          | 20     | **Paper-field test** (500 × 500 m, same 25% primary cap)                   |
 | `results/campaign_7mhz_n20.json`                | **7 MHz**   | none         | 20     | Extra B_sys; linear scale of 8.8 no-cap ([§2.11](#211-7-mhz-no-cap-15-25)) |
 | `results/campaign_7mhz_cap15_n20.json`          | 7 MHz       | 15%          | 20     | Extra B_sys, tighter-cap sensitivity                                       |
@@ -336,10 +340,17 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/campaign_8.8mhz_cap15_n20_paired.json` / `.csv`   | Paired SCA vs baselines (15% sensitivity)                   |
 | `results/campaign_8.8mhz_cap15_n20_losses.json`            | Loss-seed forensics (J = 3, 15% sensitivity)                |
 | `results/compare_cap15_vs_cap25.json`                      | Side-by-side 15% vs 25%                                     |
+| `results/compare_cap12_vs_cap25.json` / `.txt`             | Four-test 12% vs 25% rematch ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)) |
 | `results/cap_binding_diagnostic.json`                      | Leftover-dump / cap-binding audit (J=1–5)                   |
-| `results/bw_cap_by_J_grid.json`                            | 30-cell cap×J search (6 caps × J=1–5; single FDR)           |
+| `results/bw_fine_7p1_8p8/index.json`                       | Fine 7.1–8.8 MHz × cap grid (144 cells, no TD3)             |
+| `results/bw_fine_7p1_8p8/analysis.json` / `.txt`           | Spread-vs-Hertz readout; cap is the lever                   |
 | `results/bw_boundary_refine_j3.json`                       | J=3 bisection 23.5–24.5% + 33-test FDR + variance audit     |
 | `results/se_spread_by_j.json`                              | SE max/mean/min vs J (why the gap fades)                    |
+| `results/sca_multistart_n20.json`                          | Keep-best extra SCA inits vs SCA and random (100 m, J=3)    |
+| `results/sca_multistart_n20_500m.json`                     | Same 20-seed eval at 500 × 500 m                            |
+| `results/n100/eval_multistart.json`                        | n100 + multi-start (100 m, 25% cap; baselines reused)       |
+| `results/n100_500m_cap25/eval_multistart.json`             | n100 + multi-start (500 m, 25% cap; baselines reused)       |
+| `results/sca_multistart_cases_analysis.json` / `.txt`      | Paired readout of the four default-point cases              |
 | `results/campaign_8.8mhz_cap25_si12k_scajoint.json`        | SCA-joint probe (full axes; method=`sca_joint` only)        |
 | `results/tk08_scajoint_feasibility.json`                   | T_k=0.8 s frozen SCA vs best-SE SCA-joint (20 seeds)        |
 | `results/tk08_scajoint_cohesive.json`                      | T_k=0.8 s SCA-joint + process-cohesive candidate (20 seeds) |
@@ -353,18 +364,20 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/fig11_8.8mhz_cap25.json` / `.csv`                 | Fig. 11 (old `S_i`/`L` placeholders)                        |
 | `results/n100/eval.json` / `_summary.csv`                  | n100 baselines (100 m, 25% cap)                             |
 | `results/n100_cap15/eval.json` / `_summary.csv`            | n100 baselines (100 m, 15% cap)                             |
+| `results/n100_cap12/eval.json`                             | n100 baselines (100 m, 12% cap; PSO mean > SCA)             |
 | `results/n100_500m_cap25/eval.json` / `_summary.csv`       | n100 baselines (500 m, 25% cap)                             |
 | `results/n100_500m_cap15/eval.json` / `_summary.csv`       | n100 baselines (500 m, 15% cap)                             |
+| `results/n100_500m_cap12/eval.json`                        | n100 baselines (500 m, 12% cap; PSO > SCA, p=0.018)         |
 | `results/n100/eval_td3.json`                               | n100 + Algorithm 2 TD3 (100 m, 25% cap)                     |
 | `results/n100_500m_cap25/eval_td3.json`                    | n100 + Algorithm 2 TD3 (500 m, 25% cap)                     |
 | `results/td3/full_eval_analysis.txt`                       | TD3 vs SCA/baselines story checks (policy export)           |
 | `results/td3/n100_500m_analysis.txt`                       | 500 m n100 TD3 paired readout                               |
 | `results/figures/td3_campaign/` · `figures/n100_td3/`      | Figs. 6–10 + 100 m n100 plots with TD3                      |
-| `results/figures/n100_500m_td3/`                           | 500 m n100 plots with TD3                                   |
+| `results/figures/n100_multistart/` · `figures/n100_500m_multistart/` | n100 plots with SCA multi-start |
 | `results/figures/`                                         | Primary plots (25%); `figures/cap15/` holds 15%             |
 
 
-**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/analyze_td3_vs_methods.py`, `scripts/analyze_n100_500m.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
+**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/analyze_td3_vs_methods.py`, `scripts/analyze_n100_500m.py`, `scripts/analyze_sca_multistart_cases.py`, `scripts/analyze_bw_fine_search.py`, `scripts/run_cap12_rematch.py`, `scripts/compare_cap12_vs_cap25.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
 
 ---
 
@@ -863,13 +876,40 @@ python -m uavdt td3 --td3-preset residual-on-sca --bandwidth-preset 8.8mhz --max
 - Practical bar \Delta>0.05 Mbps: only seeds **11** (+0.066) and **19** (+0.056).
 - **All 13 wins are distant basins** (mean UAV xy distance to frozen SCA q is 16–72 m, none \le 15 m). \pm 10 m residual-on-SCA can match SCA by construction; it is **not** the search that reaches those basins. That is why the CMA-ES sibling exists. Do not silently enlarge `move_scale_m`.
 
+**Multi-start as a method (measured, 2026-09-11).** `method="sca_multistart"` / `uavdt.sca_multistart`. Artifact: `results/sca_multistart_n20.json` (does not overwrite the headline campaign or Experiment A JSON). Same 20 default seeds, 8.8 MHz / 25% cap.
+
+**Construction.** Default `include_frozen=True` puts one-shot k-means SCA in the candidate pool with the 4 extra inits (5 starts). Keep-best is lexicographic `(feasible, evaluate() rate)`. The returned point is therefore **never worse than one-shot SCA by construction**, not because 0 losses happened to show up on these 20 seeds. (`--no-frozen-start` drops that guarantee; campaigns do not use it.) The eval’s 0 losses vs a separately run `sca` method is the same program on the same init, plus keep-best.
+
+- Means: SCA **8.946**, multi-start **8.961**, random **8.928** Mbps. Vs frozen SCA: **+0.014 ± 0.020** Mbps, **13/20** strictly better (7/20 keep the frozen start). Practical bar: still only **2/20** (seeds 11 and 19). Winner kinds: frozen 7 / extra k-means 7 / extra random 6.
+- Vs random: **+0.033 ± 0.034** Mbps, **19/20**, p_greater=1.9×10⁻⁶. Closes **4/5** of the random-beats-SCA seeds {7, 11, 13, 19}. Seed **18** still loses by **0.003** Mbps (an extra random init recovered +0.030 vs SCA but not the random geometry).
+- **Cost.** **5.6 s/seed** is **~5×** one-shot SCA (~1.0 s in this eval; 0.89 s at J=3 in [§2.10](#210-td3-algorithm-2-reproduction)) — five SCA solves, not a new inner loop. Algorithm 2 TD3 is **~110×** (97 s vs 0.89 s) and scores **below** SCA. Cheap classical search buys a small improvement; expensive RL search does not. That is the bookend of the TD3 investigation.
+- Novelty is better init, not a new convex program. Do not headline 0.014 Mbps as a method win; do report that one-shot k-means SCA is not the keep-best local solver of (P).
+
+**Four default-point cases (measured, 2026-09-11).** Same wrapper (frozen k-means start + 2 random + 2 k-means extras), 8.8 MHz / 25% cap, I=10, J=3. There is no 500-layout bank: `n100_500m` is the existing 100-layout 500 × 500 m bank. Driver: `scripts/run_sca_multistart_cases.py`. Readout: `scripts/analyze_sca_multistart_cases.py`. Does not overwrite `n100/eval.json` or either headline campaign. 20-seed 500 m SCA mean **8.300** matches `campaign_8.8mhz_cap25_si12k_500m.json` J=3.
+
+| Case | n | SCA | Multi-start | Δ vs SCA | wins vs SCA | practical >0.05 | vs random |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 20-seed 100 × 100 m | 20 | 8.946 | 8.961 | **+0.014 ± 0.020** | 13/20 (0 losses) | 2/20 | 19/20 |
+| 20-seed 500 × 500 m | 20 | 8.300 | 8.403 | **+0.103 ± 0.150** | 11/20 (0 losses) | **8/20** | **20/20** |
+| n100 100 × 100 m | 100 | 8.946 | 8.959 | **+0.013 ± 0.029** | 66/100 (0 losses) | 6/100 | 92/100 |
+| n100 500 × 500 m | 100 | 8.228 | 8.393 | **+0.165 ± 0.241** | 62/100 (0 losses) | **48/100** | 92/100 |
+
+All four cells **100% feasible**. Vs SCA Δ ≥ 0 **by construction**. Wall ~**5.1–6.5 s**/seed (~5× frozen SCA).
+
+- **100 m leftover-dump compresses the gain.** n20 and n100 agree to 0.001 Mbps. Std also shrinks (n100 SCA 0.033 → multi-start 0.013) because keep-best clips the bad k-means-init tails.
+- **500 m is where extra inits are load-bearing.** Mean Δ crosses the 0.05 Mbps bar. n100 vs PSO **+0.305** (94/100); one-shot SCA was only +0.140 vs PSO at this cap. Extra **k-means** seeds win most often at 500 m (n100: frozen 34 / extra k-means 59 / extra random 7). Extra random inits matter more at 100 m (n20: 6/20).
+- **Random can still win.** n100 still loses to the bank’s saved random UAV on **8/100** layouts at both fields (different seed lists). Extra random starts use `seed*1000+{1,2}`, not the bank geometry.
+- Frozen SCA stays the §VII / campaign column. Multi-start is the keep-best local solver of (P). Do not replace the headline method. 15% cap was not rerun.
+
+Figures: `results/figures/n100_multistart/`, `results/figures/n100_500m_multistart/`.
+
 **Experiment C (measured, 2026-09-10).** `results/residual_on_sca/assoc_oracle_n20.json`, seeds 1–20, 8.8 MHz / 25% cap, T_k=2.8 s. 1-opt + best-SE + 200 random legal maps at **frozen SCA q**, then SCA polish of the winner. Legal a: (21)(23)(24); grouping not required (T_k-Q_k-T_{\mathrm{u2u}}=1.91 s).
 
-- Frozen-q LP: mean \Delta = **+0.0010 \pm 0.0020** Mbps, **7/20** Hamming-1/2 rematches (seeds 2, 3, 6, 7, 8, 9, 18), max LP **+0.0077** (seed 7). Wilcoxon p_{\mathrm{greater}}=0.0078 (no losses). Below the 0.01 Mbps “flat” bar in `docs/novelty.md`.
+- Frozen-q LP: mean \Delta = **+0.0010 \pm 0.0020** Mbps, **7/20** Hamming-1/2 rematches (seeds 2, 3, 6, 7, 8, 9, 18), max LP **+0.0077** (seed 7). Wilcoxon p_{\mathrm{greater}}=0.0078 (no losses). Below the 0.01 Mbps “flat” bar.
 - After SCA polish: mean \Delta = **+0.0027 \pm 0.0079** Mbps, same 7 wins, max **+0.035** (seed 18). **0/20** above the 0.05 Mbps practical bar. Pre-registered readout: `flat_at_frozen_q`.
 - Experiment A’s practical seeds **11** and **19** (and 13) are **untouched** at frozen SCA q (Hamming 0). Searching a at that q cannot reach the 16–72 m basins that produced A’s +0.05–0.07 Mbps wins.
 
-**Verdict (C).** You can nick leftover-dump Mbps with a 1-opt on a (\sim 0.001 Mbps). You cannot beat SCA on default Mbps by discrete search at the SCA point. Goal A at 100 m / 25% / T_k=2.8 s is **joint (q,a)** (multi-start SCA / a new init), not SPA-SCA v5 at frozen q. Goal B (T_k=0.8 s feasibility) is unchanged.
+**Verdict (C).** You can nick leftover-dump Mbps with a 1-opt on a (\sim 0.001 Mbps). You cannot beat SCA on default Mbps by discrete search at the SCA point. Goal A at 100 m / 25% / T_k=2.8 s is **joint (q,a)** (multi-start SCA / a new init). Goal B (T_k=0.8 s feasibility) is unchanged.
 
 **Experiment B (measured, 2026-09-10).** `results/residual_on_sca/residual_td3_heldout_21_40.json`, held-out seeds 21–40, 7000 TD3 steps, 8.8 MHz / 25% cap.
 
@@ -995,13 +1035,14 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 ### 2.12 n100 Monte Carlo bank (8.8 MHz)
 
-**Not the 20-seed campaign.** Frozen 100-layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`), I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; TD3 (Algorithm 2) only at **25% cap**. All runs **100% feasible**. Analysis: `python scripts/analyze_n100_500m.py`.
+**Not the 20-seed campaign.** Frozen 100-layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`), I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; TD3 (Algorithm 2) and SCA multi-start only at **25% cap**. All runs **100% feasible**. Analysis: `python scripts/analyze_n100_500m.py`, `python scripts/analyze_sca_multistart_cases.py`.
 
 #### 100 × 100 m
 
 
 | Method  | 25% cap (Mbps) | 15% cap (Mbps) |
 | ------- | -------------- | -------------- |
+| SCA multi-start (opt-in) | 8.959 ± 0.013 | — |
 | **SCA** | **8.946 ± 0.033** | **8.891 ± 0.044** |
 | Random  | 8.932 ± 0.044 | 8.799 ± 0.140 |
 | **TD3** | 8.912 ± 0.038 | — |
@@ -1009,7 +1050,9 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | K-means | 8.896 ± 0.043 | 8.832 ± 0.067 |
 
 
-**Artifacts:** `results/n100/eval.json` (25%), `results/n100_cap15/eval.json` (15%), `results/n100/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100/eval.json` (25%), `results/n100/eval_multistart.json` (25% + multi-start), `results/n100_cap15/eval.json` (15%), `results/n100/eval_td3.json` (25% + TD3).
+
+**Multi-start paired (25% only):** vs SCA **+0.013 ± 0.029** Mbps, **66/100**, 0 losses, p<0.001; vs random +0.027 (92/100); vs PSO +0.054 (100/100). Practical >0.05 Mbps: **6/100**. Mean wall **5.5 s**. See [§2.9](#29-residual-policy-on-sca).
 
 **TD3 paired (25% only):** vs SCA **−0.033 ± 0.026** Mbps, **5/100** wins, p<0.001; vs random −0.019 (24/100); vs k-means +0.016 (94/100); vs PSO +0.008 (72/100). Mean wall-clock **72 s** / scenario.
 
@@ -1018,6 +1061,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 | Method  | 25% cap (Mbps) | 15% cap (Mbps) |
 | ------- | -------------- | -------------- |
+| SCA multi-start (opt-in) | 8.393 ± 0.234 | — |
 | **SCA** | **8.228 ± 0.352** | 7.542 ± 0.447 |
 | PSO     | 8.088 ± 0.285 | **7.556 ± 0.398** |
 | Random  | 7.991 ± 0.394 | 6.889 ± 0.588 |
@@ -1025,7 +1069,9 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | K-means | 7.438 ± 0.577 | 6.749 ± 0.657 |
 
 
-**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap15/eval.json` (15%), `results/n100_500m_cap25/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap25/eval_multistart.json` (25% + multi-start), `results/n100_500m_cap15/eval.json` (15%), `results/n100_500m_cap25/eval_td3.json` (25% + TD3).
+
+**Multi-start paired (25% only):** vs SCA **+0.165 ± 0.241** Mbps, **62/100**, 0 losses, p<0.001; vs random +0.401 (92/100); vs PSO **+0.305** (94/100). Practical >0.05 Mbps: **48/100**. Mean wall **6.5 s**. See [§2.9](#29-residual-policy-on-sca).
 
 **TD3 paired (25% only):** vs SCA **−0.718 ± 0.410** Mbps, **0/100** wins, p<0.001; vs random −0.482 (21/100); vs PSO −0.579 (3/100); vs k-means +0.071 (95/100). Mean wall-clock **168 s** / scenario. Readout: `results/td3/n100_500m_analysis.txt`.
 
@@ -1039,7 +1085,103 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | 25% → 15% @ 500 m | −0.686 | −1.102 | −0.690 |
 
 
-**Readout.** At 100 m the bank matches the 20-seed campaign to ~0.001 Mbps (leftover-dump saturation). At 500 m / 15%, PSO (7.556) slightly edges SCA (7.542) on the mean — a paired check is advisable before citing. TD3 was not run at 15%. Do not mix n100 banks with the 20-seed campaign tables in [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap) / [§2.7](#27-primary-campaign-88-mhz-25-cap). TD3 detail: [§2.10](#210-td3-algorithm-2-reproduction).
+**Readout.** At 100 m the bank matches the 20-seed campaign to ~0.001 Mbps (leftover-dump saturation); multi-start adds only **+0.013** Mbps. At 500 m / 25% the same wrapper adds **+0.165** Mbps vs SCA and **+0.305** vs PSO — extra inits are load-bearing once leftover dump is not saturating. At 500 m / 15%, PSO (7.556) slightly edges SCA (7.542) on the mean. At **12%** that inversion is the ranking: PSO first on both n100 fields ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)). TD3 was not run at 15% or 12%. Do not mix n100 banks with the 20-seed campaign tables in [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap) / [§2.7](#27-primary-campaign-88-mhz-25-cap). TD3 detail: [§2.10](#210-td3-algorithm-2-reproduction). Multi-start detail: [§2.9](#29-residual-policy-on-sca).
+
+---
+
+
+
+### 2.13 Fine B_sys × cap search (7.1–8.8 MHz)
+
+**Claim (falsifiable).** At a *fixed* leftover-dump cap fraction, J=3 method spread scales ~linearly with `B_sys`. The lever that separates methods is the **cap**, not 7.4 vs 8.1 vs 8.8 MHz.
+
+**Setup.** `scripts/run_bw_fine_search.py`: 18 bandwidths × 8 caps = **144** full-axis 20-seed campaigns (random / k-means / PSO / SCA, no TD3), 100 × 100 m. Wall **~13 h**. Does not overwrite `campaign_8.8mhz_cap25_si12k.json`. Analysis: `python scripts/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt`.
+
+**Null confirmed.** Spread vs `B_sys` r² = **1.000** at every cap except 25% (0.913). SCA Mbps vs MHz slope ≈ **1.02 Mbps/MHz**, r²=1.000: the same leftover-dump radio as [§2.11](#211-7-mhz-no-cap-15-25).
+
+| Cap | Mean spread | Mean SCA−rnd | k (Mbps/MHz) | r² | SCA uniquely best | Perfect |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| none | 0.025 | 0.017 | 0.0031 | 1.000 | 18/18 | 0 |
+| **10%** | **0.280** | 0.235 | 0.0352 | 1.000 | **0/18** | 0 |
+| 12% | 0.166 | 0.166 | 0.0209 | 1.000 | 18/18 | **18** |
+| 15% | 0.117 | 0.117 | 0.0147 | 1.000 | 18/18 | **18** |
+| 18% | 0.077 | 0.077 | 0.0097 | 1.000 | 18/18 | 6 (8.3–8.8 only) |
+| 20% | 0.055 | 0.055 | 0.0069 | 1.000 | 18/18 | 0 |
+| 22% | 0.045 | 0.038 | 0.0057 | 1.000 | 18/18 | 0 |
+| **25%** | **0.042** | **0.020** | 0.0053 | 0.913 | 18/18 | **0** |
+
+Perfect = 100% feasible at J=3, SCA uniquely best, Wilcoxon p<0.05 vs random, spread ≥ 0.08. All 144 cells are 100% feasible at J=3. **T_k=0.8 s SCA feasible 0/144** (AoDT / nearest-`a`, not spectrum).
+
+**10% is too tight.** PSO ranks first on **all 18** bandwidths (PSO > SCA > k-means > random). Mean SCA−PSO **−0.045** Mbps. Tightening the cap does not monotonically help SCA.
+
+**Search-selected “best perfect” is 8.8 MHz / 12%** (spread 0.184, SCA 8.816). That is a **score artifact** (`40 × spread`; spread ∝ Hertz at fixed cap). SCA is only **0.001 Mbps** above PSO (8.816 vs 8.815). Do **not** replace headline `B_sys` or cap.
+
+**Headline 8.8 MHz / 25%** (same J=3 numbers as the primary campaign): SCA **8.946**, random 8.928, spread **0.046**, SCA−random **+0.019**, p=**0.123**, not perfect. From 8.4 MHz the 25% SCA−random test is already n.s. (p≈0.13). Keep 25% as the leftover-dump stress test adopted independently of that p-value ([§2.7](#27-primary-campaign-88-mhz-25-cap)). 15% remains the tighter-cap sensitivity.
+
+**What this does not show.** TD3 was not in the grid. The four-test 12% rematch (500 m + n100) is [§2.14](#214-88-mhz-12-vs-25-four-test-rematch): 12% hands the J=3 ranking to PSO on three of four tests. Do **not** replace `PRIMARY_MAX_BW_SHARE`.
+
+---
+
+
+
+### 2.14 8.8 MHz 12% vs 25% four-test rematch
+
+**Verdict.** Keep **25%** as the main leftover-dump cap. 12% is the search-score cell from [§2.13](#213-fine-b_sys--cap-search-71-88-mhz); on the same four tests that already exist at 25%, it buys SCA-vs-random significance by throwing Hertz **and** by letting PSO take the mean.
+
+**Setup.** `python scripts/run_cap12_rematch.py --skip-plot` (~18 min). Methods: random / k-means / PSO / frozen SCA. No TD3, no multi-start. Reused the fine-search 100 m campaign (`bw_fine_7p1_8p8/campaign_8p8mhz_cap12.json` → `campaign_8.8mhz_cap12_n20.json`). Did **not** overwrite any 25% campaign or `n100/eval.json`. Analysis: `python scripts/compare_cap12_vs_cap25.py` → `results/compare_cap12_vs_cap25.txt`.
+
+Quoted point is default **J=3, I=10**. All four tests are **100% feasible** at that point. Wilcoxon is two-sided on paired SCA−other.
+
+#### J=3 ranking (8.8 MHz)
+
+
+| Test | Cap | SCA | Random | PSO | K-means | Spread | Rank | SCA−rnd | SCA−PSO |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| n20 100×100 m | **12%** | 8.816 | 8.632 | 8.815 | 8.784 | 0.184 | SCA ≳ PSO | +0.184, 19/20, p=9.5e-6 | **+0.001, 12/20, p=0.60** |
+| n20 100×100 m | **25%** | **8.946** | 8.928 | 8.905 | 8.901 | 0.046 | **SCA** | +0.019, 15/20, p=0.123 | +0.042, 19/20, p=1.3e-5 |
+| n20 500×500 m | **12%** | 6.900 | 6.061 | **7.020** | 6.334 | 0.959 | **PSO** | +0.839, 20/20, p=1.9e-6 | **−0.120, 10/20, p=0.14** |
+| n20 500×500 m | **25%** | **8.300** | 7.947 | 8.122 | 7.474 | 0.826 | **SCA** | +0.353, 18/20, p=0.001 | +0.178, 16/20, p=0.004 |
+| n100 100×100 m | **12%** | 8.813 | 8.667 | **8.815** | 8.776 | 0.148 | **PSO** | +0.146, 90/100, p=1.3e-17 | **−0.002, 69/100, p=0.065** |
+| n100 100×100 m | **25%** | **8.946** | 8.932 | 8.905 | 8.896 | 0.050 | **SCA** | +0.014, 71/100, p=1.3e-5 | +0.041, 97/100, p=7.8e-23 |
+| n100 500×500 m | **12%** | 6.916 | 6.156 | **7.022** | 6.308 | 0.866 | **PSO** | +0.761, 94/100, p=4.7e-22 | **−0.105, 55/100, p=0.018** |
+| n100 500×500 m | **25%** | **8.228** | 7.991 | 8.088 | 7.438 | 0.789 | **SCA** | +0.237, 73/100, p=1.3e-7 | +0.140, 75/100, p=1.0e-6 |
+
+
+**SCA uniquely best at J=3:** 12% **1/4** tests (n20 100 m, by 0.001 Mbps). 25% **4/4**.
+
+n100 100 m / 12% is a mean-vs-sign split: SCA beats PSO on **69/100** seeds but the mean is **−0.002** Mbps (large PSO wins). Wilcoxon vs PSO is n.s. (p=0.065). Ranking by the published mean still puts PSO first.
+
+#### Rate paid for 12% (25% minus 12%, SCA)
+
+| Test | SCA | Random | PSO | K-means |
+| --- | ---: | ---: | ---: | ---: |
+| n20 100 m | 0.130 | 0.295 | 0.089 | 0.117 |
+| n20 500 m | **1.400** | 1.886 | 1.102 | 1.140 |
+| n100 100 m | 0.133 | 0.265 | 0.090 | 0.120 |
+| n100 500 m | **1.311** | 1.836 | 1.067 | 1.130 |
+
+At 100 m leftover dump already saturates, so 12% only nicks ~0.13 Mbps of SCA. At 500 m the pool was not leftover-saturated at 25%; tightening to 12% costs **>1.3 Mbps** and is where PSO takes the ranking.
+
+#### J-sweep (20-seed campaigns)
+
+**100 m / 12%.** J=2 is **PSO > SCA** (8.671 vs 8.643). J=5 spread is **0.051** (barely the 0.05 Mbps bar). SCA’s 0.001 Mbps J=3 edge over PSO is not a J-robust ranking.
+
+**100 m / 25%.** SCA uniquely best at **every** J=1–5. Spread collapses with J (0.258 → 0.015), which is the leftover-dump stress test, not a ranking inversion.
+
+**500 m / 12%.** PSO uniquely best at **J=2, 3, 4**. SCA only at J=1 and J=5.
+
+**500 m / 25%.** PSO uniquely best only at **J=2** (already known). SCA uniquely best at J=3 (headline), J=4, J=5.
+
+**T_k=0.8 s.** SCA / random / k-means feasible **0%** at both caps and both fields (PSO 10% at 100 m, 0% at 500 m). Grouping / nearest-`a`, not the leftover-dump fraction.
+
+#### Why not promote 12%
+
+1. The fine-search “perfect” score is `40 × spread`, and spread ∝ Hertz at a fixed cap — a 12% win on 100 m J=3 is a **score artifact** ([§2.13](#213-fine-b_sys--cap-search-71-88-mhz)).
+2. A headline ranking cap has to keep SCA first against **PSO**, not only against random. 12% fails that on the paper field and on both n100 banks.
+3. 12% sits next to the **10% cliff**, where PSO uniquely best on all 18 bandwidths. 15% already showed PSO slightly ahead of SCA on n100 500 m (7.556 vs 7.542). 12% makes that inversion significant (p=0.018).
+4. `PRIMARY_MAX_BW_SHARE = 0.25` stays the leftover-dump stress test adopted independently of p=0.123. 15% stays the tighter-cap **sensitivity**. 12% is a diagnostic rematch, not a third headline.
+
+**Artifacts.** `results/campaign_8.8mhz_cap12_n20.json`, `_n20_500m.json`, `results/n100_cap12/eval.json`, `results/n100_500m_cap12/eval.json`, `results/compare_cap12_vs_cap25.json`. Protected 25% files were not overwritten.
 
 ---
 
@@ -1250,7 +1392,13 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 
 ### TD3 Algorithm 2 (policy export, same 20 seeds)
 
-> Algorithm 2 TD3 scores 8.917 Mbps at default J = 3: 0.030 ± 0.020 Mbps below SCA (2/20, p<0.001), statistically tied with random (p=0.064), and 0.016 Mbps above k-means (20/20). The TD3−SCA gap shrinks from −0.030 Mbps at I=10 to −0.014 at I=32 but never changes sign (0/20 TD3 wins at I=32). TD3 mean exceeds SCA on 0 of 29 sweep points. Per-instance training is ~97 s vs SCA’s 0.89 s at J=3.
+> Algorithm 2 TD3 scores 8.917 Mbps at default J = 3: 0.030 ± 0.020 Mbps below SCA (2/20, p<0.001), statistically tied with random (p=0.064), and 0.016 Mbps above k-means (20/20). The TD3−SCA gap shrinks from −0.030 Mbps at I=10 to −0.014 at I=32 but never changes sign (0/20 TD3 wins at I=32). TD3 mean exceeds SCA on 0 of 29 sweep points. Per-instance training is ~97 s vs SCA’s 0.89 s at J=3 (~110×).
+
+
+
+### Multi-start SCA (keep-best extra inits)
+
+> Keep-best of one-shot k-means SCA plus four extra inits is never worse than frozen SCA **by construction** (the frozen candidate is in the pool). At the default point it scores 8.961 Mbps vs SCA 8.946 and random 8.928 (+0.014 vs SCA, 13/20 strictly better; +0.033 vs random, 19/20). Cost is 5.6 s/seed, **~5×** SCA, against Algorithm 2 TD3’s **~110×** for a worse point. Cheap classical search buys a small improvement; expensive RL search does not.
 
 
 
@@ -1416,6 +1564,15 @@ python scripts/run_tk08_followup.py
 python scripts/run_td3_full_eval.py
 python scripts/analyze_td3_vs_methods.py
 
+# Multi-start SCA (opt-in; does not overwrite headline campaigns or n100/eval.json)
+python scripts/run_sca_multistart_cases.py
+python scripts/analyze_sca_multistart_cases.py
+python scripts/plot_sca_multistart_n100.py
+
+# Fine B_sys x cap search (long; does not overwrite headline campaign)
+python scripts/run_bw_fine_search.py --run --resume
+python scripts/analyze_bw_fine_search.py
+
 # Extra B_sys = 7 MHz (no TD3): no cap, 15%, 25%
 .\scripts\run_7mhz_campaigns.ps1
 python scripts/analyze_7mhz.py
@@ -1446,6 +1603,8 @@ One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regenerati
 | Analysis + fig11 + plots            | < 3 min                                 |
 | Full bandwidth sweep (7 configs)    | ~36 min                                 |
 | TD3 Alg. 2 full eval (n100 + 29×20) | ~college-server overnight (~108 s/seed) |
+| Multi-start four default-point cases | ~22 min (n20 100 m reused; n20 500 m + n100×2) |
+| Fine B_sys × cap grid (144 cells) | ~13 h |
 
 
 **Logs:** `results/campaign_8.8mhz_cap25_si12k_run.log`, `results/rerun_init_repair.log`, `results/check_bsys_latest.log`, `results/spot_validate_nocap.log`, `results/spot_validate_cap25.log`, `results/run_all_bandwidth_campaigns.log`

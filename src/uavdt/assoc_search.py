@@ -1,9 +1,9 @@
-"""Legal association search at frozen UAV geometry (Experiment C / SPA-SCA v5).
+"""Legal association search at frozen UAV geometry (Experiment C).
 
 Does not edit `uavdt.sca`. Algorithm 1 still freezes a,b; this module
 searches a at a fixed q, then the caller may `solve_sca` with the winner.
 
-Legal set (docs/novelty.md):
+Legal set:
   (21) exclusive a_ij
   (23) one processing UAV per process
   (24) CPU stability

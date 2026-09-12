@@ -18,8 +18,9 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | AoDT extras (Eqs. (10), (12), (14)–(15), FCFS/LCFS-S sim, Fig. 11) | Added; does not change (17) |
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Frozen except `initialize.py` (CPU-stable \(b_{ij}\) repair) and `settings.py` (`process_cohesive_candidate`, ignored by frozen SCA) |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
+| Multi-start SCA (`uavdt.sca_multistart`, method=`sca_multistart`) | Opt-in keep-best extra inits of frozen SCA (Experiment A: 2 random + 2 k-means **plus** the frozen k-means start). Never worse than one-shot SCA **by construction** while `include_frozen` is True (default). Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA. Writes separately named files (`results/sca_multistart_n20.json`, `_n20_500m.json`, `n100/eval_multistart.json`, `n100_500m_cap25/eval_multistart.json`). |
 | TD3 (`uavdt.td3`, method=`td3`) | Opt-in. Default `TD3Settings` is Algorithm 2 **reproduction** (k-means residual, leftover inner \(B\), penalty reward, policy export). `TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` is the **proposed interface to (P)**: residual \(\Delta q\) on the SCA incumbent, frozen SCA \(a,b\), inner frozen-\(q\) LP, feasible-Mbps reward, incumbent snapshot export. Does **not** change `SimConfig`. Not in default `METHODS`. |
-| New work | Baselines, sweeps, reporting, SCA-joint probe, TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
+| New work | Baselines, sweeps, reporting, SCA-joint probe, multi-start SCA, TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
 
 ---
 
@@ -96,6 +97,12 @@ python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
 # Proposed interface to (P): residual on SCA, inner LP, feasible-rate reward.
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --td3-preset residual-on-sca
 python scripts/experiments/residual_on_sca/run_multistart.py
+python scripts/run_sca_multistart_eval.py
+python scripts/run_sca_multistart_cases.py
+python scripts/analyze_sca_multistart_cases.py
+python scripts/plot_sca_multistart_n100.py
+python scripts/run_bw_fine_search.py --report
+python scripts/analyze_bw_fine_search.py
 python scripts/experiments/residual_on_sca/run_residual_td3.py
 python scripts/experiments/residual_on_sca/run_cmaes_polish.py
 
@@ -170,12 +177,26 @@ primary campaign.
   `residual_td3_heldout_21_40.json` (Experiment B),
   `cmaes_polish_heldout_21_40.json` (CMA-ES control),
   `assoc_oracle_n20.json` (Experiment C)
+- Multi-start SCA method (`results/sca_multistart_n20.json`,
+  `sca_multistart_n20_500m.json`, `n100/eval_multistart.json`,
+  `n100_500m_cap25/eval_multistart.json`; scripts
+  `scripts/run_sca_multistart_eval.py`, `scripts/run_sca_multistart_cases.py`).
+  Keep-best extra inits. Does not overwrite Experiment A, n100/eval.json, or
+  the headline campaigns.
 - TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
   `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`;
   analysis `scripts/analyze_td3_vs_methods.py`). Policy export. Do not cite
   `*_SNAPSHOT_INVALID_*`.
 - Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
   `cap_binding_diagnostic.json`
+- Fine B_sys × cap grid (`results/bw_fine_7p1_8p8/`; 144 cells, no TD3):
+  `index.json`, `analysis.json`. Null: spread ∝ `B_sys` at fixed cap.
+  Does not replace 8.8 MHz / 25%.
+- 12% four-test rematch (`scripts/run_cap12_rematch.py`,
+  `scripts/compare_cap12_vs_cap25.py`): 100 m + 500 m campaigns and both
+  n100 banks at 8.8 MHz / 12%. PSO ranks first at J=3 on 500 m and both
+  n100 fields. Does not overwrite 25% files. Does not change
+  `PRIMARY_MAX_BW_SHARE`.
 - Paired writeup stats (same seed, champion vs baseline):
 
 ```text

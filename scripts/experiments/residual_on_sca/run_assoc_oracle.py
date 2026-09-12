@@ -4,8 +4,8 @@
 SCA geometry, then one SCA polish of the winner. Same evaluate() and
 primary 8.8 MHz / 25% cap / T_k=2.8 s as the headline campaign.
 
-Falsifies “beat SCA on default Mbps by searching a at frozen q”
-(docs/novelty.md). Does not overwrite campaign_8.8mhz_cap25_si12k.json.
+Falsifies “beat SCA on default Mbps by searching a at frozen q”.
+Does not overwrite campaign_8.8mhz_cap25_si12k.json.
 Does not edit src/uavdt/sca/.
 
 Usage:
