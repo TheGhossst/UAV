@@ -83,9 +83,9 @@
 
 | Field / role                           | Cap     | SCA       | Random | K-means | PSO   | Feasible | Spread    |
 | -------------------------------------- | ------- | --------- | ------ | ------- | ----- | -------- | --------- |
-| **100 × 100 m** (primary)              | **25%** | **8.946** | 8.928  | 8.901   | 8.905 | 100%     | **0.046** |
+| **100 × 100 m** (primary)              | **25%** | **8.946** | 8.773  | 8.901   | 8.902 | 100%     | **0.173** |
 | 100 × 100 m (tighter-cap sensitivity)  | 15%     | 8.895     | 8.765  | 8.838   | 8.854 | 100%     | 0.129     |
-| 500 × 500 m (field test, same 25% cap) | 25%     | 8.300     | 7.947  | 7.474   | 8.122 | 100%     | 0.826     |
+| 500 × 500 m (field test, same 25% cap) | 25%     | 8.300     | 6.016  | 7.474   | 8.122 | 100%     | 2.284     |
 
 
 **25% is the primary cap:** it is the leftover-dump stress test adopted independently of the SCA-vs-random p-value. At default J = 3, SCA vs random is **not** significant (p=0.123). A **15%** cap remains as a tighter-cap sensitivity (search-selected; SCA vs random p<0.001 at J=3, but the gap is not practically large at J=4–5). See [§2.7](#27-primary-campaign-88-mhz-25-cap) and [§2](#2-sweep-axes-at-88-mhz-15-cap).
@@ -1730,6 +1730,8 @@ python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.
 Full bandwidth preset sweep (long): `scripts/run_all_bandwidth_campaigns.ps1`
 
 One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regeneration.ps1`
+
+**2026-09-17 — random UAV placement fix, all methods except TD3:** `python scripts/run_full_regeneration_no_td3.py` regenerates frozen banks, n20/n100/n200 §VII campaigns, multi-start + zenith-anchor, n200 PPT figures, sweep comparison plots, and patches headline J=3 table from fresh primary JSON. Prior artifacts archived under `results/archive/pre_random_fix_*`.
 
 ### Run timings (representative)
 

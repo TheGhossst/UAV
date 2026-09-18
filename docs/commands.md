@@ -61,6 +61,16 @@ $env:PYTHONPATH = "src"
 
 Log: `results/full_regeneration_<timestamp>.log`.
 
+**No TD3 + random-UAV RNG fix (banks, n20/n100/n200 campaigns, anchor/multi-start, PPT):**
+
+```powershell
+$env:PYTHONPATH = "src"
+python scripts/run_full_regeneration_no_td3.py
+```
+
+Log: `results/full_regeneration_no_td3_<timestamp>.log`. Archives prior headline
+JSON under `results/archive/pre_random_fix_*` before rewriting banks and campaigns.
+
 ### Manual step-by-step
 
 ```powershell
