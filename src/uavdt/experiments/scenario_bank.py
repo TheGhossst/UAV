@@ -85,6 +85,8 @@ def generate_bank(
         "seed_start": int(seed_start),
         "note": (
             "Frozen area + IoT (z=0) + random UAV layouts. "
+            "UAV rng is salted independently of IoT rng (same numeric seed "
+            "must not put UAV j on IoT j). "
             "SCA / k-means / PSO ignore saved UAV xy and place or optimize "
             "their own. The random method replays uav_xyz_m. "
             "B_sys and other radio knobs are eval-time, not geometry."

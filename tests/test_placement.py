@@ -30,6 +30,21 @@ def test_random_seed_reproducible():
     np.testing.assert_allclose(a, b)
 
 
+def test_random_is_not_zenith_on_same_seed_iots():
+    """Campaign uses generate_scenario(seed) then place_random(..., seed).
+
+    Those must not share a numpy stream: default_rng(seed) for both puts
+    UAV j exactly on IoT j, which is leftover-dump zenith, not random.
+    """
+    cfg = SimConfig()
+    for seed in range(1, 8):
+        sc = generate_scenario(seed, cfg)
+        uav = place_random(cfg.num_uav, seed, cfg)
+        for j in range(cfg.num_uav):
+            d = np.linalg.norm(uav[j, :2] - sc.iot_xyz_m[j, :2])
+            assert d > 1.0, f"seed={seed} UAV {j} landed on IoT {j} (d={d:.3g} m)"
+
+
 def test_kmeans_centroids_in_field_with_height(frozen_scenario):
     uav = place_kmeans(frozen_scenario, seed=2)
     assert uav.shape == (3, 3)

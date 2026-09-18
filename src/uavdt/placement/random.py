@@ -7,6 +7,11 @@ import numpy as np
 from uavdt.config import SimConfig, DEFAULT
 from uavdt.scenario import make_uav_xyz_m
 
+# generate_scenario(seed) also does np.random.default_rng(seed). Sharing that
+# stream placed UAV j at IoT j (zenith), which leftover-dump LP loves — so the
+# "random" baseline was secretly a J-IoT zenith layout, not uniform placement.
+_UAV_PLACE_STREAM = 0x55415652  # ASCII "UAVR"
+
 
 def place_random(
     num_uav: int,
@@ -15,7 +20,9 @@ def place_random(
     max_tries: int = 10_000,
 ) -> np.ndarray:
     """Uniform (x, y) in the field, z = H, pairwise 3D distance >= θ."""
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(
+        np.random.SeedSequence([int(seed), _UAV_PLACE_STREAM])
+    )
     xy = np.zeros((num_uav, 2), dtype=float)
     for j in range(num_uav):
         placed = False
