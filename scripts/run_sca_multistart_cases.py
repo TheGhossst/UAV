@@ -6,6 +6,8 @@ Cases (8.8 MHz, 25% cap, I=10, J=3, T_k=2.8 s):
   n100_100m  — 100 frozen layouts, 100×100 m
   n100_500m  — 100 frozen layouts, 500×500 m  (this is "n500" in the request:
                there is no 500-layout bank)
+  j_sweep_100m — UAV axis J=1..5, 20 seeds (merge into campaign_sca_multistart_uavs.json)
+  i_sweep_100m — IoT axis I=10..32 at 100 m (merge into campaign_sca_multistart_iots.json)
 
 Reuses existing random/k-means/PSO/SCA n100 checkpoints. Does not overwrite
 headline campaigns or n100/eval.json.
@@ -31,6 +33,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from run_sca_multistart_eval import run_n20_eval  # noqa: E402
 
 from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig  # noqa: E402
+from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign  # noqa: E402
 from uavdt.experiments.n100 import evaluate_bank, write_eval  # noqa: E402
 from uavdt.experiments.scenario_bank import load_bank  # noqa: E402
 from uavdt.placement.pso import PSOSettings  # noqa: E402
@@ -137,6 +140,137 @@ def run_n100_case(
     return payload
 
 
+def _axis_complete(path: Path, axis: str, xs: list[int], method: str) -> bool:
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    got = sorted(
+        int(float(p["x"]))
+        for p in payload.get("points") or []
+        if p.get("axis") == axis and method in (p.get("by_method") or {})
+    )
+    return got == sorted(int(x) for x in xs)
+
+
+def _j_sweep_complete(path: Path) -> bool:
+    return _axis_complete(path, "uavs", [1, 2, 3, 4, 5], "sca_multistart")
+
+
+def _merge_axis_campaign(base_path: Path, extra: dict, axis: str) -> dict:
+    base = json.loads(base_path.read_text(encoding="utf-8"))
+    extra_by_x = {
+        float(p["x"]): p
+        for p in extra.get("points") or []
+        if p.get("axis") == axis
+    }
+    merged_points = []
+    for pt in base.get("points") or []:
+        if pt.get("axis") != axis:
+            continue
+        copy = json.loads(json.dumps(pt))
+        other = extra_by_x.get(float(pt["x"]))
+        if other is not None:
+            copy.setdefault("by_method", {})
+            copy["by_method"].update(other.get("by_method") or {})
+        merged_points.append(copy)
+    methods = list(base.get("methods") or [])
+    if "sca_multistart" not in methods:
+        methods.append("sca_multistart")
+    header = dict(base)
+    header["methods"] = methods
+    header["sca_multistart"] = True
+    header["points"] = merged_points
+    header["note"] = (
+        f"Merged headline campaign {axis} axis with opt-in sca_multistart. "
+        "Does not replace frozen SCA. " + str(base.get("note") or "")
+    )
+    return header
+
+
+def run_j_sweep(*, area_m: float, out: Path, campaign_path: Path) -> dict:
+    _refuse(out)
+    if _j_sweep_complete(out):
+        _log(f"skip complete J-sweep {out}")
+        return json.loads(out.read_text(encoding="utf-8"))
+    cfg = SimConfig(
+        b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE
+    ).with_square_area_m(float(area_m))
+    settings = CampaignSettings(
+        n_runs=20,
+        seed_start=1,
+        methods=("sca_multistart",),
+        sca_settings=SCASettings(solver=None, max_iterations=30),
+        multistart_settings=MultiStartSettings(),
+    )
+    ckpt = out.with_name(out.stem + ".checkpoint.json")
+    _log(
+        f"J-sweep sca_multistart  area={area_m:g}x{area_m:g} m  "
+        f"J=1..5  n_runs=20  out={out.relative_to(ROOT)}"
+    )
+    t0 = perf_counter()
+    extra = run_campaign(("uavs",), cfg, settings, checkpoint_path=ckpt)
+    payload = _merge_axis_campaign(campaign_path, extra, "uavs")
+    write_campaign(payload, out)
+    if ckpt.exists():
+        ckpt.unlink()
+    _log(f"wrote {out}  ({perf_counter() - t0:.1f}s)")
+    for pt in payload["points"]:
+        if pt.get("axis") != "uavs":
+            continue
+        ms = (pt.get("by_method") or {}).get("sca_multistart") or {}
+        sca = (pt.get("by_method") or {}).get("sca") or {}
+        _log(
+            f"  J={int(float(pt['x']))}  "
+            f"multistart={ms.get('mean_sum_rate_Mbps', float('nan')):.4f}  "
+            f"SCA={sca.get('mean_sum_rate_Mbps', float('nan')):.4f}"
+        )
+    return payload
+
+
+def run_i_sweep(*, area_m: float, out: Path, campaign_path: Path) -> dict:
+    _refuse(out)
+    want = [10, 16, 20, 24, 28, 32]
+    if _axis_complete(out, "iots", want, "sca_multistart"):
+        _log(f"skip complete I-sweep {out}")
+        return json.loads(out.read_text(encoding="utf-8"))
+    cfg = SimConfig(
+        b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE
+    ).with_square_area_m(float(area_m))
+    settings = CampaignSettings(
+        n_runs=20,
+        seed_start=1,
+        methods=("sca_multistart",),
+        sca_settings=SCASettings(solver=None, max_iterations=30),
+        multistart_settings=MultiStartSettings(),
+    )
+    ckpt = out.with_name(out.stem + ".checkpoint.json")
+    _log(
+        f"I-sweep sca_multistart  area={area_m:g}x{area_m:g} m  "
+        f"I=10..32  n_runs=20  out={out.relative_to(ROOT)}"
+    )
+    t0 = perf_counter()
+    extra = run_campaign(("iots",), cfg, settings, checkpoint_path=ckpt)
+    payload = _merge_axis_campaign(campaign_path, extra, "iots")
+    write_campaign(payload, out)
+    if ckpt.exists():
+        ckpt.unlink()
+    _log(f"wrote {out}  ({perf_counter() - t0:.1f}s)")
+    for pt in payload["points"]:
+        if pt.get("axis") != "iots":
+            continue
+        ms = (pt.get("by_method") or {}).get("sca_multistart") or {}
+        sca = (pt.get("by_method") or {}).get("sca") or {}
+        _log(
+            f"  I={int(float(pt['x']))}  "
+            f"multistart={ms.get('mean_sum_rate_Mbps', float('nan')):.4f}  "
+            f"SCA={sca.get('mean_sum_rate_Mbps', float('nan')):.4f}"
+        )
+    return payload
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-plot", action="store_true")
@@ -144,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         "--only",
         type=str,
         default="",
-        help="Comma list of case ids: n20_100m,n20_500m,n100_100m,n100_500m",
+        help="Comma list of case ids: n20_100m,n20_500m,n100_100m,n100_500m,j_sweep_100m,i_sweep_100m",
     )
     args = parser.parse_args(argv)
     wanted = {
@@ -189,6 +323,20 @@ def main(argv: list[str] | None = None) -> int:
             ),
             fig_dir=ROOT / "results" / "figures" / "n100_500m_multistart",
             skip_plot=bool(args.skip_plot),
+        )
+    if "j_sweep_100m" in wanted:
+        _log("=== J-sweep 100x100 m ===")
+        run_j_sweep(
+            area_m=100.0,
+            out=ROOT / "results" / "campaign_sca_multistart_uavs.json",
+            campaign_path=ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json",
+        )
+    if "i_sweep_100m" in wanted:
+        _log("=== I-sweep 100x100 m ===")
+        run_i_sweep(
+            area_m=100.0,
+            out=ROOT / "results" / "campaign_sca_multistart_iots.json",
+            campaign_path=ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json",
         )
     _log(f"all requested cases done in {perf_counter() - t_all:.1f}s")
     return 0

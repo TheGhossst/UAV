@@ -7,3 +7,4 @@ results/
 *.egg-info/
 .coverage
 htmlcov/
+latex/

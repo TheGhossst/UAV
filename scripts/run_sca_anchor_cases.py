@@ -3,7 +3,7 @@
 Cases (8.8 MHz, I=10, T_k=2.8 s unless noted):
   n20_100m / n20_500m / n100_100m / n100_500m — 25% default-point cells
   j_sweep_100m / j_sweep_500m — UAV axis J=1..5, 20 seeds
-  i_sweep_500m — IoT axis I=10..32 at 500 m, full enum (max_enumerate=10000)
+  i_sweep_100m / i_sweep_500m — IoT axis I=10..32, full enum (max_enumerate=10000)
   n20_500m_cap15 / n100_500m_cap15 — tighter 15% cap at 500 m
   tk08_100m — T_k=0.8 s + process-cohesive candidate per zenith set
 
@@ -369,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help=(
             "Comma list of case ids: n20_100m,n20_500m,n100_100m,n100_500m,"
-            "j_sweep_100m,j_sweep_500m,i_sweep_500m,n20_500m_cap15,"
+            "j_sweep_100m,j_sweep_500m,i_sweep_100m,i_sweep_500m,n20_500m_cap15,"
             "n100_500m_cap15,tk08_100m"
         ),
     )
@@ -446,6 +446,13 @@ def main(argv: list[str] | None = None) -> int:
             area_m=500.0,
             out=ROOT / "results" / "campaign_sca_anchor_uavs_500m.json",
             campaign_path=ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json",
+        )
+    if "i_sweep_100m" in wanted:
+        _log("=== I-sweep 100x100 m (full enum) ===")
+        run_i_sweep(
+            area_m=100.0,
+            out=ROOT / "results" / "campaign_sca_anchor_iots.json",
+            campaign_path=ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json",
         )
     if "i_sweep_500m" in wanted:
         _log("=== I-sweep 500x500 m (full enum) ===")
