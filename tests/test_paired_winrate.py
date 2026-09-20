@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.paired_winrate import (
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+from paired_winrate import (  # noqa: E402
     align_by_seed,
     analyze_campaign,
     betainc_reg,

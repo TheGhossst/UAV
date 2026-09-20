@@ -605,7 +605,7 @@ headline field (intentional modification; paper §VII uses 500 × 500 m). A
 ### Reporting & artifacts
 
 - [x] Paired statistics and FDR documented (`docs/RESULTS.md` §3).
-- [x] Paper-style figures from campaign JSON (`scripts/plot_paper_figures.py`).
+- [x] Paper-style figures from campaign JSON (`scripts/plot/plot_paper_figures.py`).
 - [ ] Runtime reported in every published table (optional for writeup).
 - [ ] SCA convergence curves saved for every campaign seed (available via
       `python -m uavdt sca --history-json …`; not bundled in campaign JSON).

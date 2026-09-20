@@ -138,11 +138,11 @@ The method is therefore a family over \(c\). 25% (\(k=4\)) is the measured lefto
 
 ## 5. Measured results
 
-Operating point unless noted: **8.8 MHz, 25% per-link cap, I=10, \(T_k=2.8\) s, \(\lambda=2\)/s**. Score: Python `evaluate()`. Practical bar: **0.05 Mbps**. Tie tolerance: **1 bit/s** (`SCASettings.improvement_tolerance`), applied in `scripts/analyze_sca_anchor_cases.py`. Wilcoxon `p_greater` is the exact one-sided test in `scripts/paired_winrate.py` and is reported **only** for comparisons that are not keep-best-by-construction (vs multi-start, vs PSO, vs random, vs k-means). Vs SCA the signed vector is \(\ge 0\) on every seed; a one-sided Wilcoxon on it is \(p=2^{-n_{\mathrm{moved}}}\) and is not reported.
+Operating point unless noted: **8.8 MHz, 25% per-link cap, I=10, \(T_k=2.8\) s, \(\lambda=2\)/s**. Score: Python `evaluate()`. Practical bar: **0.05 Mbps**. Tie tolerance: **1 bit/s** (`SCASettings.improvement_tolerance`), applied in `scripts/analyze/analyze_sca_anchor_cases.py`. Wilcoxon `p_greater` is the exact one-sided test in `scripts/lib/paired_winrate.py` and is reported **only** for comparisons that are not keep-best-by-construction (vs multi-start, vs PSO, vs random, vs k-means). Vs SCA the signed vector is \(\ge 0\) on every seed; a one-sided Wilcoxon on it is \(p=2^{-n_{\mathrm{moved}}}\) and is not reported.
 
 All quoted 25% tests are **100% feasible**. Headline campaigns and `n100/eval.json` were **not** overwritten.
 
-Driver: `python scripts/run_sca_anchor_cases.py` (~48 min). Ablations: `python scripts/run_sca_anchor_ablations.py`. Readout: `python scripts/analyze_sca_anchor_cases.py`.
+Driver: `python scripts/campaigns/run_sca_anchor_cases.py` (~48 min). Ablations: `python scripts/campaigns/run_sca_anchor_ablations.py`. Readout: `python scripts/analyze/analyze_sca_anchor_cases.py`.
 
 ### 5.1 Four default-point tests (J=3)
 
@@ -261,7 +261,7 @@ Winner *identity* often moves (LP-top subsets are nearly tied; median LP gap ran
 
 ### 5.7 Ablations (selection, beam, cap family, degrees-LoS)
 
-These isolate the claims §5.4 cannot. Artifacts under `results/sca_anchor_ablations/`. Driver: `python scripts/run_sca_anchor_ablations.py`.
+These isolate the claims §5.4 cannot. Artifacts under `results/sca_anchor_ablations/`. Driver: `python scripts/campaigns/run_sca_anchor_ablations.py`.
 
 **Random-anchor control.** Pick 3 random IoTs, one LP, polish that one, keep-best with frozen.
 
@@ -376,9 +376,9 @@ The remaining-before-headline bar in [`RESULTS.md` §2.15](RESULTS.md#215-zenith
 | Solver | `src/uavdt/sca_anchor.py` |
 | Method hook | `src/uavdt/experiments/methods.py` (`KNOWN_METHODS`, not in default `METHODS`) |
 | CLI | `python -m uavdt sca-anchor --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
-| Four tests + J-sweep | `python scripts/run_sca_anchor_cases.py` |
-| Ablations | `python scripts/run_sca_anchor_ablations.py` |
-| Paired readout | `python scripts/analyze_sca_anchor_cases.py` |
+| Four tests + J-sweep | `python scripts/campaigns/run_sca_anchor_cases.py` |
+| Ablations | `python scripts/campaigns/run_sca_anchor_ablations.py` |
+| Paired readout | `python scripts/analyze/analyze_sca_anchor_cases.py` |
 | Tests | `tests/test_sca_anchor.py` (keep-best, sep jitter, I=32 beam, bound, random, opt-in) |
 | n20 JSON | `results/sca_anchor_n20.json`, `sca_anchor_n20_500m.json`, `sca_anchor_n20_500m_cap15.json` |
 | n100 JSON | `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json` |

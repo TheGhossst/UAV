@@ -32,7 +32,7 @@ uses 100 × 100 m and a feasible `B_sys` (see `docs/REPRODUCTION.md` §4.1).
 Do not chase the paper’s 7–14 Mbps numbers. The 20 kHz Table II value,
 read as the (27) cap, is bounded by `B_sys · log2(1+SNR_max)` at
 **0.997 Mbps** even at `SNR_max = 10^15`; a control at 500 × 500 m is
-also 0% feasible (`scripts/check_bsys_20khz.py`).
+also 0% feasible (`scripts/tools/check_bsys_20khz.py`).
 
 | Figure | Axis | Held fixed | Caption / text |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ $env:PYTHONPATH="src"
 
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --n-runs 5 --solver cvxpy --out results/campaign_8.8mhz.json
 
-python scripts/check_bsys_20khz.py
+python scripts/tools/check_bsys_20khz.py
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --area-m 500 --placement kmeans
 
 python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 5 --out results/campaign_8.8mhz_cap25_uavs.json
@@ -98,16 +98,16 @@ python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
 # Proposed interface to (P): residual on SCA, inner LP, feasible-rate reward.
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --td3-preset residual-on-sca
 python scripts/experiments/residual_on_sca/run_multistart.py
-python scripts/run_sca_multistart_eval.py
-python scripts/run_sca_multistart_cases.py
-python scripts/analyze_sca_multistart_cases.py
-python scripts/plot_sca_multistart_n100.py
-python scripts/run_sca_anchor_cases.py
-python scripts/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
-python scripts/analyze_sca_anchor_cases.py
-python scripts/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
-python scripts/run_bw_fine_search.py --report
-python scripts/analyze_bw_fine_search.py
+python scripts/campaigns/run_sca_multistart_eval.py
+python scripts/campaigns/run_sca_multistart_cases.py
+python scripts/analyze/analyze_sca_multistart_cases.py
+python scripts/plot/plot_sca_multistart_n100.py
+python scripts/campaigns/run_sca_anchor_cases.py
+python scripts/campaigns/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
+python scripts/analyze/analyze_sca_anchor_cases.py
+python scripts/lib/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
+python scripts/campaigns/run_bw_fine_search.py --report
+python scripts/analyze/analyze_bw_fine_search.py
 python scripts/experiments/residual_on_sca/run_residual_td3.py
 python scripts/experiments/residual_on_sca/run_cmaes_polish.py
 
@@ -121,11 +121,11 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth-preset 8.8mhz --max-bw-share 0.15 --n-runs 5 --out results/campaign_8.8mhz_cap15_uavs.json
 
 # SCA-joint methodology probe (does not overwrite frozen-SCA campaign files)
-python scripts/run_sca_joint_campaign.py
-python scripts/run_tk08_followup.py
+python scripts/campaigns/run_sca_joint_campaign.py
+python scripts/campaigns/run_tk08_followup.py
 
 # One-command replay of docs/RESULTS.md §9 (primary + cap15 + 500 m + sca-joint + analysis)
-# scripts/run_full_regeneration.ps1
+# scripts/orchestration/run_full_regeneration.ps1
 # Full bandwidth preset sweep (long, 7 configs): scripts/run_all_bandwidth_campaigns.ps1
 # Extra 7 MHz trio (no TD3): scripts/run_7mhz_campaigns.ps1
 ```
@@ -185,7 +185,7 @@ primary campaign.
 - Multi-start SCA method (`results/sca_multistart_n20.json`,
   `sca_multistart_n20_500m.json`, `n100/eval_multistart.json`,
   `n100_500m_cap25/eval_multistart.json`; scripts
-  `scripts/run_sca_multistart_eval.py`, `scripts/run_sca_multistart_cases.py`).
+  `scripts/campaigns/run_sca_multistart_eval.py`, `scripts/campaigns/run_sca_multistart_cases.py`).
   Keep-best extra inits. Does not overwrite Experiment A, n100/eval.json, or
   the headline campaigns.
 - Zenith-anchor SCA method (`results/sca_anchor_n20.json`,
@@ -193,28 +193,28 @@ primary campaign.
   `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`,
   `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`,
   `_500m.json`, `campaign_sca_anchor_iots_500m.json`,
-  `sca_anchor_tk08.json`; scripts `scripts/run_sca_anchor_eval.py`,
-  `scripts/run_sca_anchor_cases.py`, `scripts/analyze_sca_anchor_cases.py`).
+  `sca_anchor_tk08.json`; scripts `scripts/campaigns/run_sca_anchor_eval.py`,
+  `scripts/campaigns/run_sca_anchor_cases.py`, `scripts/analyze/analyze_sca_anchor_cases.py`).
   LP-scored zenith J-subsets + SCA polish. Method note: [`novelty.md`](novelty.md).
   Does not overwrite n100/eval.json or the headline campaigns.
 - TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
   `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`;
-  analysis `scripts/analyze_td3_vs_methods.py`). Policy export. Do not cite
+  analysis `scripts/analyze/analyze_td3_vs_methods.py`). Policy export. Do not cite
   `*_SNAPSHOT_INVALID_*`.
 - Cap×J search: `bw_cap_by_J_grid.json`, `bw_boundary_refine_j3.json`,
   `cap_binding_diagnostic.json`
 - Fine B_sys × cap grid (`results/bw_fine_7p1_8p8/`; 144 cells, no TD3):
   `index.json`, `analysis.json`. Null: spread ∝ `B_sys` at fixed cap.
   Does not replace 8.8 MHz / 25%.
-- 12% four-test rematch (`scripts/run_cap12_rematch.py`,
-  `scripts/compare_cap12_vs_cap25.py`): 100 m + 500 m campaigns and both
+- 12% four-test rematch (`scripts/campaigns/run_cap12_rematch.py`,
+  `scripts/tools/compare_cap12_vs_cap25.py`): 100 m + 500 m campaigns and both
   n100 banks at 8.8 MHz / 12%. PSO ranks first at J=3 on 500 m and both
   n100 fields. Does not overwrite 25% files. Does not change
   `PRIMARY_MAX_BW_SHARE`.
 - Paired writeup stats (same seed, champion vs baseline):
 
 ```text
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
 ```
 
   Writes `*_paired.json` / `*_paired.csv`. Quote lines are
@@ -228,8 +228,8 @@ After the constraint-(24) init repair (`cpu_stable_processing`), re-run
 only I=28, I=32, and `f_j=0.5e8` (other campaign rows are unchanged):
 
 ```text
-python scripts/rerun_init_repair_points.py
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/tools/rerun_init_repair_points.py
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
 ```
 
 Published score is always Python `evaluate()` (Eq. (17) AoDT). Fig. 11
@@ -239,7 +239,7 @@ score; they do not replace it.
 Full analysis, audit paragraph, and tables: **`docs/RESULTS.md`**.
 
 **Figures:** `pip install -r requirements-dev.txt` then
-`python scripts/plot_paper_figures.py` → `results/figures/` (25% primary).
+`python scripts/plot/plot_paper_figures.py` → `results/figures/` (25% primary).
 Tighter-cap 15% plots: `--campaign results/campaign_8.8mhz_cap15_n20.json --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15`.
 
 **Paper field (500 × 500 m):** field-size test at 8.8 MHz, **25%** primary cap (15% not re-run at 500 m):
@@ -248,7 +248,7 @@ Tighter-cap 15% plots: `--campaign results/campaign_8.8mhz_cap15_n20.json --fig1
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
 ```
 
-20 kHz area control (both fields): `python scripts/check_bsys_20khz.py`.
+20 kHz area control (both fields): `python scripts/tools/check_bsys_20khz.py`.
 
 ### Bandwidth configuration screen (optional)
 
@@ -258,15 +258,15 @@ sensitivity and other `(B_sys, share)` cells. Outputs land in `results/`
 
 | Script | Role |
 | --- | --- |
-| `scripts/sweep_bandwidth_screen.py` | Rank `(B_sys, max_bw_share)` at J=3 |
-| `scripts/compare_bw_configs.py` | Side-by-side preset comparison |
-| `scripts/compare_cap15_vs_cap25.py` | Primary 25% vs 15% sensitivity |
-| `scripts/analyze_nocap_8p8mhz.py` | No-cap vs 25% primary (15% still a sensitivity) |
-| `scripts/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
-| `scripts/run_bw_fine_search.py` | 7.1–8.8 MHz × caps, full axes, no TD3 (long; resume-safe) |
-| `scripts/bw_cap_by_j_grid.py` | Cap × J table with FDR |
-| `scripts/bw_boundary_refine_j3.py` | J=3 cap bisection + 33-test FDR |
-| `scripts/bw_threshold_refine.py` | Refine cap threshold near 25% |
+| `scripts/tools/sweep_bandwidth_screen.py` | Rank `(B_sys, max_bw_share)` at J=3 |
+| `scripts/tools/compare_bw_configs.py` | Side-by-side preset comparison |
+| `scripts/tools/compare_cap15_vs_cap25.py` | Primary 25% vs 15% sensitivity |
+| `scripts/analyze/analyze_nocap_8p8mhz.py` | No-cap vs 25% primary (15% still a sensitivity) |
+| `scripts/tools/bw_grid_search.py` | Exhaustive B×cap grid (long; checkpointed) |
+| `scripts/campaigns/run_bw_fine_search.py` | 7.1–8.8 MHz × caps, full axes, no TD3 (long; resume-safe) |
+| `scripts/tools/bw_cap_by_j_grid.py` | Cap × J table with FDR |
+| `scripts/tools/bw_boundary_refine_j3.py` | J=3 cap bisection + 33-test FDR |
+| `scripts/tools/bw_threshold_refine.py` | Refine cap threshold near 25% |
 
 ---
 

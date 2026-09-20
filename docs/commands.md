@@ -65,7 +65,7 @@ Log: `results/full_regeneration_<timestamp>.log`.
 
 ```powershell
 $env:PYTHONPATH = "src"
-python scripts/run_full_regeneration_no_td3.py
+python scripts/orchestration/run_full_regeneration_no_td3.py
 ```
 
 Log: `results/full_regeneration_no_td3_<timestamp>.log`. Archives prior headline
@@ -80,7 +80,7 @@ $env:PYTHONPATH = "src"
 python -m pytest -q
 
 # 2. 20 kHz B_sys feasibility check (model ceiling + 100 m / 500 m control)
-python scripts/check_bsys_20khz.py --n-runs 20 --out results/check_bsys_20khz.json
+python scripts/tools/check_bsys_20khz.py --n-runs 20 --out results/check_bsys_20khz.json
 
 # 3. Headline campaign: sum rate vs J, I, λ, T_k, CPU at 100 m, 8.8 MHz, 25% cap
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 `
@@ -88,7 +88,7 @@ python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.2
   --out results/campaign_8.8mhz_cap25_si12k.json
 
 # 4. Re-score campaign points after CPU-stable init repair
-python scripts/rerun_init_repair_points.py
+python scripts/tools/rerun_init_repair_points.py
 
 # 5. Tighter per-link cap sensitivity (15%)
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.15 `
@@ -114,18 +114,18 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-iteration
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --max-iterations 30
 
 # 10. SCA-joint methodology probe + low-T_k follow-ups
-python scripts/run_sca_joint_campaign.py
-python scripts/run_tk08_followup.py
+python scripts/campaigns/run_sca_joint_campaign.py
+python scripts/campaigns/run_tk08_followup.py
 
 # 11. Stats + plots
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json
-python scripts/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/analyze_campaigns.py
-python scripts/plot_paper_figures.py
-python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n20.json `
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json
+python scripts/analyze/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/analyze/analyze_campaigns.py
+python scripts/plot/plot_paper_figures.py
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n20.json `
   --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15
-python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json `
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json `
   --out-dir results/figures/500m
 ```
 
@@ -140,7 +140,7 @@ $env:PYTHONPATH = "src"
 python -m pytest -q
 python -m uavdt campaign --axis uavs --bandwidth-preset 8.8mhz --max-bw-share 0.25 `
   --n-runs 5 --solver cvxpy --out results/campaign_smoke.json
-python scripts/plot_paper_figures.py --campaign results/campaign_smoke.json --skip-fig11
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_smoke.json --skip-fig11
 ```
 
 ---
@@ -245,8 +245,8 @@ Same five-axis, 20-seed protocol at 7 MHz: no cap, 15%, 25%. Does not run TD3.
 
 ```powershell
 .\scripts\run_7mhz_campaigns.ps1
-python scripts/analyze_7mhz.py
-python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.json `
+python scripts/analyze/analyze_7mhz.py
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.json `
   --skip-fig11 --out-dir results/figures/7mhz_cap25
 ```
 
@@ -265,14 +265,14 @@ Omit `--max-bw-share` for no cap. Use `0.15` for the tighter-cap sensitivity.
 Full five-axis campaigns at every 0.1 MHz from 7.1 to 8.8, caps none / 10% / 12% / 15% / 18% / 20% / 22% / 25%. Resume-safe. Reuses existing 7 MHz and 8.8 MHz files. Does **not** overwrite `campaign_8.8mhz_cap25_si12k.json`.
 
 ```powershell
-python scripts/run_bw_fine_search.py --estimate
-python scripts/run_bw_fine_search.py --run --resume
-python scripts/run_bw_fine_search.py --report
-python scripts/analyze_bw_fine_search.py
+python scripts/campaigns/run_bw_fine_search.py --estimate
+python scripts/campaigns/run_bw_fine_search.py --run --resume
+python scripts/campaigns/run_bw_fine_search.py --report
+python scripts/analyze/analyze_bw_fine_search.py
 ```
 
 Leaderboard: `results/bw_fine_7p1_8p8/index.json`. Analysis:
-`python scripts/analyze_bw_fine_search.py`. At a fixed cap fraction, method
+`python scripts/analyze/analyze_bw_fine_search.py`. At a fixed cap fraction, method
 spread scales linearly with `B_sys` (measured r²=1.000 except 25%); the cap
 is the ranking lever. Do not promote the search-selected 8.8 MHz / 12% cell.
 
@@ -283,8 +283,8 @@ plus both frozen n100 banks. Reuses the fine-search 100 m campaign. Does
 **not** overwrite `campaign_8.8mhz_cap25_si12k.json` or `n100/eval.json`.
 
 ```powershell
-python scripts/run_cap12_rematch.py --skip-plot
-python scripts/compare_cap12_vs_cap25.py
+python scripts/campaigns/run_cap12_rematch.py --skip-plot
+python scripts/tools/compare_cap12_vs_cap25.py
 ```
 
 Outputs: `results/campaign_8.8mhz_cap12_n20.json`,
@@ -298,7 +298,7 @@ Same five axes, but `--n-runs 100` for tighter error bars. Checkpoints per axis;
 resumes on crash.
 
 ```powershell
-python scripts/run_n100_campaign.py
+python scripts/campaigns/run_n100_campaign.py
 ```
 
 Output: `results/campaign_8.8mhz_cap25_n100.json` (merged from
@@ -336,14 +336,14 @@ python -m uavdt n100 --generate-only          # write bank only
 python -m uavdt n100 --skip-eval              # re-plot from eval.json
 python -m uavdt n100 --methods random,kmeans,pso,sca,td3 --td3-preset residual-on-sca
 python -m uavdt n100 --methods random,kmeans,pso,sca,sca_multistart --out results/n100/eval_multistart.json --checkpoint results/n100/eval_multistart.checkpoint.json --fig-dir results/figures/n100_multistart
-python scripts/run_sca_multistart_cases.py
-python scripts/analyze_sca_multistart_cases.py
+python scripts/campaigns/run_sca_multistart_cases.py
+python scripts/analyze/analyze_sca_multistart_cases.py
 python -m uavdt n100 --methods random,kmeans,pso,sca,sca_anchor --out results/n100/eval_anchor.json --checkpoint results/n100/eval_anchor.checkpoint.json --fig-dir results/figures/n100_anchor
-python scripts/run_sca_anchor_cases.py
-python scripts/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
-python scripts/analyze_sca_anchor_cases.py
-python scripts/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
-python scripts/paired_winrate.py results/campaign_sca_anchor_iots_500m.json --champion sca_anchor
+python scripts/campaigns/run_sca_anchor_cases.py
+python scripts/campaigns/run_sca_anchor_cases.py --only i_sweep_500m,n20_500m_cap15,n100_500m_cap15,tk08_100m
+python scripts/analyze/analyze_sca_anchor_cases.py
+python scripts/lib/paired_winrate.py results/campaign_sca_anchor_uavs_500m.json --champion sca_anchor
+python scripts/lib/paired_winrate.py results/campaign_sca_anchor_iots_500m.json --champion sca_anchor
 python -m uavdt n100 --force-generate         # overwrite bank
 python -m uavdt n100 --no-resume              # ignore checkpoint
 ```
@@ -353,7 +353,7 @@ python -m uavdt n100 --no-resume              # ignore checkpoint
 If you ran `run_n100_campaign.py`, plot sweep curves from that JSON:
 
 ```powershell
-python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_n100.json `
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_n100.json `
   --skip-fig11 --out-dir results/figures/n100
 ```
 
@@ -416,7 +416,7 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 
 ### Direct MATLAB bridge test
 
 ```powershell
-python scripts/compare_sca_cvxpy_matlab.py
+python scripts/tools/compare_sca_cvxpy_matlab.py
 ```
 
 ---
@@ -463,11 +463,11 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca,td3 `
 ### Standalone scripts
 
 ```powershell
-python scripts/run_td3_train.py --seed 1 --total-steps 7000 --out results/td3/train_seed1.json
-python scripts/run_td3_full_eval.py          # n100 bank + campaign; long; CUDA if available
-python scripts/run_td3_policy_export_small.py
-python scripts/run_td3_policy_export_n20.py
-python scripts/analyze_td3_vs_methods.py     # writes results/td3/full_eval_analysis.txt
+python scripts/td3/run_td3_train.py --seed 1 --total-steps 7000 --out results/td3/train_seed1.json
+python scripts/td3/run_td3_full_eval.py          # n100 bank + campaign; long; CUDA if available
+python scripts/td3/run_td3_policy_export_small.py
+python scripts/td3/run_td3_policy_export_n20.py
+python scripts/analyze/analyze_td3_vs_methods.py     # writes results/td3/full_eval_analysis.txt
 ```
 
 Citable Alg. 2 artifacts: `results/campaign_8.8mhz_cap25_td3.json`,
@@ -477,9 +477,9 @@ Do not cite `*_SNAPSHOT_INVALID_*`.
 ### Diagnostics
 
 ```powershell
-python scripts/diagnose_td3_saturation.py
-python scripts/diagnose_td3_rate_gap.py
-python scripts/verify_td3_unsaturate.py
+python scripts/td3/diagnose_td3_saturation.py
+python scripts/td3/diagnose_td3_rate_gap.py
+python scripts/td3/verify_td3_unsaturate.py
 ```
 
 ---
@@ -548,10 +548,10 @@ each SCA step. **Exploratory only** — does not replace frozen SCA in headline
 campaigns.
 
 ```powershell
-python scripts/run_sca_joint_campaign.py
-python scripts/run_sca_joint_campaign.py --only tk08      # low T_k feasibility
-python scripts/run_sca_joint_campaign.py --only campaign
-python scripts/run_sca_joint_campaign.py --only runtime
+python scripts/campaigns/run_sca_joint_campaign.py
+python scripts/campaigns/run_sca_joint_campaign.py --only tk08      # low T_k feasibility
+python scripts/campaigns/run_sca_joint_campaign.py --only campaign
+python scripts/campaigns/run_sca_joint_campaign.py --only runtime
 
 python -m uavdt sca-joint --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 `
   --solver cvxpy --process-cohesive-candidate
@@ -565,10 +565,10 @@ python -m uavdt sca-joint --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25
 Tests process-cohesive rematch and construction under a tight delay bound.
 
 ```powershell
-python scripts/run_tk08_followup.py
-python scripts/run_tk08_followup.py --only cohesive
-python scripts/run_tk08_followup.py --only construction
-python scripts/run_tk08_followup.py --only tradeoff
+python scripts/campaigns/run_tk08_followup.py
+python scripts/campaigns/run_tk08_followup.py --only cohesive
+python scripts/campaigns/run_tk08_followup.py --only construction
+python scripts/campaigns/run_tk08_followup.py --only tradeoff
 ```
 
 ---
@@ -580,8 +580,8 @@ python scripts/run_tk08_followup.py --only tradeoff
 Wilcoxon signed-rank and win-rate per sweep point.
 
 ```powershell
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json --champion sca
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json --champion sca
 ```
 
 Writes `*_paired.json` and `*_paired.csv` beside the campaign file.
@@ -589,10 +589,10 @@ Writes `*_paired.json` and `*_paired.csv` beside the campaign file.
 ### Text summaries
 
 ```powershell
-python scripts/analyze_campaigns.py
-python scripts/analyze_campaign.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/summarize_campaign.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/analyze/analyze_campaigns.py
+python scripts/analyze/analyze_campaign.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/tools/summarize_campaign.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/analyze/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
 ```
 
 ### Sweep plots (`plot_paper_figures.py`)
@@ -603,16 +603,16 @@ method, plus an optional **AoDT vs UAV count** plot from `fig11` JSON, and a
 
 ```powershell
 # Headline 100 m campaign → results/figures/
-python scripts/plot_paper_figures.py
+python scripts/plot/plot_paper_figures.py
 
 # Custom inputs
-python scripts/plot_paper_figures.py `
+python scripts/plot/plot_paper_figures.py `
   --campaign results/campaign_8.8mhz_cap25_si12k.json `
   --fig11 results/fig11_8.8mhz_cap25_si12k.json `
   --out-dir results/figures
 
 # 500 m field campaign (skip AoDT arrival plot if no fig11 JSON)
-python scripts/plot_paper_figures.py `
+python scripts/plot/plot_paper_figures.py `
   --campaign results/campaign_8.8mhz_cap25_si12k_500m.json `
   --skip-fig11 --out-dir results/figures/500m
 ```
@@ -626,10 +626,10 @@ read the plot title for the swept parameter.
 ### Cap / bandwidth comparisons
 
 ```powershell
-python scripts/compare_cap15_vs_cap25.py
-python scripts/compare_cap12_vs_cap25.py
-python scripts/compare_bw_configs.py
-python scripts/analyze_nocap_8p8mhz.py
+python scripts/tools/compare_cap15_vs_cap25.py
+python scripts/tools/compare_cap12_vs_cap25.py
+python scripts/tools/compare_bw_configs.py
+python scripts/analyze/analyze_nocap_8p8mhz.py
 ```
 
 ### AoDT arrival-pattern study (`fig11` subcommand)
@@ -648,19 +648,19 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 
 ```powershell
 # 20 kHz B_sys ceiling + feasibility at 100 m and 500 m
-python scripts/check_bsys_20khz.py
-python scripts/check_bsys_20khz.py --n-runs 20 --methods random,kmeans,pso,sca
+python scripts/tools/check_bsys_20khz.py
+python scripts/tools/check_bsys_20khz.py --n-runs 20 --methods random,kmeans,pso,sca
 
-python scripts/cap_binding_diagnostic.py
-python scripts/se_spread_by_j.py
-python scripts/bw_cap_by_j_grid.py
-python scripts/bw_boundary_refine_j3.py
-python scripts/run_bw_fine_search.py
-python scripts/bw_threshold_refine.py
-python scripts/sweep_bandwidth_screen.py
-python scripts/run_sca_bw_matrix.py
-python scripts/local_direction_diag.py
-python scripts/summarize_local_diag.py
+python scripts/tools/cap_binding_diagnostic.py
+python scripts/tools/se_spread_by_j.py
+python scripts/tools/bw_cap_by_j_grid.py
+python scripts/tools/bw_boundary_refine_j3.py
+python scripts/campaigns/run_bw_fine_search.py
+python scripts/tools/bw_threshold_refine.py
+python scripts/tools/sweep_bandwidth_screen.py
+python scripts/campaigns/run_sca_bw_matrix.py
+python scripts/tools/local_direction_diag.py
+python scripts/tools/summarize_local_diag.py
 ```
 
 ---
@@ -706,14 +706,14 @@ f_j: 0.5e8 … 2.5e8  cycles/s
 | Run SCA on one seed | `python -m uavdt sca --seed 1 --solver cvxpy --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
 | Full parameter sweep (headline settings) | `python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --out results/campaign_8.8mhz_cap25_si12k.json` |
 | 100 frozen layouts | `python -m uavdt n100 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --solver cvxpy` |
-| Plot sum-rate sweeps | `python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k.json --skip-fig11` |
-| SCA vs random p-values | `python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json` |
+| Plot sum-rate sweeps | `python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k.json --skip-fig11` |
+| SCA vs random p-values | `python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json` |
 | Train proposed TD3 | `python -m uavdt td3 --td3-preset residual-on-sca --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
 | Multi-start SCA test | `python scripts/experiments/residual_on_sca/run_multistart.py` |
 | Residual-on-SCA held-out | `python scripts/experiments/residual_on_sca/run_residual_td3.py` |
 | Association oracle (Experiment C) | `python scripts/experiments/residual_on_sca/run_assoc_oracle.py` |
 | Full regeneration | `.\scripts\run_full_regeneration.ps1` |
-| 20 kHz sanity check | `python scripts/check_bsys_20khz.py` |
+| 20 kHz sanity check | `python scripts/tools/check_bsys_20khz.py` |
 | Seed 79 layout map | See [§4 — layout comparison](#one-seed-initial-vs-optimized-uav-layout) |
 | AoDT vs J (three λ patterns) | `python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20` |
 

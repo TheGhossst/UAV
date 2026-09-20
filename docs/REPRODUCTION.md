@@ -340,7 +340,7 @@ of 20{,}000 Hz. Details: `docs/RESULTS.md` §0.2.
   **0% feasible**. Realized rates drop (~0.020 → ~0.013 Mbps) because
   the infeasible QoS LP falls back to equal-share `B_sys/I`, so
   `R_sum = B_sys · mean_SE`; max SNR (best-link dump ~0.020 Mbps) is
-  unchanged. Area is not a confounder (`scripts/check_bsys_20khz.py`).
+  unchanged. Area is not a confounder (`scripts/tools/check_bsys_20khz.py`).
 - **Headline results are therefore reported at 2.4 MHz and 8.8 MHz**,
   with `max_bw_share = None` (no per-link cap), **`0.25` (8.8 MHz
   primary leftover-dump stress test)**, and `0.15` (tighter-cap
@@ -367,7 +367,7 @@ gap_vs_uncapped_pct = 100 * gap_vs_uncapped / uncapped_rate
 
 Both rates must already be in the **same** unit (bit/s or Mbps). Do
 **not** introduce a factor of 10. Helper: `uavdt.sca.gap_vs_uncapped`.
-Sweep JSON (`scripts/run_sca_bw_matrix.py`) writes `gaps_vs_uncapped`.
+Sweep JSON (`scripts/campaigns/run_sca_bw_matrix.py`) writes `gaps_vs_uncapped`.
 No stored sweep JSONs are in-tree at the time of this note; recompute
 from `results/` when a campaign is run.
 
@@ -380,7 +380,7 @@ pip install -r requirements.txt
 python -m pytest
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --placement random
 python -m uavdt evaluate --seed 1 --bandwidth 20000 --area-m 500 --placement kmeans
-python scripts/check_bsys_20khz.py
+python scripts/tools/check_bsys_20khz.py
 python -m uavdt evaluate --bandwidth-preset 2.4mhz --placement kmeans
 python -m uavdt evaluate --bandwidth-preset 8.8mhz --seed 1
 python -m uavdt multi-seed --n-runs 5 --bandwidth 20000 --placement random

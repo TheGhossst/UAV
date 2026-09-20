@@ -73,6 +73,6 @@ Or rsync the whole `results/` and `latex/ppt/` trees.
 
 ```powershell
 $env:PYTHONPATH = "src"
-python scripts/plot_sweep_n_stat_comparison.py
-python scripts/plot_ppt_all_methods_bank.py
+python scripts/plot/plot_sweep_n_stat_comparison.py
+python scripts/plot/plot_ppt_all_methods_bank.py
 ```

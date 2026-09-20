@@ -102,7 +102,7 @@ The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-fiel
 
 ### Last regeneration
 
-**2026-09-18 (random placement fix + no-TD3 full replay)** — `place_random` salted RNG ([§2.16](#216-random-uav-placement-fix)). Regenerated frozen banks (`n100` + **n200**), §VII campaigns at **n=20 / 100 / 200**, `n100`/`n100_500m_cap25` `eval.json`, multi-start + zenith-anchor (default cells + J/I sweeps + anchor highstat), PPT sweep plots. Prior headline JSON archived under `results/archive/pre_random_fix_*`. One command: `python scripts/run_full_regeneration_no_td3.py`. **TD3** and cap×J grid ([§2.7](#27-primary-campaign-88-mhz-25-cap)) were **not** re-run in this replay.
+**2026-09-18 (random placement fix + no-TD3 full replay)** — `place_random` salted RNG ([§2.16](#216-random-uav-placement-fix)). Regenerated frozen banks (`n100` + **n200**), §VII campaigns at **n=20 / 100 / 200**, `n100`/`n100_500m_cap25` `eval.json`, multi-start + zenith-anchor (default cells + J/I sweeps + anchor highstat), PPT sweep plots. Prior headline JSON archived under `results/archive/pre_random_fix_*`. One command: `python scripts/orchestration/run_full_regeneration_no_td3.py`. **TD3** and cap×J grid ([§2.7](#27-primary-campaign-88-mhz-25-cap)) were **not** re-run in this replay.
 
 **2026-09-12 (zenith-anchor SCA)** — First opt-in `sca_anchor` probe (methodology; numbers superseded for campaign/bank baselines by 2026-09-18 regen). See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
 
@@ -119,7 +119,7 @@ The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-fiel
 - `analyze_campaigns.py` + `plot_paper_figures.py` (primary, cap15, 500 m)
 - Bandwidth preset sweep (`run_all_bandwidth_campaigns.ps1`) — Sep 7 artifacts retained; numbers match fresh primary run
 
-One-command replay: `scripts/run_full_regeneration.ps1` (adds bandwidth sweep if uncommented).
+One-command replay: `scripts/orchestration/run_full_regeneration.ps1` (adds bandwidth sweep if uncommented).
 
 **2026-09-08 (earlier)** — T_k=0.8 s audit trail closed: hand construction → best-SE joint null → full-sweep null → process-cohesive candidate **20/20** → construction **40/40** → sync tradeoff gap **0.59 Mbps** mean (median 0.57, 40 geometries). See [§2.8](#28-sca-joint-methodology-probe).
 
@@ -165,7 +165,7 @@ Figs. 6–10 sit at **7–14 Mbps** — seven to fourteen times above even the n
 | Helper           | Command                                    |
 | ---------------- | ------------------------------------------ |
 | Ceiling function | `uavdt.channel.sum_rate_ceiling_bit_per_s` |
-| Re-run check     | `python scripts/check_bsys_20khz.py`       |
+| Re-run check     | `python scripts/tools/check_bsys_20khz.py`       |
 
 
 
@@ -400,7 +400,7 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 | `results/figures/`                                         | Primary plots (25%); `figures/cap15/` holds 15%             |
 
 
-**Analysis scripts:** `scripts/paired_winrate.py`, `scripts/analyze_sca_vs_random_losses.py`, `scripts/analyze_campaigns.py`, `scripts/analyze_td3_vs_methods.py`, `scripts/analyze_n100_500m.py`, `scripts/analyze_sca_multistart_cases.py`, `scripts/analyze_sca_anchor_cases.py`, `scripts/analyze_bw_fine_search.py`, `scripts/run_cap12_rematch.py`, `scripts/compare_cap12_vs_cap25.py`, `scripts/run_sca_joint_campaign.py`, `scripts/run_tk08_followup.py`, `scripts/bw_cap_by_j_grid.py`, `scripts/bw_boundary_refine_j3.py`, `scripts/cap_binding_diagnostic.py`
+**Analysis scripts:** `scripts/lib/paired_winrate.py`, `scripts/analyze/analyze_sca_vs_random_losses.py`, `scripts/analyze/analyze_campaigns.py`, `scripts/analyze/analyze_td3_vs_methods.py`, `scripts/analyze/analyze_n100_500m.py`, `scripts/analyze/analyze_sca_multistart_cases.py`, `scripts/analyze/analyze_sca_anchor_cases.py`, `scripts/analyze/analyze_bw_fine_search.py`, `scripts/campaigns/run_cap12_rematch.py`, `scripts/tools/compare_cap12_vs_cap25.py`, `scripts/campaigns/run_sca_joint_campaign.py`, `scripts/campaigns/run_tk08_followup.py`, `scripts/tools/bw_cap_by_j_grid.py`, `scripts/tools/bw_boundary_refine_j3.py`, `scripts/tools/cap_binding_diagnostic.py`
 
 ---
 
@@ -669,7 +669,7 @@ All methods **100% feasible** at J = 3 on both fields.
 - T_k = 0.8 s remains **0% feasible** for all methods under nearest-a (same discrete-init artefact as §2.4 / §2.8; not a Problem (P) limit).
 - Method ranking is unchanged: **SCA > PSO ≈ random > k-means** at 500 m, with larger separations than at 100 m.
 
-Plot: `python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m`
+Plot: `python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m`
 
 n100 at the same field: [§2.12](#212-n100-monte-carlo-bank-88-mhz). Algorithm 2 TD3 stays next to k-means (7.510 vs SCA 8.228 Mbps, 0/100 wins). Do not mix that 100-layout bank with this 20-seed campaign table.
 
@@ -694,7 +694,7 @@ At default J = 3 (post-fix), SCA vs random is **+0.173 ± 0.101 Mbps, 20/20, p<0
 
 Random drops sharply vs pre-fix zenith-alias layouts at 25%; tightening to 15% barely moves the random mean. Paired vs-random at 25%: **+0.173 ± 0.101 Mbps, 20/20, p<0.001** (`campaign_8.8mhz_cap25_si12k_paired.json`). Full 25% axis tables remain in the primary campaign JSON; do not mix them with the 15% tables in §2.1–2.5.
 
-> **Cap×J grid (pre-fix).** The 30-cell search in `bw_cap_by_J_grid.json` still shows J=3 @ 25% as Δ=+0.019, q=0.137 — those cells used the old random stream. After the fix, the same cap at J=3 matches the primary campaign (+0.173, p<0.001). Re-run `scripts/bw_cap_by_j_grid.py` before updating that landscape table.
+> **Cap×J grid (pre-fix).** The 30-cell search in `bw_cap_by_J_grid.json` still shows J=3 @ 25% as Δ=+0.019, q=0.137 — those cells used the old random stream. After the fix, the same cap at J=3 matches the primary campaign (+0.173, p<0.001). Re-run `scripts/tools/bw_cap_by_j_grid.py` before updating that landscape table.
 
 #### Cap × J search and boundary refinement
 
@@ -911,7 +911,7 @@ python -m uavdt td3 --td3-preset residual-on-sca --bandwidth-preset 8.8mhz --max
 - **Cost.** **5.6 s/seed** is **~5×** one-shot SCA (~1.0 s in this eval; 0.89 s at J=3 in [§2.10](#210-td3-algorithm-2-reproduction)) — five SCA solves, not a new inner loop. Algorithm 2 TD3 is **~110×** (97 s vs 0.89 s) and scores **below** SCA. Cheap classical search buys a small improvement; expensive RL search does not. That is the bookend of the TD3 investigation.
 - Novelty is better init, not a new convex program. Do not headline 0.014 Mbps as a method win; do report that one-shot k-means SCA is not the keep-best local solver of (P).
 
-**Four default-point cases (measured, 2026-09-11).** Same wrapper (frozen k-means start + 2 random + 2 k-means extras), 8.8 MHz / 25% cap, I=10, J=3. There is no 500-layout bank: `n100_500m` is the existing 100-layout 500 × 500 m bank. Driver: `scripts/run_sca_multistart_cases.py`. Readout: `scripts/analyze_sca_multistart_cases.py`. Does not overwrite `n100/eval.json` or either headline campaign. 20-seed 500 m SCA mean **8.300** matches `campaign_8.8mhz_cap25_si12k_500m.json` J=3.
+**Four default-point cases (measured, 2026-09-11).** Same wrapper (frozen k-means start + 2 random + 2 k-means extras), 8.8 MHz / 25% cap, I=10, J=3. There is no 500-layout bank: `n100_500m` is the existing 100-layout 500 × 500 m bank. Driver: `scripts/campaigns/run_sca_multistart_cases.py`. Readout: `scripts/analyze/analyze_sca_multistart_cases.py`. Does not overwrite `n100/eval.json` or either headline campaign. 20-seed 500 m SCA mean **8.300** matches `campaign_8.8mhz_cap25_si12k_500m.json` J=3.
 
 | Case | n | SCA | Multi-start | Δ vs SCA | wins vs SCA | practical >0.05 | vs random |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -960,7 +960,7 @@ The 16 ties are “no exploitable slack in \pm 10 m,” not “training collapse
 
 **Not the claim.** Residual-on-SCA ([§2.9](#29-residual-policy-on-sca)). Paper 7–14 Mbps. TD3 as a faster substitute for SCA.
 
-**Setup.** College-server CUDA full eval (log ends `DONE`). 7000 steps, k-means residual, leftover inner B, Alg. 2 penalty reward. Same 20 seeds as the primary campaign; random / k-means / PSO / SCA reused from `campaign_8.8mhz_cap25_si12k.json`. Artifacts: `results/campaign_8.8mhz_cap25_td3.json`, `results/n100/eval_td3.json`, `results/td3/full_eval_analysis.txt`. The dump used `SNAPSHOT_INVALID` output paths from an older script name; every seed has `export_mode=policy` and official Mbps equals `policy_export`. Cite the clean names. Analysis: `python scripts/analyze_td3_vs_methods.py`.
+**Setup.** College-server CUDA full eval (log ends `DONE`). 7000 steps, k-means residual, leftover inner B, Alg. 2 penalty reward. Same 20 seeds as the primary campaign; random / k-means / PSO / SCA reused from `campaign_8.8mhz_cap25_si12k.json`. Artifacts: `results/campaign_8.8mhz_cap25_td3.json`, `results/n100/eval_td3.json`, `results/td3/full_eval_analysis.txt`. The dump used `SNAPSHOT_INVALID` output paths from an older script name; every seed has `export_mode=policy` and official Mbps equals `policy_export`. Cite the clean names. Analysis: `python scripts/analyze/analyze_td3_vs_methods.py`.
 
 **Default J = 3, I = 10 (20 seeds, T_k = 2.8 s).**
 
@@ -1017,7 +1017,7 @@ Shift I=32 minus I=10: **+0.016 Mbps** vs SCA. Story check “devices grow, gap 
 
 ### 2.11 7 MHz, no cap / 15% / 25%
 
-**Not TD3. Not the primary campaign.** Extra `B_sys = 7` MHz between the 2.4 MHz and 8.8 MHz presets, same 100 × 100 m / 20-seed / five-axis protocol. Methods: random, k-means, PSO, frozen SCA. CLI: `--bandwidth-preset 7mhz`. Runner: `scripts/run_7mhz_campaigns.ps1`. Analysis: `scripts/analyze_7mhz.py`. Figures: `results/figures/7mhz_{nocap,cap15,cap25}/`.
+**Not TD3. Not the primary campaign.** Extra `B_sys = 7` MHz between the 2.4 MHz and 8.8 MHz presets, same 100 × 100 m / 20-seed / five-axis protocol. Methods: random, k-means, PSO, frozen SCA. CLI: `--bandwidth-preset 7mhz`. Runner: `scripts/run_7mhz_campaigns.ps1`. Analysis: `scripts/analyze/analyze_7mhz.py`. Figures: `results/figures/7mhz_{nocap,cap15,cap25}/`.
 
 **Falsifiable prediction.** Sum rate is `B_sys` times mean spectral efficiency on the leftover-dump LP, so 7 MHz SCA should equal `(7/8.8)` times the matching 8.8 MHz SCA at the same cap, to solver noise.
 
@@ -1061,7 +1061,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 ### 2.12 n100 / n200 Monte Carlo banks (8.8 MHz)
 
-**Not the §VII campaign JSON.** Frozen layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`, **`n200_i10_j3_*`** added 2026-09-18) with **salted random UAV** xy replayed by the `random` method ([§2.16](#216-random-uav-placement-fix)). SCA / k-means / PSO place their own UAVs on the same frozen IoT layout. I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; opt-in multi-start, zenith-anchor at **25%**; TD3 **not** replayed in 2026-09-18 regen. High-stat §VII sweeps: `campaign_8.8mhz_cap25_n100.json`, `campaign_8.8mhz_cap25_n200.json` (fresh random per seed — do not mix with bank means). Analysis: `python scripts/analyze_n100_500m.py`, `python scripts/analyze_sca_multistart_cases.py`, `python scripts/analyze_sca_anchor_cases.py`.
+**Not the §VII campaign JSON.** Frozen layout banks (`data/scenario_bank/n100_i10_j3_{100m,500m}.json`, **`n200_i10_j3_*`** added 2026-09-18) with **salted random UAV** xy replayed by the `random` method ([§2.16](#216-random-uav-placement-fix)). SCA / k-means / PSO place their own UAVs on the same frozen IoT layout. I=10, J=3, `B_sys`=8.8 MHz. Methods: random, k-means, PSO, frozen SCA; opt-in multi-start, zenith-anchor at **25%**; TD3 **not** replayed in 2026-09-18 regen. High-stat §VII sweeps: `campaign_8.8mhz_cap25_n100.json`, `campaign_8.8mhz_cap25_n200.json` (fresh random per seed — do not mix with bank means). Analysis: `python scripts/analyze/analyze_n100_500m.py`, `python scripts/analyze/analyze_sca_multistart_cases.py`, `python scripts/analyze/analyze_sca_anchor_cases.py`.
 
 #### 100 × 100 m (bank `n100`, 2026-09-18)
 
@@ -1123,7 +1123,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 **Claim (falsifiable).** At a *fixed* leftover-dump cap fraction, J=3 method spread scales ~linearly with `B_sys`. The lever that separates methods is the **cap**, not 7.4 vs 8.1 vs 8.8 MHz.
 
-**Setup.** `scripts/run_bw_fine_search.py`: 18 bandwidths × 8 caps = **144** full-axis 20-seed campaigns (random / k-means / PSO / SCA, no TD3), 100 × 100 m. Wall **~13 h**. Does not overwrite `campaign_8.8mhz_cap25_si12k.json`. Analysis: `python scripts/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt`.
+**Setup.** `scripts/campaigns/run_bw_fine_search.py`: 18 bandwidths × 8 caps = **144** full-axis 20-seed campaigns (random / k-means / PSO / SCA, no TD3), 100 × 100 m. Wall **~13 h**. Does not overwrite `campaign_8.8mhz_cap25_si12k.json`. Analysis: `python scripts/analyze/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt`.
 
 **Null confirmed.** Spread vs `B_sys` r² = **1.000** at every cap except 25% (0.913). SCA Mbps vs MHz slope ≈ **1.02 Mbps/MHz**, r²=1.000: the same leftover-dump radio as [§2.11](#211-7-mhz-no-cap-15-25).
 
@@ -1156,7 +1156,7 @@ Perfect = 100% feasible at J=3, SCA uniquely best, Wilcoxon p<0.05 vs random, sp
 
 **Verdict.** Keep **25%** as the main leftover-dump cap. 12% is the search-score cell from [§2.13](#213-fine-b_sys--cap-search-71-88-mhz); on the same four tests that already exist at 25%, it buys SCA-vs-random significance by throwing Hertz **and** by letting PSO take the mean.
 
-**Setup.** `python scripts/run_cap12_rematch.py --skip-plot` (~18 min). Methods: random / k-means / PSO / frozen SCA. No TD3, no multi-start. Reused the fine-search 100 m campaign (`bw_fine_7p1_8p8/campaign_8p8mhz_cap12.json` → `campaign_8.8mhz_cap12_n20.json`). Did **not** overwrite any 25% campaign or `n100/eval.json`. Analysis: `python scripts/compare_cap12_vs_cap25.py` → `results/compare_cap12_vs_cap25.txt`.
+**Setup.** `python scripts/campaigns/run_cap12_rematch.py --skip-plot` (~18 min). Methods: random / k-means / PSO / frozen SCA. No TD3, no multi-start. Reused the fine-search 100 m campaign (`bw_fine_7p1_8p8/campaign_8p8mhz_cap12.json` → `campaign_8.8mhz_cap12_n20.json`). Did **not** overwrite any 25% campaign or `n100/eval.json`. Analysis: `python scripts/tools/compare_cap12_vs_cap25.py` → `results/compare_cap12_vs_cap25.txt`.
 
 Quoted point is default **J=3, I=10**. All four tests are **100% feasible** at that point. Wilcoxon is two-sided on paired SCA−other.
 
@@ -1223,7 +1223,7 @@ Standalone method note (algorithm, novelty boundaries, full tables): [`novelty.m
 
 **Mechanism.** The leftover-dump LP puts leftover Hertz on about `1/cap` highest-SE links. SE is maximal at zenith, so a natural prior is “UAV `j` hovers over a distinct IoT.” K-means puts UAVs *between* IoTs; SCA’s Taylor step only pulls toward links that already hold `B`. That matches Experiment A’s 16–72 m basins ([§2.9](#29-residual-policy-on-sca)). Closest priors in this repo: frozen SCA (local, k-means init), multi-start (unstructured extra inits), Experiment C (search `a` at frozen `q` — flat). Hovering-over-users is a common UAV placement prior in the wider literature; the load-bearing piece here is coupling that prior to the leftover-dump LP as an exact subset oracle, then Algorithm 1 polish.
 
-**Setup.** `python scripts/run_sca_anchor_cases.py`. Method `sca_anchor` / `uavdt.sca_anchor`. Default `C(10,3)=120` full enum; I-axis uses `max_enumerate=10000` so `C(32,3)=4960` is full enum, not beam. Keep-best includes frozen k-means SCA. Wilcoxon `p_greater` is the exact one-sided test from `scripts/paired_winrate.py` (same functions as `analyze_sca_anchor_cases.py`). Did **not** overwrite `campaign_8.8mhz_cap25_si12k.json`, `_500m.json`, or `n100/eval.json`. Analysis: `python scripts/analyze_sca_anchor_cases.py`.
+**Setup.** `python scripts/campaigns/run_sca_anchor_cases.py`. Method `sca_anchor` / `uavdt.sca_anchor`. Default `C(10,3)=120` full enum; I-axis uses `max_enumerate=10000` so `C(32,3)=4960` is full enum, not beam. Keep-best includes frozen k-means SCA. Wilcoxon `p_greater` is the exact one-sided test from `scripts/lib/paired_winrate.py` (same functions as `analyze_sca_anchor_cases.py`). Did **not** overwrite `campaign_8.8mhz_cap25_si12k.json`, `_500m.json`, or `n100/eval.json`. Analysis: `python scripts/analyze/analyze_sca_anchor_cases.py`.
 
 Quoted point is default **J=3, I=10, 8.8 MHz, 25% cap**. All four tests **100% feasible**. Practical bar **0.05 Mbps**.
 
@@ -1322,7 +1322,7 @@ Vs cohesive SCA-joint: +0.037, 10/20 moved, 0 losses, **6/20** practical, p=9.8e
 
 The remaining-before-headline bar is cleared. Default `--methods` is unchanged. Do not overwrite protected headline JSON.
 
-**Artifacts.** `results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json`, `results/campaign_sca_anchor_uavs.json`, `_500m.json`, `results/campaign_sca_anchor_iots_500m.json`, `results/sca_anchor_tk08.json`, `results/sca_anchor_cases_analysis.json` / `.txt`, n200 highstat under `results/campaign_sca_anchor_*_n200_*`. Figures: `results/figures/n100_anchor/`, `n100_500m_anchor/`, PPT sweeps via `scripts/plot_ppt_sweeps.py`.
+**Artifacts.** `results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json`, `results/campaign_sca_anchor_uavs.json`, `_500m.json`, `results/campaign_sca_anchor_iots_500m.json`, `results/sca_anchor_tk08.json`, `results/sca_anchor_cases_analysis.json` / `.txt`, n200 highstat under `results/campaign_sca_anchor_*_n200_*`. Figures: `results/figures/n100_anchor/`, `n100_500m_anchor/`, PPT sweeps via `scripts/plot/plot_ppt_sweeps.py`.
 
 ---
 
@@ -1334,7 +1334,7 @@ The remaining-before-headline bar is cleared. Default `--methods` is unchanged. 
 
 **Fix (2026-09-18).** `place_random` uses `default_rng(SeedSequence([seed, 0x55415652]))` (`src/uavdt/placement/random.py`). Frozen banks store salted random UAV xy; note in `data/scenario_bank/*.json`. Test: `tests/test_placement.py::test_random_is_not_zenith_on_same_seed_iots`.
 
-**What was replayed.** `python scripts/run_full_regeneration_no_td3.py`: banks, `campaign_8.8mhz_cap25_si12k.json` (+ `_500m`, `_n100`, `_n200`), `n100`/`n100_500m_cap25` `eval.json`, multi-start + zenith-anchor cases and highstat, PPT plots. Archives pre-fix JSON under `results/archive/pre_random_fix_*`.
+**What was replayed.** `python scripts/orchestration/run_full_regeneration_no_td3.py`: banks, `campaign_8.8mhz_cap25_si12k.json` (+ `_500m`, `_n100`, `_n200`), `n100`/`n100_500m_cap25` `eval.json`, multi-start + zenith-anchor cases and highstat, PPT plots. Archives pre-fix JSON under `results/archive/pre_random_fix_*`.
 
 **Headline impact @ J=3, 25%, 100 m campaign.** Random mean **8.773** (was **8.928**); SCA unchanged **8.946**; spread **0.173** (was 0.046); paired SCA−random **+0.173, 20/20, p<0.001** (was +0.019, 15/20, p=0.123). FDR vs random on the 25% sweep: **25/25** unique points (was 15/25).
 
@@ -1439,7 +1439,7 @@ Both configs: `agreement: ok`. Cap-25 seed 1 matches the campaign CVXPY rate exa
 
 ### Default point — 20 paired seeds (J = 3, 25% primary)
 
-**Source:** `scripts/compare_sca_cvxpy_matlab.py` → `results/sca_cvxpy_vs_matlab_j3.json`
+**Source:** `scripts/tools/compare_sca_cvxpy_matlab.py` → `results/sca_cvxpy_vs_matlab_j3.json`
 
 
 | Quantity                | Value                      |
@@ -1711,65 +1711,65 @@ python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 
 $env:PYTHONPATH="src"
 
 python -m pytest
-python scripts/check_bsys_20khz.py
+python scripts/tools/check_bsys_20khz.py
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --out results/campaign_8.8mhz_cap25_si12k.json
-python scripts/rerun_init_repair_points.py
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
-python scripts/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/tools/rerun_init_repair_points.py
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap25_si12k.json
+python scripts/analyze/analyze_sca_vs_random_losses.py results/campaign_8.8mhz_cap25_si12k.json
 python -m uavdt fig11 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --out results/fig11_8.8mhz_cap25_si12k.json
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-iterations 30
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --max-iterations 30
-python scripts/analyze_campaigns.py
-python scripts/plot_paper_figures.py
+python scripts/analyze/analyze_campaigns.py
+python scripts/plot/plot_paper_figures.py
 
 # Tighter-cap sensitivity (100 m, 15% cap) — optional
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.15 --n-runs 20 --solver cvxpy --out results/campaign_8.8mhz_cap15_n20.json
-python scripts/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json
-python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n20.json --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15
+python scripts/lib/paired_winrate.py results/campaign_8.8mhz_cap15_n20.json
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap15_n20.json --fig11 results/fig11_8.8mhz_cap15.json --out-dir results/figures/cap15
 
 # Paper field (500 × 500 m) — field-size test, same 25% primary cap
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --solver cvxpy --area-m 500 --out results/campaign_8.8mhz_cap25_si12k_500m.json
-python scripts/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8mhz_cap25_si12k_500m.json --out-dir results/figures/500m
 
 # SCA-joint methodology probe (does not overwrite frozen-SCA campaign JSON)
-python scripts/run_sca_joint_campaign.py
-python scripts/run_tk08_followup.py
+python scripts/campaigns/run_sca_joint_campaign.py
+python scripts/campaigns/run_tk08_followup.py
 
 # TD3 Algorithm 2 full eval (long; CUDA; does not overwrite frozen-SCA JSON)
-python scripts/run_td3_full_eval.py
-python scripts/analyze_td3_vs_methods.py
+python scripts/td3/run_td3_full_eval.py
+python scripts/analyze/analyze_td3_vs_methods.py
 
 # Multi-start SCA (opt-in; does not overwrite headline campaigns or n100/eval.json)
-python scripts/run_sca_multistart_cases.py
-python scripts/analyze_sca_multistart_cases.py
-python scripts/plot_sca_multistart_n100.py
+python scripts/campaigns/run_sca_multistart_cases.py
+python scripts/analyze/analyze_sca_multistart_cases.py
+python scripts/plot/plot_sca_multistart_n100.py
 
 # Zenith-anchor SCA (opt-in; does not overwrite headline campaigns or n100/eval.json)
-python scripts/run_sca_anchor_cases.py
-python scripts/analyze_sca_anchor_cases.py
-python scripts/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs.json --skip-fig11 --out-dir results/figures/anchor_uavs
-python scripts/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs_500m.json --skip-fig11 --out-dir results/figures/anchor_uavs_500m
+python scripts/campaigns/run_sca_anchor_cases.py
+python scripts/analyze/analyze_sca_anchor_cases.py
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs.json --skip-fig11 --out-dir results/figures/anchor_uavs
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_sca_anchor_uavs_500m.json --skip-fig11 --out-dir results/figures/anchor_uavs_500m
 
 # Fine B_sys x cap search (long; does not overwrite headline campaign)
-python scripts/run_bw_fine_search.py --run --resume
-python scripts/analyze_bw_fine_search.py
+python scripts/campaigns/run_bw_fine_search.py --run --resume
+python scripts/analyze/analyze_bw_fine_search.py
 
 # Extra B_sys = 7 MHz (no TD3): no cap, 15%, 25%
 .\scripts\run_7mhz_campaigns.ps1
-python scripts/analyze_7mhz.py
-python scripts/paired_winrate.py results/campaign_7mhz_n20.json
-python scripts/paired_winrate.py results/campaign_7mhz_cap15_n20.json
-python scripts/paired_winrate.py results/campaign_7mhz_cap25_n20.json
-python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_n20.json --skip-fig11 --out-dir results/figures/7mhz_nocap
-python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_cap15_n20.json --skip-fig11 --out-dir results/figures/7mhz_cap15
-python scripts/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.json --skip-fig11 --out-dir results/figures/7mhz_cap25
+python scripts/analyze/analyze_7mhz.py
+python scripts/lib/paired_winrate.py results/campaign_7mhz_n20.json
+python scripts/lib/paired_winrate.py results/campaign_7mhz_cap15_n20.json
+python scripts/lib/paired_winrate.py results/campaign_7mhz_cap25_n20.json
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_7mhz_n20.json --skip-fig11 --out-dir results/figures/7mhz_nocap
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_7mhz_cap15_n20.json --skip-fig11 --out-dir results/figures/7mhz_cap15
+python scripts/plot/plot_paper_figures.py --campaign results/campaign_7mhz_cap25_n20.json --skip-fig11 --out-dir results/figures/7mhz_cap25
 ```
 
 Full bandwidth preset sweep (long): `scripts/run_all_bandwidth_campaigns.ps1`
 
-One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regeneration.ps1`
+One-command replay of §9 (except bandwidth sweep): `scripts/orchestration/run_full_regeneration.ps1`
 
-**2026-09-18 — random UAV placement fix, all methods except TD3:** `python scripts/run_full_regeneration_no_td3.py` — see [§2.16](#216-random-uav-placement-fix). Log: `results/full_regeneration_no_td3_<timestamp>.log`.
+**2026-09-18 — random UAV placement fix, all methods except TD3:** `python scripts/orchestration/run_full_regeneration_no_td3.py` — see [§2.16](#216-random-uav-placement-fix). Log: `results/full_regeneration_no_td3_<timestamp>.log`.
 
 ### Run timings (representative)
 
@@ -1811,7 +1811,7 @@ One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regenerati
 
 ### Side-by-side @ J=3
 
-`scripts/compare_si_l_defaults.py` → `results/compare_si_l_defaults.json`
+`scripts/tools/compare_si_l_defaults.py` → `results/compare_si_l_defaults.json`
 
 
 | Quantity                  | Old placeholders | Settled defaults | Better?                                    |
@@ -1832,7 +1832,7 @@ One-command replay of §9 (except bandwidth sweep): `scripts/run_full_regenerati
 > **Verdict:** Settled S_i/L are **better for model fidelity** — Eq. (17) now **binds at** T_k = 2.8 s. Sum rates drop ~0.02 Mbps; **method ranking is unchanged**. This does **not** close the gap to paper §VII Mbps.
 
 ```bash
-python scripts/compare_si_l_defaults.py
+python scripts/tools/compare_si_l_defaults.py
 python -m uavdt campaign --axis uavs --bandwidth-preset 8.8mhz --max-bw-share 0.25 --n-runs 20 --out results/campaign_8.8mhz_cap25_si12k.json
 ```
 

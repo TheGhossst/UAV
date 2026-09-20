@@ -21,5 +21,6 @@ OUT_ASSOC_ORACLE = OUT_DIR / "assoc_oracle_n20.json"
 def bootstrap() -> None:
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
-    if str(SCRIPTS) not in sys.path:
-        sys.path.insert(0, str(SCRIPTS))
+    lib = SCRIPTS / "lib"
+    if str(lib) not in sys.path:
+        sys.path.insert(0, str(lib))
