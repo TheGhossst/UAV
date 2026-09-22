@@ -9,7 +9,7 @@ a_ij is still nearest at that init.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 
 import numpy as np
@@ -82,10 +82,11 @@ def _run_one(
 ) -> tuple[SCAResult | None, float, str | None]:
     t0 = perf_counter()
     try:
+        settings = replace(sca_settings or SCASettings(), dynamic_assignment=False)
         result = solve_sca(
             scenario,
             seed,
-            settings=sca_settings,
+            settings=settings,
             uav_xyz_m=uav,
             allocation=allocation,
         )

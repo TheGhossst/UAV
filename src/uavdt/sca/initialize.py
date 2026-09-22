@@ -60,7 +60,8 @@ def initialize_sca(scenario: Scenario, seed: int) -> tuple[np.ndarray, Allocatio
 
     IMPLEMENTATION CHOICE: Algorithm 1 does not specify the initial geometry.
     K-means is the paper's named placement initialization baseline (§VII).
-    a_ij and b_ij are frozen after this step. If majority-of-association
+    a_ij and b_ij stay here unless SCASettings.dynamic_assignment is True.
+    If majority-of-association
     would put two processes on one UAV and violate (24),
     cpu_stable_processing picks a feasible process→UAV map when one exists.
     Nearest-a is not rematched: it can split N_k across UAVs so some IoTs

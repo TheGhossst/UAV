@@ -2,7 +2,10 @@
 
 Each iteration solves one convexified (P) for UAV positions and bandwidth
 (paper §V: first-order Taylor of (3)–(5) and (25)). Association and
-processing are not in Algorithm 1's update list and stay at initialization.
+processing are not in Algorithm 1's update list; they stay at
+initialization unless SCASettings.dynamic_assignment is True, in which
+case a block-coordinate a_ij / b_ij step follows the convex (q, B)
+update and is accepted only by evaluate() / true_gate_ok().
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ import numpy as np
 from uavdt.constraints import pairwise_uav_distance_m
 from uavdt.evaluator import EvalResult, evaluate
 from uavdt.models import Allocation, Scenario
+from uavdt.sca.assignment import AssignmentEvent, run_assignment_updates, same_one_hot
 from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q, solve_joint_convex_step
 from uavdt.sca.initialize import initialize_sca
 from uavdt.sca.linearize import se_jacobian
@@ -43,6 +47,9 @@ class SCAIterationLog:
     max_cpu_load: float
     bandwidth_usage: float
     solve_time_s: float
+    n_assoc_changed: int = 0
+    n_proc_changed: int = 0
+    assignment_stage: str = ""
 
 
 @dataclass
@@ -103,6 +110,40 @@ def true_gate_ok(ev: EvalResult) -> bool:
         and c.bandwidth_support_ok
         and c.sep_violations == 0
         and c.uav_in_field_ok
+    )
+
+
+def _history_from_assignment_event(
+    event: AssignmentEvent,
+    uav_xyz_m: np.ndarray,
+) -> SCAIterationLog:
+    true_obj = (
+        float(event.objective_after)
+        if event.accepted and event.objective_after is not None
+        else float(event.objective_before)
+    )
+    return SCAIterationLog(
+        iteration=event.iteration,
+        current_true_objective=event.objective_before,
+        candidate_true_objective=event.objective_after,
+        current_max_AoDT=event.max_aodt_before,
+        candidate_max_AoDT=event.max_aodt_after,
+        current_min_separation=_min_sep(uav_xyz_m),
+        candidate_min_separation=_min_sep(uav_xyz_m),
+        step_size=0.0,
+        bandwidth_objective=event.bandwidth_objective,
+        true_objective=true_obj,
+        accepted=event.accepted,
+        rejection_reason=event.reason,
+        solver_status=event.solver_status,
+        qos_violations=event.qos_violations,
+        aodt_violations=event.aodt_violations,
+        max_cpu_load=event.max_cpu_load,
+        bandwidth_usage=event.bandwidth_usage,
+        solve_time_s=event.solve_time_s,
+        n_assoc_changed=event.n_assoc_changed,
+        n_proc_changed=event.n_proc_changed,
+        assignment_stage=event.stage,
     )
 
 
@@ -241,24 +282,42 @@ def _history_from_matlab(rows) -> list[SCAIterationLog]:
                 max_cpu_load=_f(row.get("max_cpu_load")),
                 bandwidth_usage=_f(row.get("bandwidth_usage")),
                 solve_time_s=_f(row.get("solve_time_s")),
+                n_assoc_changed=int(_f(row.get("n_assoc_changed"), 0.0)),
+                n_proc_changed=int(_f(row.get("n_proc_changed"), 0.0)),
+                assignment_stage=str(row.get("assignment_stage", "")),
             )
         )
     return history
 
 
 def _common_diagnostics(seed: int, cfg, settings: SCASettings, extra: dict) -> dict:
+    dynamic = bool(getattr(settings, "dynamic_assignment", False))
     out = {
         "method": "algorithm_1_sca_problem_p",
         "label": (
             "Algorithm 1 SCA of Problem (P): joint convexified (q, B) "
-            "with first-order Taylor of (3)–(5) and (25). a_ij, b_ij fixed."
+            "with first-order Taylor of (3)–(5) and (25). "
+            + (
+                "a_ij, b_ij reassigned by a true-gated block-coordinate step."
+                if dynamic
+                else "a_ij, b_ij fixed."
+            )
         ),
-        "binaries": "a_ij and b_ij fixed after initialization (IMPLEMENTATION CHOICE)",
+        "binaries": (
+            "a_ij and b_ij reassigned after each (q, B) step (EXPERIMENTAL)"
+            if dynamic
+            else "a_ij and b_ij fixed after initialization (IMPLEMENTATION CHOICE)"
+        ),
+        "dynamic_assignment": dynamic,
         "seed": seed,
         "b_sys_hz": cfg.b_sys_hz,
         "step_size_m": settings.step_size_m,
-        "association_init_equals_final": True,
-        "processing_init_equals_final": True,
+        "association_init_equals_final": extra.pop(
+            "association_init_equals_final", not dynamic
+        ),
+        "processing_init_equals_final": extra.pop(
+            "processing_init_equals_final", not dynamic
+        ),
         "solver_backend": settings.solver or "cvxpy",
     }
     out.update(extra)
@@ -451,6 +510,11 @@ def solve_sca(
     """Sequential SCA-style solver. Final scores always come from evaluate()."""
     settings = settings or SCASettings()
     cfg = scenario.cfg
+    dynamic = bool(getattr(settings, "dynamic_assignment", False))
+    if dynamic and _use_matlab(settings):
+        raise RuntimeError(
+            "dynamic_assignment is CVXPY-only; frozen SCA keeps the MATLAB path"
+        )
     if uav_xyz_m is None or allocation is None:
         uav, alloc = initialize_sca(scenario, seed)
     else:
@@ -458,96 +522,150 @@ def solve_sca(
         alloc = allocation
     a = alloc.hard_association()
     b = alloc.hard_processing()
+    a_init = a.copy()
+    b_init = b.copy()
     if _use_matlab(settings):
         return _solve_sca_matlab(scenario, seed, settings, uav, alloc)
 
+    history: list[SCAIterationLog] = []
+    assignment_events: list[AssignmentEvent] = []
+    assignment_accepted = 0
+    assignment_rejected = 0
+    bw: np.ndarray
+    current_eval: EvalResult
+
+    def assignment_now(iteration: int) -> bool:
+        nonlocal a, b, bw, current_eval, assignment_accepted, assignment_rejected
+        if not dynamic:
+            return False
+        a, b, bw, current_eval, events = run_assignment_updates(
+            scenario,
+            uav,
+            a,
+            b,
+            bw,
+            current_eval,
+            settings,
+            iteration=iteration,
+        )
+        any_acc = False
+        for event in events:
+            assignment_events.append(event)
+            history.append(_history_from_assignment_event(event, uav))
+            if event.accepted:
+                assignment_accepted += 1
+                any_acc = True
+            else:
+                assignment_rejected += 1
+        return any_acc
+
+    def assignment_diag() -> dict:
+        return {
+            "dynamic_assignment": dynamic,
+            "association_init_equals_final": same_one_hot(a_init, a),
+            "processing_init_equals_final": same_one_hot(b_init, b),
+            "assignment_accepted": assignment_accepted,
+            "assignment_rejected": assignment_rejected,
+            "assignment_log": [event.to_jsonable() for event in assignment_events],
+        }
+
     bw_init = solve_bandwidth_at_fixed_q(scenario, uav, a, b, settings)
+    last_status = bw_init.status
+    solver_name = bw_init.solver_name
     if bw_init.infeasible:
-        ev0 = evaluate(scenario, uav, Allocation(a, b, alloc.bandwidth_hz))
-        history0 = [
+        current_eval = evaluate(scenario, uav, Allocation(a, b, alloc.bandwidth_hz))
+        bw = np.asarray(alloc.bandwidth_hz, dtype=float).copy()
+        history.append(
             SCAIterationLog(
                 iteration=0,
-                current_true_objective=ev0.sum_rate_bit_per_s,
+                current_true_objective=current_eval.sum_rate_bit_per_s,
                 candidate_true_objective=None,
-                current_max_AoDT=_max_aodt(ev0),
+                current_max_AoDT=_max_aodt(current_eval),
                 candidate_max_AoDT=None,
                 current_min_separation=_min_sep(uav),
                 candidate_min_separation=None,
                 step_size=_effective_step_size(settings),
                 bandwidth_objective=None,
-                true_objective=ev0.sum_rate_bit_per_s,
+                true_objective=current_eval.sum_rate_bit_per_s,
                 accepted=False,
                 rejection_reason="init_bandwidth_infeasible",
                 solver_status=bw_init.status,
-                qos_violations=ev0.constraints.qos_violations,
-                aodt_violations=ev0.constraints.aodt_violations,
-                max_cpu_load=float(np.max(ev0.rho)) if ev0.rho.size else 0.0,
+                qos_violations=current_eval.constraints.qos_violations,
+                aodt_violations=current_eval.constraints.aodt_violations,
+                max_cpu_load=float(np.max(current_eval.rho))
+                if current_eval.rho.size
+                else 0.0,
                 bandwidth_usage=float(np.sum(alloc.bandwidth_hz)),
                 solve_time_s=bw_init.solve_time_s,
             )
-        ]
-        return SCAResult(
-            uav_xyz_m=uav,
-            allocation=Allocation(a, b, alloc.bandwidth_hz),
-            surrogate_objective=float("nan"),
-            true_objective=float(ev0.sum_rate_bit_per_s),
-            true_eval=ev0,
-            history=history0,
-            solver_status=bw_init.status,
-            solver_name=bw_init.solver_name,
-            n_iterations=0,
-            diagnostics={
+        )
+        assignment_now(0)
+        if not true_gate_ok(current_eval):
+            diag = {
                 "method": "sequential_sca_style_fixed_association_processing",
                 "stop_reason": "init_bandwidth_infeasible",
                 "converged": False,
                 "accepted_steps": 0,
                 "rejected_steps": 1,
                 "step_size_reductions": 0,
-            },
+            }
+            if dynamic:
+                diag.update(assignment_diag())
+            return SCAResult(
+                uav_xyz_m=uav,
+                allocation=Allocation(a, b, bw),
+                surrogate_objective=float("nan"),
+                true_objective=float(current_eval.sum_rate_bit_per_s),
+                true_eval=current_eval,
+                history=history,
+                solver_status=bw_init.status,
+                solver_name=bw_init.solver_name,
+                n_iterations=0,
+                diagnostics=diag,
+            )
+    else:
+        bw = bw_init.bandwidth_hz
+        current_eval = evaluate(scenario, uav, Allocation(a, b, bw))
+        if not true_gate_ok(current_eval):
+            raise RuntimeError(
+                "sequential SCA-style solver requires a true-feasible start; "
+                f"violations qos={current_eval.constraints.qos_violations} "
+                f"aodt={current_eval.constraints.aodt_violations} "
+                f"cpu={current_eval.constraints.cpu_unstable_count} "
+                f"sep={current_eval.constraints.sep_violations} "
+                f"bw_excess={current_eval.constraints.bw_excess_hz}"
+            )
+        history.append(
+            SCAIterationLog(
+                iteration=0,
+                current_true_objective=current_eval.sum_rate_bit_per_s,
+                candidate_true_objective=current_eval.sum_rate_bit_per_s,
+                current_max_AoDT=_max_aodt(current_eval),
+                candidate_max_AoDT=_max_aodt(current_eval),
+                current_min_separation=_min_sep(uav),
+                candidate_min_separation=_min_sep(uav),
+                step_size=_effective_step_size(settings),
+                bandwidth_objective=bw_init.objective,
+                true_objective=current_eval.sum_rate_bit_per_s,
+                accepted=True,
+                rejection_reason="init",
+                solver_status=bw_init.status,
+                qos_violations=0,
+                aodt_violations=0,
+                max_cpu_load=float(np.max(current_eval.rho))
+                if current_eval.rho.size
+                else 0.0,
+                bandwidth_usage=float(np.sum(bw)),
+                solve_time_s=bw_init.solve_time_s,
+            )
         )
-
-    bw = bw_init.bandwidth_hz
-    current_eval = evaluate(scenario, uav, Allocation(a, b, bw))
-    if not true_gate_ok(current_eval):
-        raise RuntimeError(
-            "sequential SCA-style solver requires a true-feasible start; "
-            f"violations qos={current_eval.constraints.qos_violations} "
-            f"aodt={current_eval.constraints.aodt_violations} "
-            f"cpu={current_eval.constraints.cpu_unstable_count} "
-            f"sep={current_eval.constraints.sep_violations} "
-            f"bw_excess={current_eval.constraints.bw_excess_hz}"
-        )
-
-    history = [
-        SCAIterationLog(
-            iteration=0,
-            current_true_objective=current_eval.sum_rate_bit_per_s,
-            candidate_true_objective=current_eval.sum_rate_bit_per_s,
-            current_max_AoDT=_max_aodt(current_eval),
-            candidate_max_AoDT=_max_aodt(current_eval),
-            current_min_separation=_min_sep(uav),
-            candidate_min_separation=_min_sep(uav),
-            step_size=_effective_step_size(settings),
-            bandwidth_objective=bw_init.objective,
-            true_objective=current_eval.sum_rate_bit_per_s,
-            accepted=True,
-            rejection_reason="init",
-            solver_status=bw_init.status,
-            qos_violations=0,
-            aodt_violations=0,
-            max_cpu_load=float(np.max(current_eval.rho)) if current_eval.rho.size else 0.0,
-            bandwidth_usage=float(np.sum(bw)),
-            solve_time_s=bw_init.solve_time_s,
-        )
-    ]
+        assignment_now(0)
 
     step = _effective_step_size(settings)
     accepted_steps = 0
     rejected_steps = 0
     n_reductions = 0
     stop_reason = "MAX_ITERATIONS"
-    last_status = bw_init.status
-    solver_name = bw_init.solver_name
     n = 0
 
     if step <= 0.0:
@@ -560,6 +678,7 @@ def solve_sca(
                 )
                 n = n - 1
                 break
+            obj_before = current_eval.sum_rate_bit_per_s
             joint = solve_joint_convex_step(
                 scenario, uav, bw, a, b, step, settings
             )
@@ -593,11 +712,11 @@ def solve_sca(
                         solve_time_s=joint.solve_time_s,
                     )
                 )
+                assignment_now(n)
                 continue
             xy_cand = np.column_stack([joint.x_m, joint.y_m])
             move = float(np.max(np.abs(xy_cand - uav[:, :2])))
             if move < settings.min_step_size_m:
-                stop_reason = "CONVERGED"
                 history.append(
                     SCAIterationLog(
                         iteration=n,
@@ -622,6 +741,9 @@ def solve_sca(
                         solve_time_s=joint.solve_time_s,
                     )
                 )
+                if assignment_now(n):
+                    continue
+                stop_reason = "CONVERGED"
                 break
             uav_cand = make_uav_xyz_m(xy_cand, cfg.uav_height_m)
             bw_res = solve_bandwidth_at_fixed_q(scenario, uav_cand, a, b, settings)
@@ -656,6 +778,7 @@ def solve_sca(
                         solve_time_s=bw_res.solve_time_s,
                     )
                 )
+                assignment_now(n)
                 continue
 
             cand_eval = evaluate(scenario, uav_cand, Allocation(a, b, bw_res.bandwidth_hz))
@@ -692,13 +815,12 @@ def solve_sca(
                         solve_time_s=bw_res.solve_time_s,
                     )
                 )
+                assignment_now(n)
                 if accepted_steps > 0 and step <= settings.min_step_size_m:
                     stop_reason = "CONVERGED"
                     break
                 continue
 
-            delta = cand_eval.sum_rate_bit_per_s - current_eval.sum_rate_bit_per_s
-            prev_obj = current_eval.sum_rate_bit_per_s
             prev_aodt = _max_aodt(current_eval)
             prev_sep = _min_sep(uav)
             uav = uav_cand
@@ -709,7 +831,7 @@ def solve_sca(
             history.append(
                 SCAIterationLog(
                     iteration=n,
-                    current_true_objective=prev_obj,
+                    current_true_objective=obj_before,
                     candidate_true_objective=cand_eval.sum_rate_bit_per_s,
                     current_max_AoDT=prev_aodt,
                     candidate_max_AoDT=_max_aodt(cand_eval),
@@ -730,6 +852,8 @@ def solve_sca(
                     solve_time_s=bw_res.solve_time_s,
                 )
             )
+            assignment_now(n)
+            delta = current_eval.sum_rate_bit_per_s - obj_before
             if abs(delta) <= settings.epsilon:
                 stop_reason = "CONVERGED"
                 break
@@ -742,11 +866,20 @@ def solve_sca(
 
     stop_reason = classify_stop_reason(
         stop_reason,
-        accepted_steps=accepted_steps,
+        accepted_steps=accepted_steps + assignment_accepted,
         step_size=step,
         min_step_size=float(settings.min_step_size_m),
     )
 
+    diag_extra = {
+        "stop_reason": stop_reason,
+        "converged": stop_reason == "CONVERGED",
+        "accepted_steps": accepted_steps,
+        "final_step_m": step,
+        "rejected_steps": rejected_steps,
+        "step_size_reductions": n_reductions,
+        **assignment_diag(),
+    }
     return SCAResult(
         uav_xyz_m=uav,
         allocation=Allocation(a, b, bw),
@@ -757,26 +890,7 @@ def solve_sca(
         solver_status=last_status,
         solver_name=solver_name,
         n_iterations=int(history[-1].iteration),
-        diagnostics={
-            "method": "algorithm_1_sca_problem_p",
-            "label": (
-                "Algorithm 1 SCA of Problem (P): joint convexified (q, B) "
-                "with first-order Taylor of (3)–(5) and (25). a_ij, b_ij fixed."
-            ),
-            "binaries": "a_ij and b_ij fixed after initialization (IMPLEMENTATION CHOICE)",
-            "stop_reason": stop_reason,
-            "converged": stop_reason == "CONVERGED",
-            "accepted_steps": accepted_steps,
-            "final_step_m": step,
-            "rejected_steps": rejected_steps,
-            "step_size_reductions": n_reductions,
-            "seed": seed,
-            "b_sys_hz": cfg.b_sys_hz,
-            "step_size_m": settings.step_size_m,
-            "association_init_equals_final": True,
-            "processing_init_equals_final": True,
-            "solver_backend": settings.solver or "cvxpy",
-        },
+        diagnostics=_common_diagnostics(seed, cfg, settings, diag_extra),
     )
 
 

@@ -25,6 +25,12 @@ class SCASettings:
     # CVX+MOSEK session for the sequential convex LPs.
     solver: str | None = None
     verbose: bool = False
+    # If False (default), a_ij and b_ij stay at initialization. If True,
+    # after each convex (q, B) step the solver may reassign association
+    # and processing. Accepted only when evaluate()/true_gate_ok() pass
+    # and the true sum rate improves (or the point becomes newly feasible).
+    # MATLAB CVX is frozen-only; dynamic_assignment is CVXPY.
+    dynamic_assignment: bool = False
     # Kept only so older call sites that passed trust_region_m=0 still
     # mean "do not move UAVs". Not a joint Taylor trust region.
     trust_region_m: float | None = None
