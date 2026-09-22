@@ -16,9 +16,13 @@ K-means puts UAVs *between* IoTs. Algorithm 1’s first-order Taylor step only p
 
 It is never worse than one-shot SCA **by construction** (`include_frozen=True`). At 500 m it is a ranking method. At 100 m leftover dump saturates and the same wrapper is a nick.
 
-**Allowed claim.** *Under any per-link bandwidth limit, the capped water-fill makes (P)’s placement a top-\(k\) anchoring problem. K-means is the wrong prior; the structure is zenith-subset selection. The paper’s uncapped model is the degenerate \(k=1\) case.*
+**Allowed claim (Path A).** *Under leftover-dump (27) plus this reproduction’s per-link cap, IoT-anchored placement plus Algorithm 1 polish is the ranking leftover-dump solver at 500 m. K-means centroids are the wrong leftover-dump prior. E1 is a scope limit: the same geometries are not min-Hertz champions.*
 
-**Forbidden claim.** *We solved Khalaf’s Problem (P) better than Algorithm 1 on the paper’s own (uncapped) model.* Hovering over users is also a common UAV placement prior; the load-bearing piece here is coupling that prior to the leftover-dump LP as an exact subset oracle.
+**Forbidden claim.** *We solved Khalaf’s Problem (P) better than Algorithm 1 on the paper’s own (uncapped) model.* Hovering over users is a common UAV placement prior.
+
+**K-medoids control (do not skip in the paper).** At 500 m / J=3 leftover dump, p-median SCA matches zenith-subset at **8.490 Mbps** (n=20) and **8.478 vs 8.481** on the n100 bank (Δ −0.003, 0/100 practical; vs SCA +0.250 with 70/100 practical vs zenith-subset’s +0.253 / 71/100). The leftover-dump LP as a subset *oracle* is not what beats SCA. At J=2, n=50 still has **no practical LP advantage** vs p-median (mean +0.040 Mbps, 11/50 above 0.05).
+
+**Path B (do not write).** E1b Hertz keep-best vs one-shot k-means: J=3 mean save 79 kHz but the 95% CI lower bound (~47 kHz) does not clear the 50 kHz drop line; J=2 (92 ± 29) does. Almost all of the save is extra k-means inits. Hertz-best vs inertia-best among the same five inits differs by 2 kHz (J=3) / 10 kHz (J=2). That is multi-start covering, not adaptive spectrum via zenith-subset LP.
 
 ---
 
@@ -59,7 +63,7 @@ Implementation: `src/uavdt/sca_anchor.py`. Does **not** edit `src/uavdt/sca/`. E
 | `max_enumerate` | 1000 | Full \(\binom{I}{J}\) enum if at most this many subsets |
 | `beam_width` | 10 | Beam width when \(\binom{I}{J}\) exceeds `max_enumerate` |
 | `include_frozen` | True | Put one-shot k-means SCA in the keep-best pool |
-| `selection` | `enum` | `random` is an ablation control (one random J-subset) |
+| `selection` | `enum` | `random` = one random J-subset (ablation); `continuous` = ~120 uniform UAV layouts, same LP + top-3 |
 | SCA settings | 30 iters, \(\varepsilon=10^{-4}\), step 20 m, CVXPY | Unmodified Algorithm 1 |
 
 Default I=10, J=3: \(\binom{10}{3}=120 \le 1000\), so full enumeration. I-axis 500 m sets `max_enumerate=10000`, so \(\binom{32}{3}=4960\) is also full enum (20/20 `enum_mode=full`; mean 4951 LPs / seed after a few jitter-unfittable skips).
@@ -113,11 +117,11 @@ Algorithm 2 TD3 is ~97 s/seed (~110×) and scores **below** SCA.
 
 | Method | What it searches | Default J=3 100 m | Default J=3 500 m |
 | --- | --- | ---: | ---: |
-| Random + LP | Unstructured xy | 8.928 | 7.947 |
+| Random + LP | Unstructured xy | 8.773 | 6.016 |
 | K-means + LP | Cluster centroids | 8.901 | 7.474 |
 | PSO + LP (external) | Swarm on xy, equal-share inner fitness | 8.905 | 8.122 |
 | Frozen SCA (Alg. 1) | Local (q, B) from k-means | **8.946** (headline) | **8.300** (headline) |
-| Multi-start SCA | 1 frozen + 2 random + 2 k-means SCA | 8.961 | 8.404 |
+| Multi-start SCA | 1 frozen + 2 random + 2 k-means SCA | 8.961 | 8.399 |
 | Algorithm 2 TD3 | Residual around k-means, leftover inner B | 8.917 | n100: 7.510 |
 | Experiment C | Discrete \(a\) at frozen SCA \(q\) | flat | — |
 | **Zenith-anchor SCA** | **J-subsets of IoT xy + LP oracle + SCA polish** | **8.964** | **8.490** |
@@ -126,7 +130,17 @@ None of the repo priors enumerates zenith J-subsets. That is the method contribu
 
 ### 4.2 Versus the wider UAV literature
 
-Hovering over users, user-centric UAV placement, and combinatorial UAV–user matching are not new ideas. Do not write “we invented hovering.” Write: leftover-dump plus a per-link cap *makes* the optimum a zenith J-subset, and an exact LP is a cheap oracle for that subset, after which Algorithm 1 is only a local polish.
+Hovering over users is **not** new. Neither is restricting UAV sites to a discrete candidate set. The manuscript name should not be “zenith-anchor”: in 2024–2026 “UAV anchor” means localization / ISAC CRLB. Prefer **zenith-subset SCA** or **leftover-dump subset prior**.
+
+**Hover-and-fly (do not claim as ours).** Wu, Xu, Zhang, *IEEE JSAC* 2018: two-user BC, hover-fly-hover; with TDMA the UAV hovers *above the users*. Xie, Xu, Zhang, *IEEE IoTJ* vol. 6, no. 2, pp. 1690–1703, Apr. **2019** (DOI 2018; WPCN): unconstrained uplink WIT optimum is hover above *each* ground user, then SCA polish — the hover set is all users, not a scored \(J\)-subset. Xu, Zeng, Zhang, *IEEE TWC* vol. 17, no. 8, pp. 5092–5106, 2018 (WPT): successive hover-and-fly over a finite location set for energy transfer. Wu, Zeng, Zhang, arXiv:1801.00444: joint OFDMA bandwidth + trajectory via BCD/SCA from a **circular** init — closest radio, wrong init.
+
+**Coverage / between-users (the k-means prior, often miscited as hover).** Alzenad et al., *IEEE WCL* 2017, is 3D UAV-BS placement as a **smallest enclosing circle**. That puts the UAV *between* users, i.e. the covering prior this method argues against on leftover dump. Do not cite it as “hover over users.”
+
+**p-median / candidate-site lineage (the covering control).** Discrete facility location on demand points is Hakimi’s 1-median (*Operations Research*, 1964) and p-median / multimedian (1965), plus the candidate-site restriction used throughout covering location (Toregas, Church, ReVelle). UAV papers that restrict hover locations to a finite set of ground sites are in that family: they park on a discrete menu, usually to cover or to cut backhaul, not to score leftover-dump water-fill. **K-medoids / p-median on IoT xy** is that control in this repo (`sca_medoid`): same Algorithm 1 polish as zenith-subset, distance objective instead of the leftover-dump LP. If it matches zenith-subset on leftover-dump Mbps, the novel piece is not “we hover,” and it is not “the LP is a magical oracle”; it is that leftover-dump plus a per-link cap makes *park-on-IoTs* the right prior versus k-means centroids.
+
+**What would still be new, if the n100 medoid control holds.** Treating capped leftover-dump as making placement a top-\(k=\lceil 1/c\rceil\) SE dump, and using an exact frozen-\(q\) bandwidth LP as one *optional* subset score. The p-median control tests whether that score matters. Random-anchor (hover over *some* IoTs) already loses to enum; p-median asks whether a *covering* park-on-IoTs rule is enough.
+
+**Forbidden sentence.** “We beat Khalaf on Problem (P).” Khalaf has no per-link cap. No-cap is the degenerate \(k=1\) case.
 
 ### 4.3 Versus Khalaf (IEEE TNSM 2026)
 
@@ -150,10 +164,10 @@ Means in Mbps.
 
 | Test | Anchor | Multi-start | SCA | PSO | Random | K-means | LP-only |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| n20 100 × 100 m | **8.964** | 8.961 | 8.946 | 8.905 | 8.928 | 8.901 | 8.960 |
-| n20 500 × 500 m | **8.490** | 8.404 | 8.300 | 8.122 | 7.947 | 7.474 | 8.443 |
-| n100 100 × 100 m | **8.963** | 8.959 | 8.946 | 8.905 | 8.932 | 8.896 | 8.959 |
-| n100 500 × 500 m | **8.481** | 8.393 | 8.228 | 8.088 | 7.991 | 7.438 | 8.430 |
+| n20 100 × 100 m | **8.964** | 8.961 | 8.946 | 8.905 | 8.773 | 8.901 | 8.960 |
+| n20 500 × 500 m | **8.490** | 8.399 | 8.300 | 8.122 | 6.016 | 7.474 | 8.443 |
+| n100 100 × 100 m | **8.963** | 8.960 | 8.946 | 8.905 | 8.753 | 8.896 | 8.959 |
+| n100 500 × 500 m | **8.481** | 8.402 | 8.228 | 8.094 | 5.823 | 7.438 | 8.430 |
 
 n20 100 m / 500 m match the 20-seed headline campaigns’ SCA to 0.000 Mbps (8.946 / 8.300). n100 banks are a different 100-layout draw; do not mix them with the 20-seed tables as if they were the same sample.
 
@@ -163,10 +177,10 @@ Vs SCA: mean \(\Delta\), distribution, practical count. No p-value. “Moved” 
 
 | Test | vs SCA | vs multi-start | vs PSO | vs random |
 | --- | --- | --- | --- | --- |
-| n20 100 m | **+0.017 ± 0.021**, median +0.008, p10–p90 [+0.000, +0.047], 18/20 moved, 2/20 prac. | +0.003 ± 0.005, 18/20 moved, 0 prac., p=3.8e-6 | +0.059, 20/20, 12/20 prac., p=9.5e-7 | +0.036, 20/20, 4/20 prac., p=9.5e-7 |
-| n20 500 m | **+0.190 ± 0.191**, median +0.127, p10–p90 [+0.010, +0.479], 18/20 moved, **14/20 prac.** | +0.087 ± 0.130, 17/20 moved, 0 losses, 9/20 prac., p=7.6e-6 | +0.369, 20/20, **20/20 prac.**, p=9.5e-7 | +0.544, 20/20, 20/20 prac., p=9.5e-7 |
-| n100 100 m | **+0.017 ± 0.030**, median +0.010, p10–p90 [+0.000, +0.046], 86/100 moved, 8/100 prac. | +0.004 ± 0.007, 70/100 moved, 15 losses, **0/100 prac.**, p=1.2e-16 | +0.058, 100/100, 51/100 prac., p=7.9e-31 | +0.032, 100/100, 16/100 prac., p=7.9e-31 |
-| n100 500 m | **+0.253 ± 0.265**, median +0.169, p10–p90 [+0.000, +0.600], 90/100 moved, **71/100 prac.** | +0.088 ± 0.125, 75/100 moved, 5 losses, **45/100 prac.**, p=4.0e-18 | +0.393, 100/100, **100/100 prac.**, p=7.9e-31 | +0.490, 100/100, 98/100 prac., p=7.9e-31 |
+| n20 100 m | **+0.017 ± 0.021**, median +0.008, p10–p90 [+0.000, +0.047], 18/20 moved, 2/20 prac. | +0.003 ± 0.005, 18/20 moved, 0 prac., p=3.8e-6 | +0.059, 20/20, 12/20 prac., p=9.5e-7 | +0.191 vs post-fix random 8.773 (old +0.036 used zenith-aliased random) |
+| n20 500 m | **+0.190 ± 0.191**, median +0.127, p10–p90 [+0.010, +0.479], 18/20 moved, **14/20 prac.** | +0.091 ± 0.130, 17/20 moved, 0 losses, 9/20 prac., p=7.6e-6 | +0.369, 20/20, **20/20 prac.**, p=9.5e-7 | +2.474 vs post-fix random 6.016 |
+| n100 100 m | **+0.017 ± 0.030**, median +0.010, p10–p90 [+0.000, +0.046], 86/100 moved, 8/100 prac. | +0.004 ± 0.007, 70/100 moved, 15 losses, **0/100 prac.**, p=1.2e-16 | +0.058, 100/100, 51/100 prac., p=7.9e-31 | +0.210 vs post-fix random 8.753 |
+| n100 500 m | **+0.253 ± 0.265**, median +0.169, p10–p90 [+0.000, +0.600], 90/100 moved, **71/100 prac.** | +0.088 ± 0.125, 75/100 moved, 5 losses, **45/100 prac.**, p=4.0e-18 | +0.393, 100/100, **100/100 prac.**, p=7.9e-31 | +2.658 vs post-fix random 5.823 |
 
 Read the 500 m column as the ranking story. The headline practical count is **71/100 at 500 m**, not the keep-best move count. Read the 100 m column as leftover-dump saturation: everyone is already near the radio ceiling (~8.97 Mbps no-cap), so even a better prior can only nick.
 
@@ -217,12 +231,12 @@ Wins vs SCA are move-counts under the 1 bit/s tie band, not a significance test.
 | J | 500 m anchor | 500 m SCA | Δ vs SCA | moved | prac. | 500 m PSO | 500 m k-means |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 6.238 | 6.025 | +0.213 | 7/20 | 6 | 6.018 | 4.582 |
-| 2 | **7.844** | 7.486 | **+0.358** | 17/20 | **14** | **7.522** | 6.165 |
+| 2 | **7.844** | 7.486 | **+0.358** | 17/20 | **14** | **7.575** | 6.165 |
 | 3 | 8.490 | 8.300 | +0.190 | 18/20 | 14 | 8.122 | 7.474 |
 | 4 | 8.778 | 8.580 | +0.197 | 18/20 | **16** | 8.413 | 8.110 |
 | 5 | 8.871 | 8.765 | +0.106 | 18/20 | 15 | 8.607 | 8.531 |
 
-**Load-bearing geometry: 500 m / J=2.** PSO beats k-means SCA (7.522 vs 7.486). Zenith-anchor **7.844** is +0.358 vs SCA and **+0.322 vs PSO** (20/20, p=9.5e-7). Too few UAVs, too large a field, k-means sits between IoTs, leftover dump still has room. That is the sentence the method is for.
+**Load-bearing geometry: 500 m / J=2.** PSO beats k-means SCA (7.575 vs 7.486; same 500 m campaign as the leftover-dump J-axis). Zenith-anchor **7.844** is +0.358 vs SCA and **+0.269 vs PSO**. Too few UAVs, too large a field, k-means sits between IoTs, leftover dump still has room. That is the sentence the method is for.
 
 ### 5.5.1 IoT-count sweep (J=3, 500 m, 20 seeds, full enum)
 
@@ -268,10 +282,12 @@ These isolate the claims §5.4 cannot. Artifacts under `results/sca_anchor_ablat
 | Test | Random-anchor | Enum | Multi-start | SCA |
 | --- | ---: | ---: | ---: | ---: |
 | n20 100 m | 8.954 | **8.964** | 8.961 | 8.946 |
-| n20 500 m | 8.329 | **8.490** | 8.404 | 8.300 |
+| n20 500 m | 8.329 | **8.490** | 8.399 | 8.300 |
 | n100 500 m | 8.315 | **8.481** | 8.393 | 8.228 |
 
-At 500 m random-anchor is a nick over SCA (n20 +0.029, 3/20 practical; n100 +0.088) and **loses to multi-start**. Hovering over any IoT is not the method. Enumeration is load-bearing.
+At 500 m random-anchor is a nick over SCA (n20 +0.029, 3/20 practical; n100 +0.088) and **loses to multi-start**. Hovering over any IoT is not the method. Enumeration among IoT subsets is load-bearing relative to a single random subset.
+
+**Continuous-candidate control.** Same LP + top-3 polish + keep-best, ~120 *uniform* UAV layouts (`selection="continuous"`). n20 500 m / J=3: continuous **8.424** vs zenith-subset **8.490** (Δ **−0.067 ± 0.067**, **0/20** higher, **11/20** practical losses). n100 500 m bank: **8.391** vs **8.481** (Δ **−0.090 ± 0.090**, **1/100** higher, **56/100** practical losses). Vs multi-start both samples are a nick (n20 +0.024 n.s.; n100 −0.011, p=0.051). Many LP-scored continuous candidates ≈ extra unstructured inits; they do **not** match park-on-IoTs.
 
 **Beam vs exhaustive on I=10.** `max_enumerate=0`, beam width 10. Rate match is exact: n20 100 m 8.963842 = exhaustive; n20 500 m 8.490441 = exhaustive; max \(|\Delta|=0\). Winner kind+combo differs on 1/20 and 3/20 (equal-rate ties). The I=32 beam is a validated heuristic, not an untested stub.
 
@@ -282,24 +298,24 @@ At 500 m random-anchor is a nick over SCA (n20 +0.029, 3/20 practical; n100 +0.0
 | Cell | Anchor | SCA | PSO | Δ vs SCA | Δ vs PSO |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 100 m 25% (headline) | 8.964 | 8.946 | 8.905 | +0.017 | +0.059 |
-| 100 m 15% | 8.914 | 8.895 | 8.854 | +0.019 | +0.060 |
-| 100 m 12% | 8.853 | 8.816 | 8.815 | +0.037 | +0.038 |
+| 100 m 15% | 8.914 | 8.895 | 8.849 | +0.019 | +0.065 |
+| 100 m 12% | 8.853 | 8.816 | 8.808 | +0.037 | +0.045 |
 | 100 m no-cap | 8.973 | 8.971 | 8.943 | +0.002 | +0.030 |
 | **500 m 25% (headline)** | **8.490** | 8.300 | 8.122 | **+0.190** | **+0.369** |
-| **500 m 15%** | **7.783** | 7.538 | 7.585 | **+0.244** | **+0.198** |
-| **500 m 12%** | **7.171** | 6.900 | 7.020 | **+0.271** | **+0.151** |
+| **500 m 15%** | **7.783** | 7.538 | 7.557 | **+0.244** | **+0.226** |
+| **500 m 12%** | **7.171** | 6.900 | 6.991 | **+0.271** | **+0.180** |
 | 500 m no-cap | 8.671 | 8.601 | 8.418 | +0.070 | +0.253 |
 
-No-cap 100 m collapses (+0.002 vs SCA, 0/20 practical). No-cap 500 m shrinks to +0.070: SCA does walk toward zenith, but *which* IoT still matters on a large field. At 12% / 500 m, PSO beats SCA (7.020 vs 6.900, 15/20 practical vs SCA for anchor) and zenith-anchor still ranks first (7.171, +0.151 vs PSO, 15/20 practical). At 15% / 500 m the vs-SCA edge is *larger* than at 25% (+0.244, 13/20 practical), not smaller; the vs-PSO edge shrinks as predicted because PSO is a better leftover-dump search when \(k\) is large. The method is a family over \(c\), not a 25%-only trick. n100 500 m confirms both cells: 12% anchor **7.216** / PSO 7.022 / SCA 6.916 (+0.299 / +0.194); 15% anchor **7.816** / PSO 7.556 / SCA 7.542 (+0.274 / +0.260).
+No-cap 100 m collapses (+0.002 vs SCA, 0/20 practical). No-cap 500 m shrinks to +0.070: SCA does walk toward zenith, but *which* IoT still matters on a large field. At 12% / 500 m, PSO beats SCA (6.991 vs 6.900, 15/20 practical vs SCA for anchor) and zenith-anchor still ranks first (7.171, +0.180 vs PSO, 15/20 practical). At 15% / 500 m the vs-SCA edge is *larger* than at 25% (+0.244, 13/20 practical), not smaller; the vs-PSO edge shrinks as predicted because PSO is a better leftover-dump search when \(k\) is large. The method is a family over \(c\), not a 25%-only trick. n100 500 m confirms both cells: 12% anchor **7.216** / PSO 7.025 / SCA 6.916 (+0.299 / +0.191); 15% anchor **7.816** / PSO 7.564 / SCA 7.542 (+0.274 / +0.252).
 
 Dedicated 15% 500 m artifacts (`sca_anchor_n20_500m_cap15.json`, `n100_500m_cap15/eval_anchor.json`) match those means and add the paired readout:
 
 | Test | Anchor | SCA | PSO | vs SCA | vs PSO |
 | --- | ---: | ---: | ---: | --- | --- |
-| n20 500 m 15% | **7.783** | 7.538 | **7.585** | +0.244, 17/20 moved, **13/20** prac. | **+0.198**, 20/20, **20/20** prac., p=9.5e-7 |
-| n100 500 m 15% | **7.816** | 7.542 | **7.556** | +0.274, 86/100 moved, **72/100** prac. | **+0.259**, 100/100, **97/100** prac., p=7.9e-31 |
+| n20 500 m 15% | **7.783** | 7.538 | **7.557** | +0.244, 17/20 moved, **13/20** prac. | **+0.226**, 20/20, **20/20** prac., p=1.9e-6 |
+| n100 500 m 15% | **7.816** | 7.542 | **7.564** | +0.274, 86/100 moved, **72/100** prac. | **+0.252**, 100/100, **100/100** prac., p=1.6e-30 |
 
-PSO beats SCA on the mean at 15% / 500 m. Anchor still ranks first on both samples, and closes every SCA-loss-to-random layout (n20 0/2, n100 0/11). Tighter cap does move the *continuous* optimum off pure zenith: winner polish displacement is **21.1 m** (n20) / **22.4 m** (n100) vs ~6 m at 25%, nearest-\(a\) changes on 5/100 n100 seeds, and K=3 vs K=1 is practical on **5/100** (0/100 at 25%). LP-only is only +0.060 vs SCA on n20 15% (7.598 vs 7.538); the three polishes add **+0.185**. The zenith J-subset remains the right *start*. The leftover-dump bound at frozen zenith \(a\) is slightly *below* the polished rate (−0.16% n20, −0.27% n100) because polish is allowed to leave zenith.
+PSO beats SCA on the mean at 15% / 500 m. Anchor still ranks first on both samples, and closes every SCA-loss-to-random layout (n20 **0/20**, n100 **0/100** after the 2026-09-20 random replay; the old 0/2 and 0/11 were vs pre-fix random). Tighter cap does move the *continuous* optimum off pure zenith: winner polish displacement is **21.1 m** (n20) / **22.4 m** (n100) vs ~6 m at 25%, nearest-\(a\) changes on 5/100 n100 seeds, and K=3 vs K=1 is practical on **5/100** (0/100 at 25%). LP-only is only +0.060 vs SCA on n20 15% (7.598 vs 7.538); the three polishes add **+0.185**. The zenith J-subset remains the right *start*. The leftover-dump bound at frozen zenith \(a\) is slightly *below* the polished rate (−0.16% n20, −0.27% n100) because polish is allowed to leave zenith.
 
 **Degrees-LoS.** Default radio is radians. Under `los_angle_unit="deg"` the LoS/NLoS geometry is a different radio (~57 Mbps). Prediction: zenith anchoring should matter more, not less.
 
@@ -341,7 +357,7 @@ Wall **9.1 s/seed** (~2 s above the 25% default, from doubling the LP oracle). T
 
 ### Copy-ready (honest)
 
-> Under leftover-dump (27) plus any per-link bandwidth cap, the frozen-q LP dumps leftover Hertz onto the top-\(\lceil 1/c\rceil\) SE links, and SE is maximal at zenith. That makes (P)’s placement a zenith-subset problem; the paper’s uncapped model is the degenerate top-1 case. Enumerating those J-subsets, scoring each with one leftover-dump LP, and polishing the top-3 with unmodified Algorithm 1 is never worse than one-shot SCA by construction. At 500 × 500 m / J=3 it scores 8.490 Mbps vs SCA 8.300 and multi-start 8.404 (+0.190 / +0.087; 14/20 practical vs SCA; median Δ vs SCA +0.127, p10–p90 [+0.010, +0.479]). The 100-layout bank is +0.253 Mbps vs SCA (71/100 practical; median +0.169). That closes 40% of the gap from k-means SCA to a leftover-dump upper bound (bound 8.732, gap 2.9%). The same ranking holds on the I-axis through I=32 (full enum, +0.150 at I=32) and at 15% cap (n100 7.816 vs SCA 7.542 / PSO 7.556). With a process-cohesive candidate it is 20/20 feasible at \(T_k=0.8\) s and 8.430 vs cohesive SCA-joint 8.393. At 100 × 100 m leftover dump compresses the same wrapper to +0.017 Mbps. K-means is the wrong prior. This is not a claim that Algorithm 1 is wrong on Khalaf’s uncapped (P).
+> Under leftover-dump (27) plus any per-link bandwidth cap, the frozen-q LP dumps leftover Hertz onto the top-\(\lceil 1/c\rceil\) SE links, and SE is maximal at zenith. That makes (P)’s placement a zenith-subset problem; the paper’s uncapped model is the degenerate top-1 case. Enumerating those J-subsets, scoring each with one leftover-dump LP, and polishing the top-3 with unmodified Algorithm 1 is never worse than one-shot SCA by construction. At 500 × 500 m / J=3 it scores 8.490 Mbps vs SCA 8.300 and multi-start 8.399 (+0.190 / +0.091; 14/20 practical vs SCA; median Δ vs SCA +0.127, p10–p90 [+0.010, +0.479]). The 100-layout bank is +0.253 Mbps vs SCA (71/100 practical; median +0.169). That closes 40% of the gap from k-means SCA to a leftover-dump upper bound (bound 8.732, gap 2.9%). The same ranking holds on the I-axis through I=32 (full enum, +0.150 at I=32) and at 15% cap (n100 7.816 vs SCA 7.542 / PSO 7.564). With a process-cohesive candidate it is 20/20 feasible at \(T_k=0.8\) s and 8.430 vs cohesive SCA-joint 8.393. At 100 × 100 m leftover dump compresses the same wrapper to +0.017 Mbps. K-means is the wrong prior. This is not a claim that Algorithm 1 is wrong on Khalaf’s uncapped (P).
 
 ### Do not write
 
@@ -359,6 +375,7 @@ Wall **9.1 s/seed** (~2 s above the 25% default, from doubling the LP oracle). T
 | Probe | Status |
 | --- | --- |
 | Random-anchor / beam / \(K=10\) / bound | **Measured** (§5.6–§5.7) |
+| Continuous ~120 LP+top-3 | **Measured** (§5.7): n20 8.424 vs 8.490 (−0.067); n100 8.391 vs 8.481 (−0.090, 56/100 practical losses). Not “many candidates + LP.” |
 | Cap family (15% / 12% / no-cap) | **Measured** on n20 both fields and n100 500 m at 12% / 15% (§5.7). Dedicated 15% 500 m paired: still ranks first vs SCA and vs PSO |
 | Degrees-LoS | **Measured** on n20 and n100 500 m (§5.7). Edge grows, not shrinks |
 | I-axis (I=16…32, J=3, 500 m) | **Measured** (§5.5.1). Full enum through \(\binom{32}{3}=4960\). Gap stays 0.13–0.19 Mbps, practical at every \(I\) |
@@ -377,11 +394,12 @@ The remaining-before-headline bar in [`RESULTS.md` §2.15](RESULTS.md#215-zenith
 | Method hook | `src/uavdt/experiments/methods.py` (`KNOWN_METHODS`, not in default `METHODS`) |
 | CLI | `python -m uavdt sca-anchor --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25` |
 | Four tests + J-sweep | `python scripts/campaigns/run_sca_anchor_cases.py` |
+| Continuous control | `python scripts/campaigns/run_sca_continuous_cases.py`, `run_sca_continuous_n100.py` |
 | Ablations | `python scripts/campaigns/run_sca_anchor_ablations.py` |
 | Paired readout | `python scripts/analyze/analyze_sca_anchor_cases.py` |
-| Tests | `tests/test_sca_anchor.py` (keep-best, sep jitter, I=32 beam, bound, random, opt-in) |
-| n20 JSON | `results/sca_anchor_n20.json`, `sca_anchor_n20_500m.json`, `sca_anchor_n20_500m_cap15.json` |
-| n100 JSON | `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json` |
+| Tests | `tests/test_sca_anchor.py` (keep-best, sep jitter, I=32 beam, bound, random, continuous, opt-in) |
+| n20 JSON | `results/sca_anchor_n20.json`, `sca_anchor_n20_500m.json`, `sca_anchor_n20_500m_cap15.json`, `sca_continuous_n20_500m.json` |
+| n100 JSON | `results/n100/eval_anchor.json`, `results/n100_500m_cap25/eval_anchor.json`, `results/n100_500m_cap15/eval_anchor.json`, `eval_continuous.json` |
 | J-sweep merge | `results/campaign_sca_anchor_uavs.json`, `_500m.json` |
 | I-sweep merge | `results/campaign_sca_anchor_iots_500m.json` |
 | \(T_k=0.8\) | `results/sca_anchor_tk08.json` |
