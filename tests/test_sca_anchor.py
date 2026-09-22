@@ -27,13 +27,18 @@ cvxpy = pytest.importorskip("cvxpy")
 
 def test_known_methods_keep_anchor_opt_in():
     assert "sca_anchor" not in METHODS
+    assert "sca_medoid" not in METHODS
+    assert "sca_continuous" not in METHODS
     assert "sca_anchor" in KNOWN_METHODS
+    assert "sca_medoid" in KNOWN_METHODS
+    assert "sca_continuous" in KNOWN_METHODS
     assert METHODS == ("random", "kmeans", "pso", "sca")
 
 
 def test_campaign_cli_accepts_sca_anchor():
     assert _parse_methods("sca_anchor") == ("sca_anchor",)
     assert _parse_methods("random,sca,sca_anchor")[-1] == "sca_anchor"
+    assert _parse_methods("sca_continuous") == ("sca_continuous",)
 
 
 def test_n_combos_and_separation_guard():
@@ -192,6 +197,34 @@ def test_random_selection_scores_one_subset():
     assert info["mode"] == "random"
     assert info["n_lp"] <= 1
     assert len(info["top"]) <= 1
+
+
+def test_continuous_selection_scores_n_layouts():
+    cfg = SimConfig(b_sys_hz=8.8e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    info = score_anchor_combos(
+        sc,
+        seed=1,
+        settings=AnchorSettings(
+            selection="continuous", n_continuous=4, top_k=2, include_frozen=False
+        ),
+        sca_settings=SCASettings(solver=None, max_iterations=1),
+    )
+    assert info["mode"] == "continuous"
+    assert info["n_combos"] == 4
+    assert info["n_lp"] <= 4
+    assert 1 <= len(info["top"]) <= 2
+    run = solve_sca_anchor(
+        sc,
+        1,
+        settings=SCASettings(solver=None, max_iterations=1),
+        anchor=AnchorSettings(
+            selection="continuous", n_continuous=3, top_k=1, include_frozen=True
+        ),
+    )
+    assert run.diagnostics.get("selection") == "continuous"
+    assert run.diagnostics.get("enum_mode") == "continuous"
+    assert run.true_eval.sum_rate_mbps > 0.0
 
 
 def test_leftover_bound_at_least_lp_best():

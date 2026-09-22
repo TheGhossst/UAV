@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import itertools
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 
 import numpy as np
@@ -41,8 +41,15 @@ class AnchorSettings:
     process_cohesive_candidate: bool = False
     # "enum" = combinatorial (full or beam). "random" = ablation control:
     # sample n_random J-subsets uniformly, LP-score, polish top-K.
+    # "medoid" = discrete p-median / k-medoids on IoT xy (covering),
+    # same LP + SCA polish as enum.
+    # "continuous" = n_continuous uniform UAV layouts (not parked on IoTs),
+    # same LP + top-K polish + keep-best. Tests "many candidates + LP
+    # screening" vs park-on-IoTs.
     selection: str = "enum"
     n_random: int = 1
+    n_medoid_inits: int = 5
+    n_continuous: int = 120
 
 
 def n_anchor_combos(num_iot: int, num_uav: int) -> int:
@@ -443,6 +450,64 @@ def _random_enum(
     return _collect(scenario, combos, seed, top_k, settings, anchor)
 
 
+def _medoid_enum(
+    scenario: Scenario,
+    seed: int,
+    top_k: int,
+    settings: SCASettings,
+    anchor: AnchorSettings,
+) -> tuple[list[dict], int, int, int]:
+    from uavdt.placement.kmedoids import covering_combos
+
+    j = int(scenario.cfg.num_uav)
+    rng = np.random.default_rng(int(seed) + 9103)
+    combos = covering_combos(
+        scenario.iot_xyz_m[:, :2],
+        j,
+        rng,
+        n_pam_inits=int(anchor.n_medoid_inits),
+        max_enumerate=int(anchor.max_enumerate),
+    )
+    return _collect(scenario, combos, seed, top_k, settings, anchor)
+
+
+def _continuous_enum(
+    scenario: Scenario,
+    seed: int,
+    top_k: int,
+    settings: SCASettings,
+    anchor: AnchorSettings,
+) -> tuple[list[dict], int, int, int]:
+    """LP-score uniform continuous UAV layouts. Not restricted to IoT xy."""
+    from uavdt.placement.random import place_random
+
+    j = int(scenario.cfg.num_uav)
+    want = max(1, int(anchor.n_continuous))
+    rows: list[dict] = []
+    n_lp = 0
+    n_skip = 0
+    for i in range(want):
+        place_seed = int(seed) * 100_003 + i + 700_001
+        try:
+            uav = place_random(j, place_seed, scenario.cfg)
+        except RuntimeError:
+            n_skip += 1
+            continue
+        row, used = _lp_row(
+            scenario, uav, tuple(), settings, None, "nearest"
+        )
+        n_lp += used
+        if row is None:
+            n_skip += 1
+            continue
+        rows.append(row)
+    rows.sort(
+        key=lambda r: (int(r["feasible"]), float(r["sum_rate_bit_per_s"])),
+        reverse=True,
+    )
+    return rows[: max(0, int(top_k))], n_lp, n_skip, 0
+
+
 def _beam_search(
     scenario: Scenario,
     seed: int,
@@ -520,6 +585,17 @@ def score_anchor_combos(
             scenario, seed, ms.top_k, sca, ms
         )
         mode = "random"
+    elif sel == "medoid":
+        top, n_lp, n_skip, n_jit = _medoid_enum(
+            scenario, seed, ms.top_k, sca, ms
+        )
+        mode = "medoid"
+    elif sel == "continuous":
+        top, n_lp, n_skip, n_jit = _continuous_enum(
+            scenario, seed, ms.top_k, sca, ms
+        )
+        mode = "continuous"
+        n_combos = int(ms.n_continuous)
     elif n_combos <= int(ms.max_enumerate):
         top, n_lp, n_skip, n_jit = _full_enum(scenario, seed, ms.top_k, sca, ms)
         mode = "full"
@@ -546,10 +622,11 @@ def _run_one(
 ) -> tuple[SCAResult | None, float, str | None]:
     t0 = perf_counter()
     try:
+        polish = replace(sca_settings, dynamic_assignment=False)
         result = solve_sca(
             scenario,
             seed,
-            settings=sca_settings,
+            settings=polish,
             uav_xyz_m=uav,
             allocation=allocation,
         )
@@ -640,15 +717,19 @@ def solve_sca_anchor(
             uav=uav0,
             allocation=row["allocation"],
         )
-        combo = [int(i) for i in row["combo"]]
+        combo = [int(i) for i in (row.get("combo") or ())]
         if extra is None:
             polished.append(
                 {
-                    "kind": "anchor",
-                    "combo": combo,
-                    "assoc_kind": row.get("assoc_kind", "nearest"),
-                    "lp_Mbps": float(row["sum_rate_Mbps"]),
-                    "sum_rate_Mbps": 0.0,
+            "kind": (
+                "continuous"
+                if str(ms.selection).lower() == "continuous"
+                else "anchor"
+            ),
+            "combo": combo,
+            "assoc_kind": row.get("assoc_kind", "nearest"),
+            "lp_Mbps": float(row["sum_rate_Mbps"]),
+            "sum_rate_Mbps": 0.0,
                     "feasible": False,
                     "n_iterations": 0,
                     "wall_clock_s": float(wall_s),
@@ -663,7 +744,11 @@ def solve_sca_anchor(
             continue
         disp = np.linalg.norm(extra.uav_xyz_m[:, :2] - uav0[:, :2], axis=1)
         rec = {
-            "kind": "anchor",
+            "kind": (
+                "continuous"
+                if str(ms.selection).lower() == "continuous"
+                else "anchor"
+            ),
             "combo": combo,
             "assoc_kind": row.get("assoc_kind", "nearest"),
             "lp_Mbps": float(row["sum_rate_Mbps"]),
@@ -718,6 +803,8 @@ def solve_sca_anchor(
             "enum_mode": scored["mode"],
             "selection": str(ms.selection),
             "n_random": int(ms.n_random),
+            "n_medoid_inits": int(ms.n_medoid_inits),
+            "n_continuous": int(ms.n_continuous),
             "n_combos": scored["n_combos"],
             "n_lp": scored["n_lp"],
             "n_skipped_sep": scored["n_skipped_sep"],

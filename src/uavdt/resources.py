@@ -70,6 +70,73 @@ def cpu_stable_processing(
     return majority
 
 
+def _processing_from_map(
+    scenario: Scenario,
+    shape: tuple[int, int],
+    assign: tuple[int, ...],
+) -> np.ndarray:
+    b = np.zeros(shape, dtype=float)
+    for pk, j_star in enumerate(assign):
+        members = scenario.processes[pk].iot_indices
+        if members.size:
+            b[members, int(j_star)] = 1.0
+    return b
+
+
+def cpu_stable_processing_candidates(
+    scenario: Scenario,
+    association: np.ndarray,
+    *,
+    max_maps: int = 8,
+) -> list[np.ndarray]:
+    """Distinct CPU-stable process-consistent b maps, cheapest first.
+
+    Majority / `cpu_stable_processing` lead. Extra process→UAV maps are
+    enumerated only when J^K is small (same cap as the (24) repair).
+    Ranked by forwarding count, then majority vote, then peak ρ.
+    """
+    a = np.asarray(association, dtype=float)
+    primary = cpu_stable_processing(scenario, a)
+    mu = float(scenario.cfg.service_rate_per_s)
+    lam = scenario.lambdas_per_s
+    ja = np.argmax(a, axis=1)
+    votes = [a[p.iot_indices].sum(axis=0) for p in scenario.processes]
+    cap = max(1, int(max_maps))
+    scored: list[tuple[tuple[int, float, float], np.ndarray]] = []
+    seen: set[tuple[int, ...]] = set()
+
+    def _consider(b: np.ndarray) -> None:
+        bb = np.asarray(b, dtype=float)
+        key = tuple(int(x) for x in np.argmax(bb, axis=1))
+        if key in seen:
+            return
+        if np.any(queue_unstable(bb, lam, mu)):
+            return
+        seen.add(key)
+        jb = np.argmax(bb, axis=1)
+        n_fwd = int(np.sum(ja != jb))
+        vote_score = 0.0
+        for pk, proc in enumerate(scenario.processes):
+            members = proc.iot_indices
+            if members.size:
+                vote_score += float(votes[pk][int(np.argmax(bb[members][0]))])
+        rho = offered_load(bb, lam, mu)
+        rank = (n_fwd, -vote_score, float(np.max(rho)) if rho.size else 0.0)
+        scored.append((rank, bb))
+
+    _consider(primary)
+    k = len(scenario.processes)
+    j = int(a.shape[1])
+    n_all = (j ** k) if k > 0 else 0
+    if k > 0 and j > 0 and n_all <= _MAX_PROCESS_UAV_MAPS:
+        for assign in _iter_process_uav_maps(k, j):
+            _consider(_processing_from_map(scenario, a.shape, assign))
+            if len(scored) >= _MAX_PROCESS_UAV_MAPS:
+                break
+    scored.sort(key=lambda item: item[0])
+    return [item[1] for item in scored[:cap]]
+
+
 def _iter_process_uav_maps(k: int, j: int):
     """Yield unique process→UAV assignments, injections first.
 

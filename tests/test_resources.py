@@ -81,6 +81,24 @@ def test_cpu_stable_splits_processes_when_majority_violates_24():
     assert assigned[0] != assigned[1]
 
 
+def test_cpu_stable_candidates_are_exclusive_and_stable(frozen_scenario, three_uavs):
+    from uavdt.computation import queue_unstable
+    from uavdt.resources import cpu_stable_processing, cpu_stable_processing_candidates, nearest_association
+
+    a = nearest_association(frozen_scenario.iot_xyz_m, three_uavs)
+    primary = cpu_stable_processing(frozen_scenario, a)
+    cands = cpu_stable_processing_candidates(frozen_scenario, a, max_maps=4)
+    assert cands
+    np.testing.assert_array_equal(cands[0] > 0.5, primary > 0.5)
+    mu = frozen_scenario.cfg.service_rate_per_s
+    for b in cands:
+        np.testing.assert_allclose(b.sum(axis=1), 1.0)
+        assert not np.any(queue_unstable(b, frozen_scenario.lambdas_per_s, mu))
+        for proc in frozen_scenario.processes:
+            js = np.argmax(b[proc.iot_indices], axis=1)
+            assert np.unique(js).size == 1
+
+
 def test_cpu_stable_keeps_majority_at_i24_both_on_one_uav():
     """I=24: 48/s < μ≈53.3/s, so sharing a UAV is legal — do not rematch."""
     from uavdt.computation import queue_unstable
