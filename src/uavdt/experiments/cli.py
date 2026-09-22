@@ -356,6 +356,7 @@ def cmd_sca(args: argparse.Namespace) -> int:
         epsilon=float(args.epsilon),
         step_size_m=float(args.step_size),
         solver=solver,
+        dynamic_assignment=bool(getattr(args, "dynamic_assignment", False)),
     )
     result = solve_sca(scenario, args.seed, settings=settings)
     write_history(result, args.history_json)
@@ -385,6 +386,29 @@ def cmd_sca(args: argparse.Namespace) -> int:
     print(f"accepted_steps        {d.get('accepted_steps')}")
     print(f"rejected_steps        {d.get('rejected_steps')}")
     print(f"step_size_reductions  {d.get('step_size_reductions')}")
+    if d.get("dynamic_assignment"):
+        print("dynamic_assignment    True")
+        print(f"assignment_accepted   {d.get('assignment_accepted')}")
+        print(f"assignment_rejected   {d.get('assignment_rejected')}")
+        print(
+            "association_init_eq   "
+            f"{d.get('association_init_equals_final')}"
+        )
+        print(
+            "processing_init_eq    "
+            f"{d.get('processing_init_equals_final')}"
+        )
+        for row in d.get("assignment_log") or []:
+            print(
+                "assignment            "
+                f"it={row.get('iteration')} {row.get('stage')} "
+                f"n_assoc={row.get('n_assoc_changed')} "
+                f"n_proc={row.get('n_proc_changed')} "
+                f"obj {row.get('objective_before')} -> {row.get('objective_after')} "
+                f"feasible={row.get('feasible')} "
+                f"{'accepted' if row.get('accepted') else 'rejected'} "
+                f"({row.get('reason')})"
+            )
     if d.get("final_step_m") is not None:
         print(f"final_step_m          {d.get('final_step_m')}")
     init_obj = result.history[0].true_objective if result.history else float("nan")
@@ -917,6 +941,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sc.add_argument("--history-json", type=str, default="results/sca_history.json")
     sc.add_argument("--history-csv", type=str, default="results/sca_history.csv")
+    sc.add_argument(
+        "--dynamic-assignment",
+        action="store_true",
+        help="Reassign a_ij and b_ij during SCA (true-gated). Default is frozen a,b.",
+    )
     sc.set_defaults(func=cmd_sca)
 
     sj = sub.add_parser(
@@ -1074,7 +1103,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,td3]. Opt-in: sca_joint, sca_multistart, sca_anchor, td3.",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,sca_medoid][,sca_continuous][,td3]. Opt-in: sca_joint, sca_multistart, sca_anchor, sca_medoid, sca_continuous, td3.",
     )
     camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
     camp.add_argument("--seed-start", type=int, default=1)
@@ -1163,7 +1192,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,td3]",
+        help=(
+            "Comma-separated: random,kmeans,pso,sca[,frozen_sca][,sca_joint]"
+            "[,sca_multistart][,sca_anchor][,sca_medoid][,sca_continuous][,td3]"
+        ),
     )
     n100.add_argument("--max-iterations", type=int, default=30)
     n100.add_argument("--epsilon", type=float, default=1e-4)

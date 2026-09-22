@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import time
 from pathlib import Path
 from time import perf_counter
 
@@ -53,7 +54,18 @@ def _atomic_write_json(path: Path, payload: dict, *, indent: int | None = None) 
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(payload, indent=indent), encoding="utf-8")
-    tmp.replace(path)
+    for attempt in range(12):
+        try:
+            tmp.replace(path)
+            return
+        except PermissionError:
+            time.sleep(0.05 * (attempt + 1))
+    path.write_text(json.dumps(payload, indent=indent), encoding="utf-8")
+    if tmp.exists():
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
 def summarize_runs(runs: list[MethodRun]) -> dict:
@@ -125,6 +137,34 @@ def _paired_stats(by_method: dict[str, dict], champion: str = "sca") -> dict:
     return out
 
 
+def _paired_delta(
+    by_method: dict[str, dict],
+    left: str,
+    right: str,
+) -> dict:
+    """Per-seed left minus right (e.g. sca - frozen_sca)."""
+    if left not in by_method or right not in by_method:
+        return {}
+    a = np.asarray(by_method[left]["per_seed_Mbps"], dtype=float)
+    b = np.asarray(by_method[right]["per_seed_Mbps"], dtype=float)
+    if a.shape != b.shape:
+        return {}
+    delta = a - b
+    practical = np.abs(delta) > 0.05
+    return {
+        "left": left,
+        "right": right,
+        "n": int(delta.size),
+        "mean_delta_Mbps": float(np.mean(delta)),
+        "std_delta_Mbps": float(np.std(delta, ddof=1)) if delta.size > 1 else 0.0,
+        "median_delta_Mbps": float(np.median(delta)),
+        "win_fraction": float(np.mean(delta > 0.0)),
+        "loss_fraction": float(np.mean(delta < 0.0)),
+        "practical_win_fraction": float(np.mean(practical & (delta > 0))),
+        "practical_loss_fraction": float(np.mean(practical & (delta < 0))),
+    }
+
+
 def _load_checkpoint(path: Path) -> dict[str, dict]:
     if not path.exists():
         return {}
@@ -184,7 +224,15 @@ def evaluate_bank(
             done[key] = run_to_record(run, scenario_id=int(rec["id"]))
             if ckpt is not None:
                 _atomic_write_json(ckpt, {"runs": done})
-            if method in {"td3", "sca_multistart", "sca_anchor"}:
+            if method in {
+                "td3",
+                "sca",
+                "frozen_sca",
+                "sca_multistart",
+                "sca_anchor",
+                "sca_medoid",
+                "sca_continuous",
+            }:
                 _log(
                     f"           done {perf_counter() - t0:.1f}s  "
                     f"{run.sum_rate_mbps:.4f} Mbps  "
@@ -243,6 +291,10 @@ def evaluate_bank(
         "geometry": bank["geometry"],
         "by_method": by_method,
         "sca_minus_baseline_Mbps": _paired_stats(by_method),
+        "frozen_sca_minus_baseline_Mbps": _paired_stats(
+            by_method, champion="frozen_sca"
+        ),
+        "sca_minus_frozen_sca_Mbps": _paired_delta(by_method, "sca", "frozen_sca"),
         "runs": ordered,
     }
 
