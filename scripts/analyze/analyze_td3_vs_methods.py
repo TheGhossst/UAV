@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 from paired_winrate import wilcoxon_signed_rank  # noqa: E402
 
 N100 = ROOT / "results" / "n100" / "eval_td3.json"
+N100_500M = ROOT / "results" / "n100_500m_cap25" / "eval_td3.json"
 CAMP = ROOT / "results" / "campaign_8.8mhz_cap25_td3.json"
 OUT = ROOT / "results" / "td3" / "full_eval_analysis.txt"
 SUMMARY = ROOT / "results" / "td3" / "full_eval_summary.json"
@@ -493,6 +494,18 @@ def main() -> int:
         summary["n100"] = n100_sum
     else:
         lines.append(f"missing {N100}")
+    lines.append("")
+    if N100_500M.exists():
+        lines.append("=== n100 500 m bank (I=10 J=3, 8.8 MHz, 25% cap) ===")
+        n500_lines, n500_sum = analyze_n100(_load(N100_500M))
+        # analyze_n100 header says 100x100; keep the numbers, retitle first line
+        n500_lines[0] = (
+            "=== n100 500 m Monte Carlo (100 frozen layouts, I=10 J=3, 8.8 MHz, 25% cap) ==="
+        )
+        lines.extend(n500_lines)
+        summary["n100_500m"] = n500_sum
+    else:
+        lines.append(f"missing {N100_500M}")
     lines.append("")
     if CAMP.exists():
         camp = _load(CAMP)

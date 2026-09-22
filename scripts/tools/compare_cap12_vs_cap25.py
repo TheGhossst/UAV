@@ -275,7 +275,8 @@ def main() -> int:
         "- Keep 25% as PRIMARY_MAX_BW_SHARE. SCA uniquely best at J=3 on 4/4 tests."
     )
     lines.append(
-        "- 12% is uniquely-best on 1/4 (n20 100 m, +0.001 vs PSO). PSO ranks first on 500 m and both n100 banks."
+        "- 12% is uniquely-best by mean on 2/4 (n20 100 m +0.008 n.s.; "
+        "n100 100 m +0.001 n.s.). PSO ranks first on both 500 m tests."
     )
     lines.append(
         "- 12% buys SCA-vs-random p<0.05 at 100 m by throwing leftover-dump Hertz (0.13 Mbps at 100 m, >1.3 Mbps at 500 m)."
