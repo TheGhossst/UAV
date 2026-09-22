@@ -18,8 +18,10 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 PPT = ROOT / "latex" / "ppt" / "sections" / "results"
+sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 from paired_winrate import wilcoxon_signed_rank  # noqa: E402
+from uavdt.experiments.method_labels import normalize_by_method  # noqa: E402
 
 
 def _load(path: Path) -> dict:
@@ -30,9 +32,17 @@ def _bank_stats(path: Path) -> dict | None:
     if not path.exists():
         return None
     p = _load(path)
-    bm = p.get("by_method") or {}
+    bm = normalize_by_method(p.get("by_method") or {})
     out: dict = {}
-    for m in ("sca", "random", "kmeans", "pso", "sca_multistart", "sca_anchor"):
+    for m in (
+        "sca",
+        "frozen_sca",
+        "random",
+        "kmeans",
+        "pso",
+        "sca_multistart",
+        "sca_anchor",
+    ):
         if m not in bm:
             continue
         out[m] = {
@@ -245,8 +255,12 @@ def main() -> int:
     parser.add_argument("--latexmk", action="store_true")
     args = parser.parse_args()
 
-    n200_100 = _bank_stats(ROOT / "results" / "n200" / "eval_anchor.json")
-    n200_500 = _bank_stats(ROOT / "results" / "n200_500m_cap25" / "eval_anchor.json")
+    n200_100 = _bank_stats(
+        ROOT / "results" / "n200" / "eval_all_methods_dynamic.json"
+    ) or _bank_stats(ROOT / "results" / "n200" / "eval_anchor.json")
+    n200_500 = _bank_stats(
+        ROOT / "results" / "n200_500m_cap25" / "eval_all_methods_dynamic.json"
+    ) or _bank_stats(ROOT / "results" / "n200_500m_cap25" / "eval_anchor.json")
     n100_100 = _bank_stats(ROOT / "results" / "n100" / "eval_anchor.json")
     n100_500 = _bank_stats(ROOT / "results" / "n100_500m_cap25" / "eval_anchor.json")
 
@@ -264,7 +278,13 @@ def main() -> int:
     _patch_paired_500m(n200_500)
 
     if (ROOT / "results" / "campaign_8.8mhz_cap25_td3.json").exists():
-        subprocess.run([sys.executable, str(ROOT / "scripts" / "gen_ppt_sweep_table_tex.py")], check=True)
+        subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "orchestration" / "gen_ppt_sweep_table_tex.py"),
+            ],
+            check=True,
+        )
 
     print("Updated PPT tex under latex/ppt/sections/results/")
     if n200_100:
