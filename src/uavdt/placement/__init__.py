@@ -2,6 +2,7 @@
 
 from uavdt.placement.cmaes import cmaes_maximize
 from uavdt.placement.kmeans import place_kmeans
+from uavdt.placement.kmedoids import place_kmedoids
 from uavdt.placement.pso import PSOSettings, place_pso
 from uavdt.placement.random import place_random
 
@@ -9,6 +10,7 @@ __all__ = [
     "PSOSettings",
     "cmaes_maximize",
     "place_kmeans",
+    "place_kmedoids",
     "place_pso",
     "place_random",
 ]
