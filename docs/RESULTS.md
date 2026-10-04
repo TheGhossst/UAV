@@ -7,12 +7,12 @@
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Scope**                   | Our experimental outcomes on the fresh `uavdt` simulator                                                                                         |
 | **Not in scope**            | Numeric comparison of Mbps figures to the paper’s §VII plots                                                                                     |
-| **Last full regeneration**  | 2026-09-18 (no TD3; **random UAV RNG fix**; banks n100/n200 + campaigns; multi-start + zenith-anchor). **2026-09-20 delta:** 15%/12% random + PSO replay, TD3 re-pair vs post-fix random, p-median, E1/E1b, continuous-candidate; cap×J archived; pytest **191/191**. |
-| **Primary campaign**        | `results/campaign_8.8mhz_cap25_si12k.json` (100 m, 25% per-link cap)                                                                             |
+| **Last full regeneration**  | 2026-09-18 (no TD3; **random UAV RNG fix**). **2026-09-20 delta:** 15%/12% replays, TD3 baseline repair, E1/E1b. **2026-09-23:** doc tables synced from JSON (`sync_results_md.py`); pytest **201/201**. |
+| **Primary campaign**        | `results/campaign_10mhz_cap25_n100.json` (100×100 m, 10 MHz, 25% cap, **100 seeds**) — legacy 8.8 MHz / n20: `campaign_8.8mhz_cap25_si12k.json` |
 | **Tighter-cap sensitivity** | `results/campaign_8.8mhz_cap15_n20.json` (100 m, 15% per-link cap). **12% is not headline** ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch))     |
 | **Paper-field test**        | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m, 25% cap)                                                                                 |
 | **TD3 Algorithm 2**         | `results/campaign_8.8mhz_cap25_td3.json` (policy export; 100 m) · n100 bank: [§2.12](#212-n100-monte-carlo-bank-88-mhz)                            |
-| **n100 / n200 Monte Carlo** | Frozen banks `n100_i10_j3_*` and `n200_i10_j3_*` (salted random UAV layouts); 8.8 MHz, caps 12% / 15% / 25%, 100 m & 500 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz) |
+| **n100 / n200 Monte Carlo** | Frozen banks `n100_i10_j3_*` and `n200_i10_j3_*` (salted random UAV layouts); headline **10 MHz** @ 25% on 100 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz) |
 | **Zenith-anchor SCA**       | Opt-in `sca_anchor`; replayed with 2026-09-18 regen — [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement)                             |
 | **7 MHz extra B_sys**       | `results/campaign_7mhz_n20.json` + `_cap15_n20` + `_cap25_n20` (no TD3; [§2.11](#211-7-mhz-no-cap-15-25))                                        |
 | **Related docs**            | `[EXPERIMENTS.md](EXPERIMENTS.md)` · `[REPRODUCTION.md](REPRODUCTION.md)` · `[param.md](param.md)` · `[novelty.md](novelty.md)` (zenith-anchor)   |
@@ -86,7 +86,7 @@
 
 | Field / role                           | Cap     | SCA       | Random | K-means | PSO   | Feasible | Spread    |
 | -------------------------------------- | ------- | --------- | ------ | ------- | ----- | -------- | --------- |
-| **100 × 100 m** (primary)              | **25%** | **8.946** | 8.773  | 8.901   | 8.902 | 100%     | **0.173** |
+| **100 × 100 m** (primary)              | **25%** | **10.172** | 9.950  | 10.110   | 10.120 | 100%     | **0.223** |
 | 100 × 100 m (tighter-cap sensitivity)  | 15%     | 8.895     | 8.649  | 8.838   | 8.849 | 100%     | 0.245     |
 | 500 × 500 m (field test, same 25% cap) | 25%     | 8.300     | 6.016  | 7.474   | 8.122 | 100%     | **2.284** |
 
@@ -103,37 +103,15 @@ The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-fiel
 
 ### Last regeneration
 
-**2026-09-20 (ledger delta, not a full replay)** — 15%/12% random columns replayed (`replay_random_tight_caps.py`); 15%/12% PSO replayed (`replay_pso_tight_caps.py`; particle inits call `place_random`); TD3 campaign random/PSO copied from the 2026-09-18 25% JSON (`repair_td3_baselines.py`; no TD3 retrain); n100 p-median; E1 / E1b / inertia control; continuous-candidate (`sca_continuous`) n20 + n100 500 m. Cap×J grid archived (pre-fix random). Protected 25% headline JSON untouched. pytest **191/191**.
+**2026-09-23 (doc sync from artifacts)** — Refreshed dynamic tables in this file from `results/*.json` (headline campaign, `sca_multistart_cases_analysis.json`, `sca_anchor_cases_analysis.json`). Protected headline JSON unchanged. `python scripts/orchestration/sync_results_md.py`. pytest **201/201**.
+
+**2026-09-20 (ledger delta, not a full replay)** — 15%/12% random columns replayed (`replay_random_tight_caps.py`); 15%/12% PSO replayed (`replay_pso_tight_caps.py`; particle inits call `place_random`); TD3 campaign random/PSO copied from the 2026-09-18 25% JSON (`repair_td3_baselines.py`; no TD3 retrain); n100 p-median; E1 / E1b / inertia control; continuous-candidate (`sca_continuous`) n20 + n100 500 m. Cap×J grid archived (pre-fix random). Protected 25% headline JSON untouched. pytest **201/201**.
 
 **2026-09-18 (random placement fix + no-TD3 full replay)** — `place_random` salted RNG ([§2.16](#216-random-uav-placement-fix)). Regenerated frozen banks (`n100` + **n200**), §VII campaigns at **n=20 / 100 / 200**, `n100`/`n100_500m_cap25` `eval.json`, multi-start + zenith-anchor (default cells + J/I sweeps + anchor highstat), PPT sweep plots. Prior headline JSON archived under `results/archive/pre_random_fix_*`. One command: `python scripts/orchestration/run_full_regeneration_no_td3.py`. **TD3** and cap×J grid ([§2.7](#27-primary-campaign-88-mhz-25-cap)) were **not** re-run in this replay. Pytest at that replay was **176/176**.
 
-**2026-09-12 (zenith-anchor SCA)** — First opt-in `sca_anchor` probe (methodology; numbers superseded for campaign/bank baselines by 2026-09-18 regen). See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
+**2026-09-12 (zenith-anchor SCA)** — First opt-in `sca_anchor` probe (methodology; campaign/bank baselines superseded by 2026-09-18 regen). See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
 
-**2026-09-08 (full pipeline)** — Re-ran the complete regeneration ledger ([§9](#9-how-to-regenerate)) on current code:
-
-- `pytest` **125/125** (includes `test_sca_joint.py` and other SCA-joint coverage)
-- `check_bsys_20khz.py` — 0% feasible at 100 m and 500 m (unchanged)
-- Primary `campaign_8.8mhz_cap25_si12k.json` + init-repair + paired winrate/losses
-- Cap15 `campaign_8.8mhz_cap15_n20.json` + fig11 + paired winrate
-- 500 m `campaign_8.8mhz_cap25_si12k_500m.json` + figures
-- `fig11_8.8mhz_cap25_si12k.json` — **50/50** sensibility checks pass
-- `spot-validate` — CVXPY vs MATLAB `agreement: ok` (no cap + 25% cap)
-- SCA-joint probe + tk08 follow-ups (cohesive **20/20**, construction **40/40**, tradeoff gap mean **0.586** Mbps)
-- `analyze_campaigns.py` + `plot_paper_figures.py` (primary, cap15, 500 m)
-- Bandwidth preset sweep (`run_all_bandwidth_campaigns.ps1`) — Sep 7 artifacts retained; numbers match fresh primary run
-
-One-command replay: `scripts/orchestration/run_full_regeneration.ps1` (adds bandwidth sweep if uncommented).
-
-**2026-09-08 (earlier)** — T_k=0.8 s audit trail closed: hand construction → best-SE joint null → full-sweep null → process-cohesive candidate **20/20** → construction **40/40** → sync tradeoff gap **0.59 Mbps** mean (median 0.57, 40 geometries). See [§2.8](#28-sca-joint-methodology-probe).
-
-**2026-09-07** — restore 25% as primary; keep 15% as tighter-cap sensitivity; 500 m field test. Mechanism diagnostics: `cap_binding_diagnostic.json`, `se_spread_by_j.json`.
-
-**2026-09-05** — first 100 m 25% campaign and analysis:
-
-- `pytest` **108/108** *(superseded by 125/125 after SCA-joint tests)*
-- Primary campaign `campaign_8.8mhz_cap25_si12k.json` (all axes, 20 seeds, CVXPY)
-- `fig11_8.8mhz_cap25_si12k.json`; spot-validate (8.8 MHz no cap + cap 25%)
-- Full bandwidth preset sweep: `scripts/run_all_bandwidth_campaigns.ps1`
+**Earlier runs (2026-09-05 … 2026-09-08):** first 25% campaigns, SCA-joint probes, bandwidth preset sweep — archival; replay via [§9](#9-how-to-regenerate).
 
 ---
 
@@ -1064,14 +1042,12 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | PSO     | 8.905 ± 0.039 | 8.855 ± 0.053 |
 | K-means | 8.896 ± 0.043 | 8.832 ± 0.067 |
 | Random (bank replay) | 8.753 ± 0.104 | 8.596 ± 0.145 |
-| **TD3** *(pre-fix run)* | 8.912 ± 0.038 | — |
+| **TD3** | *(not on disk — see [§2.10](#210-td3-algorithm-2-reproduction))* | — |
 
 
-**Artifacts:** `results/n100/eval.json` (25%), `results/n100/eval_multistart.json` (25% + multi-start), `results/n100/eval_anchor.json` (25% + zenith-anchor), `results/n100_cap15/eval.json` (15%), `results/n100/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100/eval.json` (25%), `results/n100/eval_multistart.json` (25% + multi-start), `results/n100/eval_anchor.json` (25% + zenith-anchor), `results/n100_cap15/eval.json` (15%). `results/n100/eval_td3.json` is **missing** in this checkout; 100 m TD3 numbers come from `campaign_8.8mhz_cap25_td3.json` ([§2.10](#210-td3-algorithm-2-reproduction)).
 
-**Zenith-anchor paired (25%, bank):** vs SCA **+0.017 ± 0.030** Mbps, **86/100** moved, 0 losses, **8/100** practical (`eval_anchor.json`). **Multi-start:** vs SCA **+0.014 ± 0.029**, **66/100**, 0 losses; practical **6/100**. Mean wall **~5.5 s**. See [§2.9](#29-residual-policy-on-sca), [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
-
-**TD3 paired (25% only, pre-fix):** vs SCA **−0.033 ± 0.026** Mbps, **5/100** wins — stale vs current SCA/bank; re-run TD3 after fix if needed ([§2.10](#210-td3-algorithm-2-reproduction)).
+**Zenith-anchor paired (25%, bank):** vs SCA **+0.017 ± 0.030** Mbps, **86/100** moved, 0 losses, **8/100** practical (`eval_anchor.json`). **Multi-start:** vs SCA **+0.014 ± 0.029**, **67/100**, 0 losses; practical **5/100**. Mean wall **~5.5 s**. See [§2.9](#29-residual-policy-on-sca), [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
 
 #### 500 × 500 m (bank `n100`, 2026-09-18)
 
@@ -1085,14 +1061,12 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | PSO     | 8.094 ± 0.250 | **7.564 ± 0.352** |
 | K-means | 7.438 ± 0.577 | 6.749 ± 0.657 |
 | Random (bank replay) | **5.823 ± 0.898** | 4.983 ± 0.815 |
-| **TD3** *(pre-fix run)* | 7.510 ± 0.571 | — |
+| **TD3** | *(not on disk — see [§2.10](#210-td3-algorithm-2-reproduction))* | — |
 
 
-**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap25/eval_multistart.json` (25% + multi-start), `results/n100_500m_cap25/eval_anchor.json` (25% + zenith-anchor), `results/n100_500m_cap25/eval_medoid.json` (25% + p-median), `results/n100_500m_cap25/eval_continuous.json` (25% + 120 uniform LP-scored layouts), `results/n100_500m_cap15/eval.json` (15%), `results/n100_500m_cap25/eval_td3.json` (25% + TD3).
+**Artifacts:** `results/n100_500m_cap25/eval.json` (25%), `results/n100_500m_cap25/eval_multistart.json` (25% + multi-start), `results/n100_500m_cap25/eval_anchor.json` (25% + zenith-anchor), `results/n100_500m_cap25/eval_medoid.json` (25% + p-median), `results/n100_500m_cap25/eval_continuous.json` (25% + 120 uniform LP-scored layouts), `results/n100_500m_cap15/eval.json` (15%). `results/n100_500m_cap25/eval_td3.json` is **missing** here.
 
-**Zenith-anchor paired (25%, bank):** vs SCA **+0.253 ± 0.265** Mbps, **90/100** moved, 0 losses, **71/100** practical. **Multi-start:** vs SCA **+0.174 ± 0.241**, **62/100**; practical **48/100**. Mean wall **~6.5 s**.
-
-**TD3 (pre-fix):** vs SCA **−0.718** mean — not replayed in 2026-09-18 regen.
+**Zenith-anchor paired (25%, bank):** vs SCA **+0.253 ± 0.265** Mbps, **90/100** moved, 0 losses, **71/100** practical. **Multi-start:** vs SCA **+0.174 ± 0.245**, **65/100**; practical **49/100**. Mean wall **~6.5 s**.
 
 #### Cross-config comparisons (SCA mean Mbps, bank)
 
@@ -1104,7 +1078,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 | 25% → 15% @ 500 m | −0.686 | −0.841 | −0.690 |
 
 
-**Readout.** On the **bank**, random replays frozen salted UAV layouts — means differ from the §VII campaign where each seed draws a fresh `place_random` layout ([§2.16](#216-random-uav-placement-fix)). Tightening the cap on those **same** layouts cannot raise the LP optimum: 15% random is below 25% at both fields (the old +0.046 / +1.066 cells mixed pre-fix and post-fix UAV xy). At 100 m, SCA matches the n20 campaign (~8.946); zenith-anchor adds **+0.017** Mbps. At 500 m / 25%, zenith-anchor **+0.253** vs SCA (**71/100** practical) remains the load-bearing story. **n200** banks and anchor highstat JSON live under `results/n200/` and `results/campaign_sca_anchor_*_n200_*` for PPT figures. 15% / 12% **random and PSO** columns were replayed 2026-09-20. TD3 bank cells are still pre-fix. Do not mix bank tables with `campaign_8.8mhz_cap25_si12k*.json` or `campaign_8.8mhz_cap25_n100.json` in one mean table.
+**Readout.** On the **bank**, random replays frozen salted UAV layouts — means differ from the §VII campaign where each seed draws a fresh `place_random` layout ([§2.16](#216-random-uav-placement-fix)). Tightening the cap on those **same** layouts cannot raise the LP optimum: 15% random is below 25% at both fields. At 100 m, SCA matches the n20 campaign (~8.946); zenith-anchor adds **+0.017** Mbps. At 500 m / 25%, zenith-anchor **+0.253** vs SCA (**71/100** practical) remains the load-bearing story. **n200** banks and anchor highstat JSON live under `results/n200/` and `results/campaign_sca_anchor_*_n200_*` for PPT figures (`campaign_8.8mhz_cap25_n200_500m.json` refreshed **2026-09-22**). 15% / 12% **random and PSO** columns were replayed 2026-09-20. TD3 **bank** eval JSON is not in this tree — use `campaign_8.8mhz_cap25_td3.json` ([§2.10](#210-td3-algorithm-2-reproduction)). Do not mix bank tables with `campaign_8.8mhz_cap25_si12k*.json` or `campaign_8.8mhz_cap25_n100.json` in one mean table.
 
 ---
 
@@ -1226,9 +1200,9 @@ Quoted point is default **J=3, I=10, 8.8 MHz, 25% cap**. All four tests **100% f
 | Test | Anchor | Multi-start | SCA | PSO | Random | K-means | vs SCA | vs MS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | n20 100 m | **8.964** | 8.961 | 8.946 | 8.902 | **8.773** | 8.901 | **+0.017**, 18/20, 2/20 prac. | +0.003, 18/20, 0/20 prac. |
-| n20 500 m | **8.490** | **8.399** | 8.300 | 8.122 | **6.016** | 7.474 | **+0.190**, 18/20 strict, **14/20** prac. | +0.091, 19/20, 9/20 prac. |
-| n100 100 m (bank) | **8.963** | 8.960 | 8.946 | 8.905 | **8.753** | 8.896 | **+0.017**, 86/100, 8/100 prac. | +0.004, 70/100, 0/100 prac. |
-| n100 500 m (bank) | **8.481** | 8.402 | 8.228 | 8.094 | **5.823** | 7.438 | **+0.253**, 90/100, **71/100** prac. | +0.079, 75/100, 45/100 prac. |
+| n20 500 m | **8.490** | 8.399 | 8.300 | 8.122 | **6.016** | 7.474 | **+0.190**, 18/20, 14/20 prac. | +0.091, 17/20, 9/20 prac. |
+| n100 100 m (bank) | **8.963** | 8.960 | 8.946 | 8.905 | **8.753** | 8.896 | **+0.017**, 86/100, 8/100 prac. | +0.004, 69/100, 0/100 prac. |
+| n100 500 m (bank) | **8.481** | 8.402 | 8.228 | 8.094 | **5.823** | 7.438 | **+0.253**, 90/100, 71/100 prac. | +0.079, 74/100, 45/100 prac. |
 
 n20 500 m vs multi-start has one “loss” (seed 15, **−1.5×10⁻⁸** Mbps) — a float tie. Winner kind is **anchor on 20/20** there; at 100 m n20 frozen wins seeds 5 and 16. n100 100 m vs multi-start has 15 tiny losses (none practical): keep-best is only vs frozen SCA, so an extra k-means start can still nick leftover-dump Hertz that the top-3 zenith polish missed.
 
@@ -1824,6 +1798,9 @@ python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-iteration
 python -m uavdt spot-validate --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --max-iterations 30
 python scripts/analyze/analyze_campaigns.py
 python scripts/plot/plot_paper_figures.py
+
+# Refresh dynamic tables in this doc from results/*.json (no campaign re-run)
+python scripts/orchestration/sync_results_md.py
 
 # Tighter-cap sensitivity (100 m, 15% cap) — optional
 python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.15 --n-runs 20 --solver cvxpy --out results/campaign_8.8mhz_cap15_n20.json

@@ -1,0 +1,8 @@
+Khalaf, G., Itani, M., & Sharafeddine, S. (2026). A UAV-Aided digital twin framework for IoT networks with high accuracy and synchronization. IEEE Transactions on Network and Service Management, 23, 3013–3025.
+
+Goehar, H., Khwaja, A. S., Alnoman, A. A., Anpalagan, A., & Jaseemuddin, M. (2023). Investigation of a HAP-UAV collaboration scheme for throughput maximization via joint user association and 3D UAV placement. Sensors, 23(13), 6095.
+
+Wu, Q., Xu, J., & Zhang, R. (2018). Capacity characterization of UAV-Enabled Two-User Broadcast Channel. IEEE Journal on Selected Areas in Communications, 36(9), 1955–1971.
+
+Katwe, M., Singh, K., Sharma, P. K., Li, C., & Ding, Z. (2021). Dynamic user clustering and optimal power allocation in UAV-Assisted Full-Duplex Hybrid NOMA system. IEEE Transactions on Wireless Communications, 21(4), 2573–2590.
+Raivi, A. M., & Moh, S. (2023). A comprehensive survey on data aggregation techniques in UAV-enabled Internet of things. Computer Science Review, 50, 100599.

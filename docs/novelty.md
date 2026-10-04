@@ -34,7 +34,7 @@ Constraint (27) is a sum cap on allocated Hertz: \(\sum_{i,j} B_{ij} \le B_{\mat
 
 Without a per-link cap the dump is top-1: one zenith link takes almost all leftover Hertz. That is why the no-cap radio collapses to a single-link geometry and why SCA already walks toward zenith from k-means. A per-link cap is the physically standard constraint that *spreads* the dump across \(k=\lceil 1/c\rceil\) links and turns placement into subset selection.
 
-Headline operating point: \(B_{\mathrm{sys}} = 8.8\) MHz, `PRIMARY_MAX_BW_SHARE = 0.25` (2.20 MHz per link, \(k=4\)). Tightening the cap (15%, \(k=7\); 12%, \(k=9\)) binds harder and can invert the SCA vs PSO ranking; 25% is the leftover-dump stress test, not a third of Problem (P). See [`RESULTS.md` §2.7, §2.13, §2.14](RESULTS.md).
+Headline operating point: \(B_{\mathrm{sys}} = 10\) MHz, `PRIMARY_MAX_BW_SHARE = 0.25` (2.50 MHz per link, \(k=4\)); legacy 8.8 MHz artifacts remain under `results/campaign_8.8mhz_*`. Tightening the cap (15%, \(k=7\); 12%, \(k=9\)) binds harder and can invert the SCA vs PSO ranking; 25% is the leftover-dump stress test, not a third of Problem (P). See [`RESULTS.md` §2.7, §2.13, §2.14](RESULTS.md).
 
 ### 2.2 SE is maximal at zenith
 
