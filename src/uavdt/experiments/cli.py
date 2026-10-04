@@ -15,7 +15,10 @@ from uavdt.config import (
     DEFAULT,
     EXTERNAL_TASK_CYCLES,
     EXTERNAL_TASK_SIZE_BITS,
+    PRIMARY_B_SYS_PRESET,
+    PRIMARY_CAMPAIGN_REL,
     PRIMARY_MAX_BW_SHARE,
+    PRIMARY_N_RUNS,
     SENSITIVITY_MAX_BW_SHARE,
     SimConfig,
 )
@@ -71,7 +74,7 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         "--bandwidth-preset",
         choices=sorted(BANDWIDTH_PRESETS),
         default=None,
-        help="Named B_sys: 20khz, 2.4mhz, 7mhz, 8.8mhz (overrides --bandwidth)",
+        help="Named B_sys: 20khz, 2.4mhz, 7mhz, 8.8mhz, 10mhz (overrides --bandwidth)",
     )
     p.add_argument(
         "--task-size-bits",
@@ -813,7 +816,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
     from uavdt.experiments.scenario_bank import generate_bank, load_bank, write_bank
 
     if args.bandwidth_preset is None:
-        args.bandwidth_preset = "8.8mhz"
+        args.bandwidth_preset = PRIMARY_B_SYS_PRESET
     if args.max_bw_share is None:
         args.max_bw_share = PRIMARY_MAX_BW_SHARE
     cfg = config_for_counts(int(args.num_iot), int(args.num_uav), _cfg_from_args(args))
@@ -1105,7 +1108,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="random,kmeans,pso,sca",
         help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,sca_medoid][,sca_continuous][,td3]. Opt-in: sca_joint, sca_multistart, sca_anchor, sca_medoid, sca_continuous, td3.",
     )
-    camp.add_argument("--n-runs", type=int, default=5, help="Paper uses 20; default 5")
+    camp.add_argument(
+        "--n-runs",
+        type=int,
+        default=PRIMARY_N_RUNS,
+        help=f"Headline {PRIMARY_N_RUNS}; paper §VII text uses 20",
+    )
     camp.add_argument("--seed-start", type=int, default=1)
     camp.add_argument("--max-iterations", type=int, default=30)
     camp.add_argument("--epsilon", type=float, default=1e-4)
@@ -1116,8 +1124,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="cvxpy",
         help="SCA backend: cvxpy (campaign default) or matlab/MOSEK",
     )
-    camp.add_argument("--out", type=str, default="results/campaign.json")
-    camp.set_defaults(func=cmd_campaign)
+    camp.add_argument("--out", type=str, default=PRIMARY_CAMPAIGN_REL)
+    camp.set_defaults(
+        func=cmd_campaign,
+        bandwidth_preset=PRIMARY_B_SYS_PRESET,
+        max_bw_share=PRIMARY_MAX_BW_SHARE,
+    )
 
     sp = sub.add_parser(
         "spot-validate",

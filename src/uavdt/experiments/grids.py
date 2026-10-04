@@ -1,7 +1,7 @@
 """Paper §VII sweep axes. Grids are DERIVED from figure captions.
 
 Exact tick lists are IMPLEMENTATION CHOICE where the PDF does not print
-them. Headline B_sys is this reproduction's 8.8 MHz (paper 20 kHz as the
+them. Headline B_sys is this reproduction's 10 MHz (paper 20 kHz as the
 (27) cap is infeasible; model-free ceiling 0.997 Mbps at SNR_max=1e15).
 """
 
@@ -14,14 +14,15 @@ from uavdt.config import SimConfig
 # PAPER: Fig. 6 I=10, vary J; text discusses five UAVs.
 UAV_COUNTS = (1, 2, 3, 4, 5)
 
-# PAPER: Fig. 7 J=3, I up to 32. Intermediate ticks not printed.
-IOT_COUNTS = (10, 16, 20, 24, 28, 32)
+# PAPER: Fig. 7 J=3, I up to 32. Slide / plot ticks use 10,15,20,25,30 (K=5 processes).
+IOT_COUNTS = (10, 15, 20, 25, 30)
+IOT_AXIS_NUM_PROCESSES = 5
 
 # PAPER: Fig. 8 λ from 1 to 3.5 tasks/s, I=10, J=3.
 LAMBDA_PER_S = (1.0, 1.5, 2.0, 2.5, 3.0, 3.5)
 
 # PAPER: Fig. 9 T_k from 0.8 s, relaxed to 3 s, I=10, J=3.
-AODT_THRESHOLD_S = (0.8, 1.2, 1.6, 2.0, 2.4, 2.8, 3.0)
+AODT_THRESHOLD_S = (0.8, 1.2, 1.6, 2.0, 2.4, 2.8, 3.2)
 
 # PAPER: Fig. 10 UAV CPU, text quotes 250 MHz at the high end.
 # Table II main value is 2e8 cycles/s. Treated as Hz = cycles/s.
@@ -63,6 +64,16 @@ def config_for_counts(
     )
 
 
+def config_for_iot_sweep(num_iot: int, cfg: SimConfig | None = None) -> SimConfig:
+    """Fig. 7 IoT axis: equal five-process split at each I in IOT_COUNTS."""
+    return config_for_counts(
+        int(num_iot),
+        3,
+        cfg,
+        num_processes=IOT_AXIS_NUM_PROCESSES,
+    )
+
+
 def iter_axis(axis: str, cfg: SimConfig) -> list[SweepPoint]:
     name = axis.lower().strip()
     if name == "uavs":
@@ -82,7 +93,7 @@ def iter_axis(axis: str, cfg: SimConfig) -> list[SweepPoint]:
                 "iots",
                 "num_iot",
                 float(i),
-                config_for_counts(i, 3, cfg),
+                config_for_iot_sweep(i, cfg),
                 f"PAPER Fig. 7  I={i}  J=3",
             )
             for i in IOT_COUNTS

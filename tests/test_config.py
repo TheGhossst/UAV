@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from uavdt.config import (
+    BANDWIDTH_PRESETS,
     EXTERNAL_TASK_CYCLES,
     EXTERNAL_TASK_SIZE_BITS,
+    PRIMARY_B_SYS_HZ,
+    PRIMARY_B_SYS_PRESET,
     PRIMARY_MAX_BW_SHARE,
+    PRIMARY_N_RUNS,
     SENSITIVITY_MAX_BW_SHARE,
     SimConfig,
+    headline_sim_config,
 )
 from uavdt.experiments.cli import build_parser, _cfg_from_args
 
@@ -16,6 +21,16 @@ def test_external_defaults_are_not_hidden():
     cfg = SimConfig()
     assert cfg.task_size_bits == EXTERNAL_TASK_SIZE_BITS
     assert cfg.task_cycles == EXTERNAL_TASK_CYCLES
+
+
+def test_headline_operating_point():
+    assert PRIMARY_B_SYS_PRESET == "10mhz"
+    assert PRIMARY_B_SYS_HZ == BANDWIDTH_PRESETS["10mhz"]
+    assert PRIMARY_N_RUNS == 100
+    cfg = headline_sim_config()
+    assert cfg.b_sys_hz == PRIMARY_B_SYS_HZ
+    assert cfg.area_x_m == 100.0
+    assert cfg.max_bw_share == PRIMARY_MAX_BW_SHARE
 
 
 def test_bw_share_experimental_roles():

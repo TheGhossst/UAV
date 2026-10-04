@@ -43,17 +43,24 @@ AREA_Y_M = 100.0
 # "Minimum bandwidth allocation"). Constraint (27) uses that symbol as a
 # sum ceiling. Under that reading, Eq. (6)+(27) bound 20 kHz at
 # B_sys·log2(1+SNR_max) — even SNR_max=1e15 is ~1 Mbps, not 7–14 Mbps.
-# Headline B_sys: 2.4 MHz and 8.8 MHz. 7 MHz is an extra experimental
-# point between those two (not Table II). Optional per-link caps are
-# EXTERNAL (not Problem (P)): 25% is the primary leftover-dump stress
-# test; 15% is a tighter-cap sensitivity kept for experiments. 20 kHz
-# is a Table II diagnostic.
+# Headline B_sys: 10 MHz (primary), plus 2.4 / 7 / 8.8 MHz experiments.
+# 7 MHz sits between 2.4 and 8.8 (not Table II). Optional per-link caps
+# are EXTERNAL (not Problem (P)): 25% is the primary leftover-dump stress
+# test; 15% is a tighter-cap sensitivity. 20 kHz is a Table II diagnostic.
 BANDWIDTH_PRESETS: dict[str, float] = {
     "20khz": 20_000.0,
     "2.4mhz": 2_400_000.0,
     "7mhz": 7_000_000.0,
     "8.8mhz": 8_800_000.0,
+    "10mhz": 10_000_000.0,
 }
+
+# Headline reproduction operating point (guide agreement 2026-09).
+PRIMARY_B_SYS_HZ = BANDWIDTH_PRESETS["10mhz"]
+PRIMARY_B_SYS_PRESET = "10mhz"
+PRIMARY_N_RUNS = 100
+PRIMARY_CAMPAIGN_REL = "results/campaign_10mhz_cap25_n100.json"
+LEGACY_CAMPAIGN_88_N20_REL = "results/campaign_8.8mhz_cap25_si12k.json"
 
 # --- External Settled experimental choices. ---
 # Paper labels S_i in bytes (Eq. 11); store bits so D = S/r is in seconds.
@@ -62,7 +69,7 @@ EXTERNAL_TASK_SIZE_BYTES = 12_000.0
 EXTERNAL_TASK_SIZE_BITS = EXTERNAL_TASK_SIZE_BYTES * 8.0  # 96_000 bit
 EXTERNAL_TASK_CYCLES = 3.75e6
 
-PAPER_N_RUNS = 20
+PAPER_N_RUNS = 20  # Khalaf §VII text; headline Monte Carlo uses PRIMARY_N_RUNS.
 
 # Optional per-link B_ij caps as a fraction of B_sys. Neither is in
 PRIMARY_MAX_BW_SHARE = 0.25
@@ -161,3 +168,15 @@ class SimConfig:
 
 
 DEFAULT = SimConfig()
+
+
+def headline_sim_config(
+    *,
+    area_m: float = AREA_X_M,
+    max_bw_share: float | None = PRIMARY_MAX_BW_SHARE,
+) -> SimConfig:
+    """100×100 m (unless area_m overridden), 10 MHz, primary cap by default."""
+    return SimConfig(
+        b_sys_hz=PRIMARY_B_SYS_HZ,
+        max_bw_share=max_bw_share,
+    ).with_square_area_m(float(area_m))

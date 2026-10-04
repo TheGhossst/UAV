@@ -43,7 +43,7 @@ class TD3Settings:
     aodt_clip_s: float = 10.0
     rho_clip: float = 2.0
     aodt_ratio_clip: float = 5.0
-    b_sys_ref_hz: float = BANDWIDTH_PRESETS["8.8mhz"]
+    b_sys_ref_hz: float = BANDWIDTH_PRESETS["10mhz"]
     rate_weight: float = 1.0
     aodt_weight: float = 10.0
     dist_weight: float = 5.0
