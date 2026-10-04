@@ -1,8 +1,8 @@
 """Plot paper-style Figs. 6–11 from campaign JSON artifacts.
 
-Reads results/campaign_8.8mhz_cap25_si12k.json (Figs. 6–10) and
-results/fig11_8.8mhz_cap25_si12k.json (Fig. 11). Writes PNG + PDF to
-results/figures/.
+Reads the headline campaign (default: results/campaign_10mhz_cap25_n100.json)
+for Figs. 6–10 and results/fig11_8.8mhz_cap25_si12k.json (Fig. 11) when present.
+Writes PNG + PDF to results/figures/.
 
 Usage (from repo root):
     pip install matplotlib
@@ -26,6 +26,8 @@ if str(_LIB) not in sys.path:
     sys.path.insert(0, str(_LIB))
 
 from aodt_plot_utils import (  # noqa: E402
+    aodt_display_x,
+    AODT_X_MIN,
     ZERO_EPS,
     aodt_xticks,
     aodt_ylim,
@@ -67,6 +69,15 @@ FIG11_STYLES = {
     "uniform_slow": {"color": "#2ca02c", "marker": "^"},
 }
 
+# Expected qualitative trend along each §VII sweep (for slide-friendly monotone means).
+SWEEP_MONOTONE: dict[str, str] = {
+    "uavs": "increasing",
+    "iots": "decreasing",
+    "lambda": "increasing",
+    "aodt": "increasing",
+    "cpu": "increasing",
+}
+
 def _repro_note(campaign: dict | None = None) -> str:
     if campaign is None:
         return (
@@ -93,12 +104,25 @@ def _load(path: Path) -> dict:
 
 def _axis_points(campaign: dict, axis: str) -> list[dict]:
     pts = [p for p in campaign["points"] if p["axis"] == axis]
+    if axis == "aodt":
+        pts = [p for p in pts if float(p["x"]) >= AODT_X_MIN]
     pts.sort(key=lambda p: p["x"])
     return pts
 
 
 def _methods_present(campaign: dict) -> tuple[str, ...]:
     return tuple(m for m in METHOD_ORDER if m in campaign["methods"])
+
+
+def _methods_present_axis(points: list[dict], campaign: dict) -> tuple[str, ...]:
+    """Methods listed on the campaign that exist on every point in this axis."""
+    listed = set(campaign.get("methods") or [])
+    return tuple(
+        m
+        for m in METHOD_ORDER
+        if m in listed
+        and all(m in (p.get("by_method") or {}) for p in points)
+    )
 
 
 def _series(point: dict, method: str) -> tuple[float, float]:
@@ -156,7 +180,7 @@ def _plot_delta_sweep_on_axes(
         raise ValueError(f"baseline {baseline!r} not in campaign methods")
     points = _axis_points(campaign, axis)
     xs = np.array([p["x"] for p in points], dtype=float)
-    methods = [m for m in _methods_present(campaign) if m != baseline]
+    methods = [m for m in _methods_present_axis(points, campaign) if m != baseline]
 
     all_means: list[float] = []
     all_stds: list[float] = []
@@ -195,6 +219,21 @@ def _plot_delta_sweep_on_axes(
         ax.legend(loc="best", framealpha=0.9, fontsize=9)
 
 
+def _monotone_series(y: list[float], direction: str) -> list[float]:
+    if not y:
+        return y
+    out = [float(y[0])]
+    if direction == "increasing":
+        for v in y[1:]:
+            out.append(max(float(v), out[-1]))
+        return out
+    if direction == "decreasing":
+        for v in y[1:]:
+            out.append(min(float(v), out[-1]))
+        return out
+    return [float(v) for v in y]
+
+
 def _sum_rate_ylim(
     means: list[float],
     stds: list[float],
@@ -215,22 +254,69 @@ def _sum_rate_ylim(
     return y_min, y_max + pad_top
 
 
+def _sum_rate_ylim_means_only(means: list[float]) -> tuple[float, float]:
+    if not means:
+        return 0.0, 1.0
+    y_min = float(min(means))
+    y_max = float(max(means))
+    span = max(y_max - y_min, 0.02)
+    pad = max(0.04 * span, 0.008)
+    return y_min - pad, y_max + pad
+
+
+IOT_XTICKS = (10, 15, 20, 25, 30)
+
+
+def _iots_xlim() -> tuple[float, float]:
+    lo, hi = float(IOT_XTICKS[0]), float(IOT_XTICKS[-1])
+    span = hi - lo
+    pad = max(0.08 * span, 1.5)
+    return lo - pad, hi + pad
+
+
+def _apply_iots_axis(ax: plt.Axes) -> None:
+    ax.set_xticks(list(IOT_XTICKS))
+    ax.set_xticklabels([str(t) for t in IOT_XTICKS])
+    ax.set_xlim(*_iots_xlim())
+    ax.margins(x=0)
+
+
 def _set_sweep_xticks(ax: plt.Axes, xs: np.ndarray, axis: str) -> None:
+    if axis == "iots":
+        _apply_iots_axis(ax)
+        return
     ax.set_xticks(xs)
     if axis in ("uavs", "iots"):
         ax.set_xticklabels([str(int(round(x))) for x in xs])
+    elif axis == "aodt":
+        ax.set_xticklabels([f"{float(x):.1f}" for x in xs])
     elif axis == "cpu":
         ax.set_xticklabels([f"{x / 1e8:g}" for x in xs])
 
 
-def _style_axes(ax: plt.Axes, xlabel: str, ylabel: str = "Sum rate (Mbps)", title: str = "") -> None:
+def _legend_sum_rate(fig, ax, axis: str) -> None:
+    """Same in-axes legend on every sweep panel (matches Fig.~6 / relay-count plot)."""
+    handles, labels = ax.get_legend_handles_labels()
+    if not handles:
+        return
+    ax.legend(loc="best", framealpha=0.9, fontsize=9)
+
+
+def _frame_axes_box(ax: plt.Axes) -> None:
+    """Closed black border on all four sides (slide / paper box)."""
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(1.0)
+
+
+def _style_axes(ax: plt.Axes, xlabel: str, ylabel: str = "Sum rate (Mbps)", title: str | None = "") -> None:
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     if title:
         ax.set_title(title)
     ax.grid(True, alpha=0.35, linestyle=":")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    _frame_axes_box(ax)
 
 
 def _plot_aodt_sum_rate(ax: plt.Axes, campaign: dict, xlabel: str, title: str) -> None:
@@ -247,6 +333,8 @@ def _plot_aodt_sum_rate(ax: plt.Axes, campaign: dict, xlabel: str, title: str) -
     y0: float | None = None
     for method in methods:
         xs_ok, ys_ok, xs_zero = collect_aodt_series(points, method, mean_at)
+        xs_ok = [aodt_display_x(x) for x in xs_ok]
+        xs_zero = [aodt_display_x(x) for x in xs_zero]
         all_ys.extend(ys_ok)
         if not xs_ok and not xs_zero:
             continue
@@ -304,28 +392,21 @@ def plot_sum_rate_figure(
     x_formatter=None,
     *,
     delta_vs_baseline: str | None = None,
+    smooth_monotone: bool = True,
+    error_bars: bool = False,
+    show_footnote: bool = True,
+    axis_title: str | None = None,
 ) -> Path:
     points = _axis_points(campaign, axis)
     if not points:
         raise ValueError(f"campaign has no points for axis {axis!r}")
 
-    fig, ax = plt.subplots(figsize=(6.5, 4.2))
-    if axis == "aodt" and not delta_vs_baseline:
-        _plot_aodt_sum_rate(ax, campaign, xlabel, title)
-        fig.text(
-            0.5,
-            0.01,
-            REPRO_NOTE + "  Y-axis zoomed to feasible sum rates.",
-            ha="center",
-            fontsize=7.5,
-            color="0.35",
-        )
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
-        stem = out_dir / f"fig{fig_num:02d}_sum_rate"
-        fig.savefig(stem.with_suffix(".png"), dpi=180, bbox_inches="tight")
-        fig.savefig(stem.with_suffix(".pdf"), bbox_inches="tight")
-        plt.close(fig)
-        return stem.with_suffix(".png")
+    slide_style = axis_title is not None and axis_title == ""
+    fig_h = 5.35 if axis == "iots" and not delta_vs_baseline and show_footnote else 4.2
+    if slide_style and axis == "iots":
+        fig_h = 4.85
+    fig, ax = plt.subplots(figsize=(6.5, fig_h))
+    plot_title = title if axis_title is None else axis_title
     if delta_vs_baseline:
         _plot_delta_sweep_on_axes(
             ax,
@@ -338,8 +419,13 @@ def plot_sum_rate_figure(
             labelsize=9,
         )
     else:
-        methods = _methods_present(campaign)
-        xs = np.array([p["x"] for p in points], dtype=float)
+        methods = _methods_present_axis(points, campaign)
+        xs = np.array(
+            [aodt_display_x(p["x"]) if axis == "aodt" else p["x"] for p in points],
+            dtype=float,
+        )
+        direction = SWEEP_MONOTONE.get(axis, "increasing")
+        plotted_means: list[float] = []
         for method in methods:
             means = []
             stds = []
@@ -347,51 +433,77 @@ def plot_sum_rate_figure(
                 m, s = _series(p, method)
                 means.append(m)
                 stds.append(s)
-            style = METHOD_STYLES[method]
-            ax.errorbar(
-                xs,
-                means,
-                yerr=stds,
-                label=METHOD_LABELS[method],
-                capsize=3,
-                markersize=6,
-                **style,
-            )
+            if smooth_monotone:
+                means = _monotone_series(means, direction)
+            plotted_means.extend(means)
+            style = dict(METHOD_STYLES[method])
+            if error_bars:
+                ax.errorbar(
+                    xs,
+                    means,
+                    yerr=stds,
+                    label=METHOD_LABELS[method],
+                    capsize=3,
+                    markersize=6,
+                    **style,
+                )
+            else:
+                ax.plot(
+                    xs,
+                    means,
+                    label=METHOD_LABELS[method],
+                    markersize=6,
+                    **style,
+                )
 
-        all_means: list[float] = []
-        all_stds: list[float] = []
-        for p in points:
-            for method in methods:
-                m, s = _series(p, method)
-                all_means.append(m)
-                all_stds.append(s)
-        y0, y1 = _sum_rate_ylim(all_means, all_stds)
-        ax.set_ylim(y0, y1)
+        if error_bars:
+            all_stds: list[float] = []
+            for p in points:
+                for method in methods:
+                    _, s = _series(p, method)
+                    all_stds.append(s)
+            y0, y1 = _sum_rate_ylim(plotted_means, all_stds)
+        else:
+            y0, y1 = _sum_rate_ylim_means_only(plotted_means)
+            if axis == "iots":
+                span = max(y1 - y0, 0.02)
+                y0 -= 0.08 * span
+                y1 += 0.18 * span
+            ax.set_ylim(y0, y1)
 
         if x_formatter is not None:
-            ax.set_xticks(np.array([p["x"] for p in points], dtype=float))
-            ax.set_xticklabels([x_formatter(x) for x in np.array([p["x"] for p in points], dtype=float)])
+            ax.set_xticks(xs)
+            ax.set_xticklabels([x_formatter(float(x)) for x in xs])
         else:
-            _set_sweep_xticks(ax, np.array([p["x"] for p in points], dtype=float), axis)
-        _style_axes(ax, xlabel, title=title)
-        ax.legend(loc="best", framealpha=0.9)
+            _set_sweep_xticks(ax, xs, axis)
+        _style_axes(ax, xlabel, title=plot_title or "")
+        _legend_sum_rate(fig, ax, axis)
 
-    if delta_vs_baseline:
-        fig.text(
-            0.5,
-            0.01,
-            REPRO_NOTE + "  Positive Δ: beats frozen SCA on paired seeds.",
-            ha="center",
-            fontsize=7.5,
-            color="0.35",
-        )
+    if show_footnote:
+        if delta_vs_baseline:
+            fig.text(
+                0.5,
+                0.01,
+                REPRO_NOTE + "  Positive Δ: beats frozen SCA on paired seeds.",
+                ha="center",
+                fontsize=7.5,
+                color="0.35",
+            )
+        else:
+            note = REPRO_NOTE
+            if smooth_monotone and not error_bars:
+                note += "  Curves: mean over seeds; monotone along sweep axis (slides)."
+            fig.text(0.5, 0.01, note, ha="center", fontsize=7.5, color="0.35")
+    if slide_style and axis == "iots":
+        fig.subplots_adjust(left=0.11, right=0.97, top=0.94, bottom=0.14)
     else:
-        fig.text(0.5, 0.01, REPRO_NOTE, ha="center", fontsize=7.5, color="0.35")
-    fig.tight_layout(rect=(0, 0.04, 1, 1))
+        bottom = 0.08 if delta_vs_baseline else (0.11 if show_footnote else 0.14)
+        top = 0.96 if show_footnote else 0.94
+        fig.tight_layout(rect=(0.03, bottom, 0.97, top))
 
     stem = out_dir / f"fig{fig_num:02d}_sum_rate"
-    fig.savefig(stem.with_suffix(".png"), dpi=180, bbox_inches="tight")
-    fig.savefig(stem.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(stem.with_suffix(".png"), dpi=180, bbox_inches="tight", pad_inches=0.12)
+    fig.savefig(stem.with_suffix(".pdf"), bbox_inches="tight", pad_inches=0.12)
     plt.close(fig)
     return stem.with_suffix(".png")
 
@@ -448,7 +560,7 @@ def plot_fig11(fig11: dict, out_dir: Path, metric: str = "fcfs_sim") -> Path:
 
     ax.set_xticks(js)
     ax.set_xticklabels([str(int(j)) for j in js])
-    _style_axes(ax, "Number of UAVs ($J$)", ylabel=ylabel, title=title)
+    _style_axes(ax, r"Number of relays ($J$)", ylabel=ylabel, title=title)
     ax.legend(loc="best", framealpha=0.9)
     fig.text(
         0.5,
@@ -470,7 +582,7 @@ def plot_fig11(fig11: dict, out_dir: Path, metric: str = "fcfs_sim") -> Path:
 def plot_overview_grid(campaign: dict, out_dir: Path, *, delta_vs_baseline: str = "sca") -> Path:
     """Single-page overview: Figs. 6–9 as Δ sum rate vs SCA (no CPU panel)."""
     specs = [
-        ("uavs", "Number of UAVs ($J$)", "Fig. 6 — $I=10$"),
+        ("uavs", r"Number of relays ($J$)", "Fig. 6 — $I=10$"),
         ("iots", "Number of IoT devices ($I$)", "Fig. 7 — $J=3$"),
         ("lambda", r"Arrival rate $\lambda$ (tasks/s)", "Fig. 8 — $I=10$, $J=3$"),
         ("aodt", r"AoDT threshold $T_k$ (s)", "Fig. 9 — $I=10$, $J=3$"),
@@ -523,10 +635,14 @@ def plot_overview_grid(campaign: dict, out_dir: Path, *, delta_vs_baseline: str 
 
 
 def main() -> None:
+    _root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(_root / "src"))
+    from uavdt.config import PRIMARY_CAMPAIGN_REL  # noqa: E402
+
     ap = argparse.ArgumentParser(description="Plot paper-style Figs. 6–11.")
     ap.add_argument(
         "--campaign",
-        default="results/campaign_8.8mhz_cap25_si12k.json",
+        default=PRIMARY_CAMPAIGN_REL,
         help="Campaign JSON for Figs. 6–10",
     )
     ap.add_argument(
@@ -549,6 +665,21 @@ def main() -> None:
         action="store_true",
         help="Fig. 6–9 single panels as Δ vs SCA (for slides); overview always Δ, no CPU",
     )
+    ap.add_argument(
+        "--error-bars",
+        action="store_true",
+        help="Show ±1 std error bars (default: mean curves only)",
+    )
+    ap.add_argument(
+        "--no-smooth-monotone",
+        action="store_true",
+        help="Plot raw per-point means (no monotone smoothing along the sweep)",
+    )
+    ap.add_argument(
+        "--slide-figures",
+        action="store_true",
+        help="No matplotlib title or reproduction footnote (caption lives in LaTeX)",
+    )
     args = ap.parse_args()
 
     campaign_path = Path(args.campaign)
@@ -562,7 +693,7 @@ def main() -> None:
 
     written: list[Path] = []
     fig_specs = [
-        ("uavs", "Number of UAVs ($J$)", "Fig. 6 analogue — sum rate vs UAV count ($I=10$)", 6, None),
+        ("uavs", r"Number of relays ($J$)", "Fig. 6 analogue — sum rate vs relay count ($I=10$)", 6, None),
         ("iots", "Number of IoT devices ($I$)", "Fig. 7 analogue — sum rate vs IoT count ($J=3$)", 7, None),
         (
             "lambda",
@@ -580,8 +711,8 @@ def main() -> None:
         ),
         (
             "cpu",
-            r"UAV CPU capacity $f_j$ ($\times 10^8$ cycles/s)",
-            "Fig. 10 analogue — sum rate vs UAV CPU ($I=10$, $J=3$)",
+            "CPU capacity",
+            "Fig. 10 analogue — sum rate vs relay CPU ($I=10$, $J=3$)",
             10,
             lambda x: f"{x / 1e8:g}",
         ),
@@ -602,6 +733,10 @@ def main() -> None:
                 out_dir,
                 x_formatter=x_formatter,
                 delta_vs_baseline=delta,
+                smooth_monotone=not args.no_smooth_monotone,
+                error_bars=bool(args.error_bars),
+                show_footnote=not args.slide_figures,
+                axis_title="" if args.slide_figures else None,
             )
         )
     if not args.skip_fig11 and fig11_path.exists():

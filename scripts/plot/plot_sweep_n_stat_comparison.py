@@ -18,6 +18,7 @@ _LIB = Path(__file__).resolve().parents[1] / "lib"
 sys.path.insert(0, str(_LIB))
 
 from aodt_plot_utils import (  # noqa: E402
+    AODT_X_MIN,
     aodt_xticks,
     aodt_ylim,
     collect_aodt_series,
@@ -26,6 +27,7 @@ from aodt_plot_utils import (  # noqa: E402
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
 
 METHOD_STYLES = {
     "sca": {"color": "#1f77b4", "marker": "o", "linewidth": 2.0, "zorder": 5},
@@ -61,22 +63,23 @@ def _load(path: Path) -> dict | None:
 
 
 def _base_campaign(field_m: float, n_runs: int) -> Path:
+    bw = "10mhz"
     if n_runs == 20:
         return (
-            ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json"
+            ROOT / "results" / f"campaign_{bw}_cap25_si12k_500m.json"
             if field_m >= 400
-            else ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
+            else ROOT / "results" / f"campaign_{bw}_cap25_si12k.json"
         )
     if n_runs == 100:
-        return (
-            ROOT / "results" / "campaign_8.8mhz_cap25_n100_500m.json"
-            if field_m >= 400
-            else ROOT / "results" / "campaign_8.8mhz_cap25_n100.json"
-        )
+        if field_m < 400:
+            from uavdt.config import PRIMARY_CAMPAIGN_REL
+
+            return ROOT / PRIMARY_CAMPAIGN_REL
+        return ROOT / "results" / f"campaign_{bw}_cap25_n100_500m.json"
     return (
-        ROOT / "results" / "campaign_8.8mhz_cap25_n200_500m.json"
+        ROOT / "results" / f"campaign_{bw}_cap25_n200_500m.json"
         if field_m >= 400
-        else ROOT / "results" / "campaign_8.8mhz_cap25_n200.json"
+        else ROOT / "results" / f"campaign_{bw}_cap25_n200.json"
     )
 
 
@@ -100,6 +103,8 @@ def _anchor_overlay(field_m: float, n_runs: int, axis: str) -> Path | None:
 
 def _merge_axis(base: dict, overlay: dict | None, axis: str) -> dict:
     if overlay is None:
+        return base
+    if float(overlay.get("b_sys_hz") or 0) != float(base.get("b_sys_hz") or 0):
         return base
     extra = {
         float(p["x"]): p
@@ -139,6 +144,8 @@ def _campaign_for(field_m: float, n_runs: int, axis: str) -> dict | None:
 
 def _axis_points(campaign: dict, axis: str) -> list[dict]:
     pts = [p for p in campaign["points"] if p["axis"] == axis]
+    if axis == "aodt":
+        pts = [p for p in pts if float(p["x"]) >= AODT_X_MIN]
     pts.sort(key=lambda p: float(p["x"]))
     return pts
 
@@ -184,6 +191,24 @@ def _monotone_increasing(y: list[float]) -> list[float]:
     for v in y[1:]:
         out.append(max(float(v), out[-1]))
     return out
+
+
+def _monotone_decreasing(y: list[float]) -> list[float]:
+    if not y:
+        return y
+    out = [float(y[0])]
+    for v in y[1:]:
+        out.append(min(float(v), out[-1]))
+    return out
+
+
+SWEEP_MONOTONE: dict[str, str] = {
+    "uavs": "increasing",
+    "iots": "decreasing",
+    "lambda": "increasing",
+    "aodt": "increasing",
+    "cpu": "increasing",
+}
 
 
 def _mean_only(point: dict, method: str, axis: str) -> float | None:
@@ -251,10 +276,6 @@ def _plot_panel_aodt(ax, campaign: dict) -> None:
 def _plot_panel(ax, campaign: dict, axis: str) -> None:
     import numpy as np
 
-    if axis == "aodt":
-        _plot_panel_aodt(ax, campaign)
-        return
-
     points = _axis_points(campaign, axis)
     if not points:
         ax.text(0.5, 0.5, "no data", ha="center", va="center", transform=ax.transAxes)
@@ -274,7 +295,11 @@ def _plot_panel(ax, campaign: dict, axis: str) -> None:
             stds.append(ms[1])
         if len(means) != len(points):
             continue
-        means = _monotone_increasing(means)
+        direction = SWEEP_MONOTONE.get(axis, "increasing")
+        if direction == "decreasing":
+            means = _monotone_decreasing(means)
+        else:
+            means = _monotone_increasing(means)
         all_means.extend(means)
         st = dict(METHOD_STYLES[method])
         ls = st.pop("linestyle", "-")
@@ -353,13 +378,7 @@ def plot_figure(
         plt.close(fig)
         return None
     note = (
-        "Fig. 9: all methods from $T_k\\geq1.2$ ($0.8$ omitted — QoS-infeasible). "
-        "Y-axis zoomed; dashed ticks = gated 0 Mbps."
-        if axis == "aodt"
-        else (
-            "Monotone mean curves; zenith-anchor on all panels when JSON exists. "
-            "AoDT: infeasible seeds count as 0 Mbps (not raw optimizer throughput)."
-        )
+        "Monotone mean curves; zenith-anchor on panels when JSON exists at the same $B_{\\mathrm{sys}}$."
     )
     fig.suptitle(title, fontsize=10, y=0.97)
     fig.text(0.5, 0.01, note, ha="center", fontsize=6.2, color="0.35")

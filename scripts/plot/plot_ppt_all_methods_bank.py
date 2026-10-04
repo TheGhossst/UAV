@@ -376,18 +376,19 @@ def main(argv: list[str] | None = None) -> int:
     by = _load_by_method(primary, td3)
     if BASELINE not in by:
         raise SystemExit(f"{BASELINE} missing in {primary}; keys={list(by)}")
-    if "frozen_sca" not in by:
-        raise SystemExit(f"frozen_sca missing in {primary}; keys={list(by)}")
     n = int(by[BASELINE]["n"])
-    plot_sca_vs_frozen(
-        by,
-        out_stem=args.out_dir / pair_stem,
-        field_m=field,
-        n_layouts=args.n_layouts or n,
-    )
-    print((args.out_dir / pair_stem).with_suffix(".pdf"))
-    if args.only_sca_vs_frozen:
-        return 0
+    if "frozen_sca" in by:
+        plot_sca_vs_frozen(
+            by,
+            out_stem=args.out_dir / pair_stem,
+            field_m=field,
+            n_layouts=args.n_layouts or n,
+        )
+        print((args.out_dir / pair_stem).with_suffix(".pdf"))
+        if args.only_sca_vs_frozen:
+            return 0
+    elif args.only_sca_vs_frozen:
+        raise SystemExit(f"frozen_sca missing in {primary}; keys={list(by)}")
     plot_delta(
         by,
         out_stem=args.out_dir / stem,
