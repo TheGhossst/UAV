@@ -31,7 +31,13 @@ sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 
 from run_sca_anchor_eval import run_n20_eval  # noqa: E402
 
-from uavdt.config import PRIMARY_MAX_BW_SHARE, SENSITIVITY_MAX_BW_SHARE, SimConfig  # noqa: E402
+from uavdt.config import (  # noqa: E402
+    PRIMARY_CAMPAIGN_REL,
+    PRIMARY_MAX_BW_SHARE,
+    SENSITIVITY_MAX_BW_SHARE,
+    SimConfig,
+    headline_sim_config,
+)
 from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign  # noqa: E402
 from uavdt.experiments.n100 import evaluate_bank, write_eval  # noqa: E402
 from uavdt.experiments.scenario_bank import load_bank  # noqa: E402
@@ -40,6 +46,7 @@ from uavdt.sca.settings import SCASettings  # noqa: E402
 from uavdt.sca_anchor import AnchorSettings  # noqa: E402
 
 PROTECTED = {
+    ROOT / PRIMARY_CAMPAIGN_REL,
     ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json",
     ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json",
     ROOT / "results" / "n100" / "eval.json",
@@ -105,7 +112,11 @@ def run_n100_case(
         _log(f"skip complete n100 {out}")
         return json.loads(out.read_text(encoding="utf-8"))
     _prepare_n100_checkpoint(src_ckpt, checkpoint)
-    overlay = SimConfig(b_sys_hz=8.8e6, max_bw_share=float(max_bw_share))
+    geo = bank["geometry"]
+    overlay = headline_sim_config(
+        area_m=float(geo["area_x_m"]),
+        max_bw_share=float(max_bw_share),
+    )
     _log(
         f"n100 bank={bank_path.name}  methods={list(methods)}  "
         f"cap={float(max_bw_share):.0%}  out={out.relative_to(ROOT)}"
@@ -196,9 +207,7 @@ def run_j_sweep(*, area_m: float, out: Path, campaign_path: Path) -> dict:
     if _j_sweep_complete(out):
         _log(f"skip complete J-sweep {out}")
         return json.loads(out.read_text(encoding="utf-8"))
-    cfg = SimConfig(
-        b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE
-    ).with_square_area_m(float(area_m))
+    cfg = headline_sim_config(area_m=float(area_m))
     settings = CampaignSettings(
         n_runs=20,
         seed_start=1,
@@ -250,9 +259,7 @@ def run_i_sweep(*, area_m: float, out: Path, campaign_path: Path) -> dict:
     if _axis_complete(out, "iots", want):
         _log(f"skip complete I-sweep {out}")
         return json.loads(out.read_text(encoding="utf-8"))
-    cfg = SimConfig(
-        b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE
-    ).with_square_area_m(float(area_m))
+    cfg = headline_sim_config(area_m=float(area_m))
     settings = CampaignSettings(
         n_runs=20,
         seed_start=1,
@@ -300,7 +307,7 @@ def run_tk08(*, out: Path) -> dict:
     from uavdt.scenario import generate_scenario
 
     cfg = replace(
-        config_for_counts(10, 3, SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE)),
+        config_for_counts(10, 3, headline_sim_config()),
         aodt_threshold_s=0.8,
     )
     anc = AnchorSettings(process_cohesive_candidate=True)

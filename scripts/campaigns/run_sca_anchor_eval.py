@@ -24,13 +24,19 @@ sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 
 from paired_winrate import paired_t, wilcoxon_signed_rank  # noqa: E402
 
-from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig  # noqa: E402
+from uavdt.config import (  # noqa: E402
+    PRIMARY_B_SYS_HZ,
+    PRIMARY_CAMPAIGN_REL,
+    PRIMARY_MAX_BW_SHARE,
+    SimConfig,
+)
 from uavdt.experiments.methods import run_method  # noqa: E402
 from uavdt.sca.settings import SCASettings  # noqa: E402
 from uavdt.sca_anchor import AnchorSettings  # noqa: E402
 from uavdt.scenario import generate_scenario  # noqa: E402
 
 PROTECTED = (
+    ROOT / PRIMARY_CAMPAIGN_REL,
     ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json",
     ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json",
     ROOT / "results" / "residual_on_sca" / "multistart_n20.json",
@@ -189,6 +195,7 @@ def run_n20_eval(
     seed_start: int = 1,
     area_m: float = 100.0,
     max_bw_share: float | None = PRIMARY_MAX_BW_SHARE,
+    b_sys_hz: float | None = None,
     los_angle_unit: str = "rad",
     skip_if_complete: bool = False,
     campaign_path: Path | None = None,
@@ -203,8 +210,9 @@ def run_n20_eval(
         return payload
     out.parent.mkdir(parents=True, exist_ok=True)
     ckpt = out.with_name(out.stem + ".checkpoint.json")
+    b_hz = float(b_sys_hz if b_sys_hz is not None else PRIMARY_B_SYS_HZ)
     cfg = SimConfig(
-        b_sys_hz=8.8e6,
+        b_sys_hz=b_hz,
         max_bw_share=max_bw_share,
         los_angle_unit=los_angle_unit,  # type: ignore[arg-type]
     ).with_square_area_m(float(area_m))
@@ -220,7 +228,7 @@ def run_n20_eval(
     _log(
         f"sca_anchor eval  seeds={seeds[0]}..{seeds[-1]}  "
         f"area={cfg.area_x_m:g}x{cfg.area_y_m:g} m  "
-        f"B_sys=8.8 MHz  cap={cap}  top_k={anc.top_k}"
+        f"B_sys={cfg.b_sys_hz / 1e6:g} MHz  cap={cap}  top_k={anc.top_k}"
     )
     for i, seed in enumerate(seeds):
         key = str(seed)

@@ -1,7 +1,7 @@
 """Run the 100-seed §VII campaign axis-by-axis and merge.
 
 Each axis writes its own JSON so a crash can resume. Headline settings:
-8.8 MHz, 25% per-link cap, 100 x 100 m, seeds 1..100.
+10 MHz, 25% per-link cap, 100 x 100 m, seeds 1..100.
 
 Usage (repo root):
     $env:PYTHONPATH = "src"
@@ -14,7 +14,12 @@ import json
 import sys
 from pathlib import Path
 
-from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig
+from uavdt.config import (
+    PRIMARY_B_SYS_HZ,
+    PRIMARY_CAMPAIGN_REL,
+    PRIMARY_N_RUNS,
+    headline_sim_config,
+)
 from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign
 from uavdt.experiments.grids import AXES
 from uavdt.placement.pso import PSOSettings
@@ -22,14 +27,16 @@ from uavdt.sca.settings import SCASettings
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "results" / "n100_campaign"
-MERGED = ROOT / "results" / "campaign_8.8mhz_cap25_n100.json"
+MERGED = ROOT / PRIMARY_CAMPAIGN_REL
 
 
 def _axis_complete(path: Path) -> dict | None:
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if int(payload.get("n_runs") or 0) != 100:
+    if int(payload.get("n_runs") or 0) != PRIMARY_N_RUNS:
+        return None
+    if float(payload.get("b_sys_hz") or 0) != float(PRIMARY_B_SYS_HZ):
         return None
     if not payload.get("points"):
         return None
@@ -50,9 +57,9 @@ def _merge(parts: list[dict]) -> dict:
 
 
 def main() -> int:
-    cfg = SimConfig(b_sys_hz=8_800_000.0, max_bw_share=PRIMARY_MAX_BW_SHARE)
+    cfg = headline_sim_config()
     settings = CampaignSettings(
-        n_runs=100,
+        n_runs=PRIMARY_N_RUNS,
         seed_start=1,
         methods=("random", "kmeans", "pso", "sca"),
         sca_settings=SCASettings(solver=None, max_iterations=30),

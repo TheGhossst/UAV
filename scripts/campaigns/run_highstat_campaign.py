@@ -15,7 +15,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig
+from uavdt.config import (
+    PRIMARY_B_SYS_HZ,
+    PRIMARY_CAMPAIGN_REL,
+    PRIMARY_MAX_BW_SHARE,
+    PRIMARY_N_RUNS,
+    headline_sim_config,
+)
 from uavdt.experiments.campaign import CampaignSettings, run_campaign, write_campaign
 from uavdt.experiments.grids import AXES
 from uavdt.placement.pso import PSOSettings
@@ -27,6 +33,8 @@ def _axis_complete(path: Path, n_runs: int) -> dict | None:
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
     if int(payload.get("n_runs") or 0) != int(n_runs):
+        return None
+    if float(payload.get("b_sys_hz") or 0) != float(PRIMARY_B_SYS_HZ):
         return None
     if not payload.get("points"):
         return None
@@ -47,25 +55,22 @@ def _merge(parts: list[dict], n_runs: int, area_m: float) -> dict:
 
 
 def _default_paths(n_runs: int, area_m: float) -> tuple[Path, Path]:
-    tag = f"n{n_runs}" if n_runs != 20 else "si12k"
-    if area_m >= 400:
-        tag = f"{tag}_500m"
+    bw = "10mhz"
     out_dir = ROOT / "results" / f"n{n_runs}_campaign_{int(area_m)}m"
-    merged = ROOT / "results" / f"campaign_8.8mhz_cap25_{tag}.json"
-    if n_runs == 20:
+    if n_runs == PRIMARY_N_RUNS and area_m < 400:
+        merged = ROOT / PRIMARY_CAMPAIGN_REL
+    elif n_runs == 20:
         merged = ROOT / "results" / (
-            "campaign_8.8mhz_cap25_si12k_500m.json"
+            f"campaign_{bw}_cap25_si12k_500m.json"
             if area_m >= 400
-            else "campaign_8.8mhz_cap25_si12k.json"
+            else f"campaign_{bw}_cap25_si12k.json"
         )
-    elif n_runs == 100 and area_m < 400:
-        merged = ROOT / "results" / "campaign_8.8mhz_cap25_n100.json"
-    elif n_runs == 100:
-        merged = ROOT / "results" / "campaign_8.8mhz_cap25_n100_500m.json"
+    elif n_runs == PRIMARY_N_RUNS:
+        merged = ROOT / "results" / f"campaign_{bw}_cap25_n100_500m.json"
     elif n_runs == 200 and area_m < 400:
-        merged = ROOT / "results" / "campaign_8.8mhz_cap25_n200.json"
+        merged = ROOT / "results" / f"campaign_{bw}_cap25_n200.json"
     else:
-        merged = ROOT / "results" / "campaign_8.8mhz_cap25_n200_500m.json"
+        merged = ROOT / "results" / f"campaign_{bw}_cap25_n200_500m.json"
     return out_dir, merged
 
 
@@ -96,11 +101,18 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = out_dir or d
         merged = merged or m
 
-    if n_runs == 20 and merged.exists() and not args.force_overwrite:
+    primary = (ROOT / PRIMARY_CAMPAIGN_REL).resolve()
+    if (
+        n_runs == PRIMARY_N_RUNS
+        and area_m < 400
+        and merged.resolve() == primary
+        and merged.exists()
+        and not args.force_overwrite
+    ):
         if args.skip_if_merged:
             print(f"skip (merged exists) {merged}", flush=True)
             return 0
-        print(f"refusing to overwrite primary n20 campaign {merged}", flush=True)
+        print(f"refusing to overwrite headline campaign {merged}", flush=True)
         return 1
     if args.force_overwrite:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -114,10 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     axes = list(AXES) if args.axes.strip().lower() == "all" else [
         x.strip() for x in args.axes.split(",") if x.strip()
     ]
-    cfg = SimConfig(
-        b_sys_hz=8_800_000.0,
-        max_bw_share=PRIMARY_MAX_BW_SHARE,
-    ).with_square_area_m(area_m)
+    cfg = headline_sim_config(area_m=area_m)
     settings = CampaignSettings(
         n_runs=n_runs,
         seed_start=1,
