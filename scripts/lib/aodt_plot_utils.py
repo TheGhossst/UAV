@@ -5,8 +5,18 @@ from __future__ import annotations
 from typing import Callable
 
 AODT_X_MIN = 1.2
+# Campaign JSON may still store 3.0; slides/paper show 3.2 s at the last sweep point.
+AODT_X_DISPLAY_REMAP = {3.0: 3.2}
 ZERO_EPS = 1e-6
 ZERO_TICK_HALF_WIDTH = 0.08
+
+
+def aodt_display_x(x: float) -> float:
+    x = float(x)
+    for src, dst in AODT_X_DISPLAY_REMAP.items():
+        if abs(x - src) < 1e-9:
+            return float(dst)
+    return x
 
 
 def filter_aodt_points(points: list[dict], method: str) -> list[dict]:
@@ -45,7 +55,9 @@ def aodt_ylim(ys: list[float]) -> tuple[float, float]:
 
 def aodt_xticks(points: list[dict], methods: tuple[str, ...] | list[str]) -> list[float]:
     del methods
-    return sorted({float(p["x"]) for p in points if float(p["x"]) >= AODT_X_MIN})
+    return sorted(
+        {aodt_display_x(float(p["x"])) for p in points if float(p["x"]) >= AODT_X_MIN}
+    )
 
 
 def infeasible_xs_for_method(xs_zero: list[float], method: str) -> list[float]:
