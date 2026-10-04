@@ -21,6 +21,7 @@ PPT = ROOT / "latex" / "ppt" / "sections" / "results"
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 from paired_winrate import wilcoxon_signed_rank  # noqa: E402
+from uavdt.config import PRIMARY_CAMPAIGN_REL  # noqa: E402
 from uavdt.experiments.method_labels import normalize_by_method  # noqa: E402
 
 
@@ -264,8 +265,10 @@ def main() -> int:
     n100_100 = _bank_stats(ROOT / "results" / "n100" / "eval_anchor.json")
     n100_500 = _bank_stats(ROOT / "results" / "n100_500m_cap25" / "eval_anchor.json")
 
-    camp = ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
-    camp500 = ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json"
+    camp = ROOT / PRIMARY_CAMPAIGN_REL
+    camp500 = ROOT / "results" / "campaign_10mhz_cap25_si12k_500m.json"
+    if not camp500.exists():
+        camp500 = ROOT / "results" / "campaign_8.8mhz_cap25_si12k_500m.json"
     hdr = _headline_campaign(camp) if camp.exists() else {}
     if camp500.exists():
         h5 = _headline_campaign(camp500)

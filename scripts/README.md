@@ -19,6 +19,7 @@ Run from the **repository root** (`C:\code\UAV`). Paths below are relative to `s
 
 ```powershell
 python scripts/orchestration/run_full_regeneration_no_td3.py --resume
+python scripts/orchestration/sync_results_md.py
 python scripts/orchestration/update_ppt_from_pulled.py --latexmk
 .\scripts\sync\pull_uav_from_college.ps1 -ResultsOnly
 ```

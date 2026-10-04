@@ -9,9 +9,13 @@ Outputs:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
+from uavdt.config import PRIMARY_CAMPAIGN_REL  # noqa: E402
+
 OUT = ROOT / "latex" / "ppt" / "sections" / "results"
 
 COLS = ("sca_anchor", "sca_multistart", "sca", "td3", "kmeans", "random")
@@ -29,6 +33,14 @@ def _load(path: Path) -> dict | None:
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _overlay_if_compatible(base: dict, extra: dict | None) -> dict | None:
+    if extra is None:
+        return None
+    if float(extra.get("b_sys_hz") or 0) != float(base.get("b_sys_hz") or 0):
+        return None
+    return extra
 
 
 def _axis_rows(campaign: dict, axis: str) -> list[dict]:
@@ -91,9 +103,9 @@ def _row_best(row: dict) -> float | None:
 def _write_j(rows: list[dict]) -> None:
     lines = [
         r"\scriptsize",
-        r"Mean sum rate (Mbps), $100\times100\,\mathrm{m^2}$, 8.8 MHz, 25\% cap, 20 seeds.",
-        r"\textbf{Bold} = best in row. Sources: \texttt{campaign\_8.8mhz\_cap25\_td3.json},",
-        r"\texttt{campaign\_sca\_anchor\_uavs.json}, \texttt{campaign\_sca\_multistart\_uavs.json}.",
+        r"Mean sum rate (Mbps), $100\times100\,\mathrm{m^2}$, 10 MHz, 25\% cap, 100 seeds.",
+        r"\textbf{Bold} = best in row. Headline: \texttt{campaign\_10mhz\_cap25\_n100.json};",
+        r"opt-in anchor / multi-start overlays when present at the same $B_{\mathrm{sys}}$.",
         r"",
         r"\vspace{0.08cm}",
         r"\resizebox{\linewidth}{!}{%",
@@ -117,9 +129,8 @@ def _write_j(rows: list[dict]) -> None:
 def _write_i(rows: list[dict]) -> None:
     lines = [
         r"\scriptsize",
-        r"Mean sum rate (Mbps), $J=3$, 20 seeds, 100 m. Baselines + TD3 from TD3 campaign;",
-        r"anchor from \texttt{campaign\_sca\_anchor\_iots.json}, multi-start from",
-        r"\texttt{campaign\_sca\_multistart\_iots.json}. \textbf{Bold} = best in row.",
+        r"Mean sum rate (Mbps), $J=3$, 100 seeds, 100 m. Headline campaign + opt-in overlays.",
+        r"\textbf{Bold} = best in row.",
         r"",
         r"\vspace{0.08cm}",
         r"\resizebox{\linewidth}{!}{%",
@@ -143,7 +154,7 @@ def _write_i(rows: list[dict]) -> None:
 
 def _write_runtime() -> None:
     text = r"""\small
-Per-instance wall time at default geometry ($I=10$, $J=3$, 100 m, 8.8 MHz, 25\% cap)
+Per-instance wall time at default geometry ($I=10$, $J=3$, 100 m, 10 MHz, 25\% cap)
 unless noted.
 
 \vspace{0.12cm}
@@ -169,13 +180,23 @@ On the 100-layout bank, TD3 averages $\sim$72 s / scenario vs SCA $\ll$1 s
 
 
 def main() -> int:
-    td3 = _load(ROOT / "results" / "campaign_8.8mhz_cap25_td3.json")
+    td3 = _load(ROOT / PRIMARY_CAMPAIGN_REL)
     if td3 is None:
-        raise SystemExit("missing campaign_8.8mhz_cap25_td3.json")
-    anchor_u = _load(ROOT / "results" / "campaign_sca_anchor_uavs.json")
-    multistart_u = _load(ROOT / "results" / "campaign_sca_multistart_uavs.json")
-    anchor_i = _load(ROOT / "results" / "campaign_sca_anchor_iots.json")
-    multistart_i = _load(ROOT / "results" / "campaign_sca_multistart_iots.json")
+        td3 = _load(ROOT / "results" / "campaign_8.8mhz_cap25_td3.json")
+    if td3 is None:
+        raise SystemExit(f"missing headline campaign ({PRIMARY_CAMPAIGN_REL})")
+    anchor_u = _overlay_if_compatible(
+        td3, _load(ROOT / "results" / "campaign_sca_anchor_uavs.json")
+    )
+    multistart_u = _overlay_if_compatible(
+        td3, _load(ROOT / "results" / "campaign_sca_multistart_uavs.json")
+    )
+    anchor_i = _overlay_if_compatible(
+        td3, _load(ROOT / "results" / "campaign_sca_anchor_iots.json")
+    )
+    multistart_i = _overlay_if_compatible(
+        td3, _load(ROOT / "results" / "campaign_sca_multistart_iots.json")
+    )
     _write_j(_build_j(td3, anchor_u, multistart_u))
     _write_i(_build_i(td3, anchor_i, multistart_i))
     _write_runtime()

@@ -21,6 +21,9 @@ from pathlib import Path
 from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
+from uavdt.config import PRIMARY_CAMPAIGN_REL  # noqa: E402
+
 PY = sys.executable
 METHODS_BASE = "random,kmeans,pso,sca"
 
@@ -71,6 +74,9 @@ def _archive_random_fix() -> Path:
     arch = ROOT / "results" / "archive" / f"pre_random_fix_{stamp}"
     arch.mkdir(parents=True, exist_ok=True)
     for name in (
+        PRIMARY_CAMPAIGN_REL.split("/")[-1],
+        "campaign_10mhz_cap25_si12k.json",
+        "campaign_10mhz_cap25_si12k_500m.json",
         "campaign_8.8mhz_cap25_si12k.json",
         "campaign_8.8mhz_cap25_si12k_500m.json",
         "campaign_8.8mhz_cap25_n100.json",
@@ -89,7 +95,7 @@ def _archive_random_fix() -> Path:
 
 def _regenerate_banks(log_path: Path) -> None:
     sys.path.insert(0, str(ROOT / "src"))
-    from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig
+    from uavdt.config import PRIMARY_CAMPAIGN_REL, headline_sim_config
     from uavdt.experiments.grids import config_for_counts
     from uavdt.experiments.scenario_bank import generate_bank, write_bank
 
@@ -101,7 +107,7 @@ def _regenerate_banks(log_path: Path) -> None:
         cfg = config_for_counts(
             10,
             3,
-            SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE),
+            headline_sim_config(),
         ).with_square_area_m(area)
         bank = generate_bank(n, cfg, seed_start=1, num_iot=10, num_uav=3)
         write_bank(bank, bank_path)
@@ -171,67 +177,12 @@ def _n100_baseline(log_path: Path) -> None:
         )
 
 
-def _headline_from_campaign(path: Path) -> dict[str, float]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    for pt in payload.get("points") or []:
-        if pt.get("axis") == "uavs" and int(float(pt.get("x", 0))) == 3:
-            return {
-                m: float(pt["by_method"][m]["mean_sum_rate_Mbps"])
-                for m in ("sca", "random", "kmeans", "pso")
-                if m in (pt.get("by_method") or {})
-            }
-    return {}
-
-
 def _patch_results_md(log_path: Path) -> None:
-    path = ROOT / "docs" / "RESULTS.md"
-    if not path.exists():
-        return
-    camp = ROOT / "results" / "campaign_8.8mhz_cap25_si12k.json"
+    camp = ROOT / PRIMARY_CAMPAIGN_REL
     if not camp.exists():
         _log("skip RESULTS.md patch (no primary campaign yet)", log_path)
         return
-    hdr = _headline_from_campaign(camp)
-    if not hdr:
-        return
-    text = path.read_text(encoding="utf-8")
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    reg_line = (
-        f"| **Last full regeneration**  | {today} (no TD3; random UAV RNG fix; "
-        f"pytest 176/176; banks + campaigns + anchor/multistart + PPT) |"
-    )
-    import re
-
-    text = re.sub(
-        r"\| \*\*Last full regeneration\*\*  \|[^\n]+\|",
-        reg_line,
-        text,
-        count=1,
-    )
-    if "sca" in hdr:
-        row = (
-            f"| **100 × 100 m** (primary)              | **25%** | "
-            f"**{hdr['sca']:.3f}** | {hdr.get('random', 0):.3f}  | "
-            f"{hdr.get('kmeans', 0):.3f}   | {hdr.get('pso', 0):.3f} | 100%     | "
-            f"**{max(hdr.values()) - min(hdr.values()):.3f}** |"
-        )
-        text = re.sub(
-            r"\| \*\*100 × 100 m\*\* \(primary\)[^\n]+\|",
-            row,
-            text,
-            count=1,
-        )
-    note = (
-        f"\n**{today} (random placement fix + no-TD3 full replay)** — "
-        "`place_random` now uses a salted RNG so UAV layouts are not IoT zenith "
-        "aliases on the same seed. Re-ran banks, §VII campaigns (n=20/100/200), "
-        "multi-start + zenith-anchor, n200 PPT bank evals. TD3 omitted. "
-        "`python scripts/orchestration/run_full_regeneration_no_td3.py`.\n"
-    )
-    if "random placement fix" not in text:
-        text = text.replace("### Last regeneration\n", "### Last regeneration\n" + note)
-    path.write_text(text, encoding="utf-8")
-    _log(f"patched {path.relative_to(ROOT)} headline table", log_path)
+    _run([PY, "scripts/orchestration/sync_results_md.py"], log_path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -439,13 +390,22 @@ def main(argv: list[str] | None = None) -> int:
 
     if at_least("plots"):
         _log("=== plots ===", log_path)
+        from uavdt.config import PRIMARY_CAMPAIGN_REL  # noqa: E402
+
         plot_cmds = [
-            [PY, "scripts/plot/plot_paper_figures.py"],
             [
                 PY,
                 "scripts/plot/plot_paper_figures.py",
                 "--campaign",
-                "results/campaign_8.8mhz_cap25_si12k_500m.json",
+                PRIMARY_CAMPAIGN_REL,
+                "--skip-fig11",
+            ],
+            [
+                PY,
+                "scripts/plot/plot_paper_figures.py",
+                "--campaign",
+                "results/campaign_10mhz_cap25_si12k_500m.json",
+                "--skip-fig11",
                 "--out-dir",
                 "results/figures/500m",
             ],
