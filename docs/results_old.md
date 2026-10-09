@@ -1,5 +1,9 @@
 # Experimental Results
 
+> **Archived ledger.** Current 10 MHz / 25% / 100-scenario numbers are in [`results_new.md`](results_new.md), taken from `server_results/results/run_10mhz_cap25/`. This file keeps the earlier 8.8 MHz ledger, the 20 kHz audit, TD3, and the cap-sensitivity writeups.
+
+
+
 **Khalaf et al. (IEEE TNSM, 2026) —** `uavdt` **reproduction**
 
 
@@ -7,12 +11,12 @@
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Scope**                   | Our experimental outcomes on the fresh `uavdt` simulator                                                                                         |
 | **Not in scope**            | Numeric comparison of Mbps figures to the paper’s §VII plots                                                                                     |
-| **Last full regeneration**  | 2026-09-18 (no TD3; **random UAV RNG fix**). **2026-09-20 delta:** 15%/12% replays, TD3 baseline repair, E1/E1b. **2026-09-23:** doc tables synced from JSON (`sync_results_md.py`); pytest **201/201**. |
+| **Last full regeneration**  | **2026-10-07:** headline tables synced to the **10 MHz / 25% / 100×100 m / 100-seed** campaign (`campaign_10mhz_cap25_n100.json`, anchor eval under `results/eval_10mhz_cap25_100m_n100/`). Earlier: 2026-09-18 (no TD3; **random UAV RNG fix**); **2026-09-20 delta:** 15%/12% replays, TD3 baseline repair, E1/E1b; **2026-09-23:** pytest **201/201**. |
 | **Primary campaign**        | `results/campaign_10mhz_cap25_n100.json` (100×100 m, 10 MHz, 25% cap, **100 seeds**) — legacy 8.8 MHz / n20: `campaign_8.8mhz_cap25_si12k.json` |
 | **Tighter-cap sensitivity** | `results/campaign_8.8mhz_cap15_n20.json` (100 m, 15% per-link cap). **12% is not headline** ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch))     |
 | **Paper-field test**        | `results/campaign_8.8mhz_cap25_si12k_500m.json` (500 m, 25% cap)                                                                                 |
 | **TD3 Algorithm 2**         | `results/campaign_8.8mhz_cap25_td3.json` (policy export; 100 m) · n100 bank: [§2.12](#212-n100-monte-carlo-bank-88-mhz)                            |
-| **n100 / n200 Monte Carlo** | Frozen banks `n100_i10_j3_*` and `n200_i10_j3_*` (salted random UAV layouts); headline **10 MHz** @ 25% on 100 m — [§2.12](#212-n100-monte-carlo-bank-88-mhz) |
+| **n100 / n200 Monte Carlo** | Frozen **8.8 MHz** banks `n100_i10_j3_*` and `n200_i10_j3_*` (salted random UAV layouts). The 100-scenario headline is the **10 MHz** campaign, not these banks — [§2.7](#27-primary-campaign-88-mhz-25-cap), [§2.12](#212-n100-monte-carlo-bank-88-mhz) |
 | **Zenith-anchor SCA**       | Opt-in `sca_anchor`; replayed with 2026-09-18 regen — [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement)                             |
 | **7 MHz extra B_sys**       | `results/campaign_7mhz_n20.json` + `_cap15_n20` + `_cap25_n20` (no TD3; [§2.11](#211-7-mhz-no-cap-15-25))                                        |
 | **Related docs**            | `[EXPERIMENTS.md](EXPERIMENTS.md)` · `[REPRODUCTION.md](REPRODUCTION.md)` · `[param.md](param.md)` · `[novelty.md](novelty.md)` (zenith-anchor)   |
@@ -35,7 +39,7 @@
 9. [Sensibility checklist](#5-sensibility-checklist)
 10. [Known limitations](#6-known-limitations-this-milestone)
 11. [Paper field 500 m](#26-paper-field-500--500-m-88-mhz-25-cap)
-12. [Primary campaign 25%](#27-primary-campaign-88-mhz-25-cap)
+12. [Primary campaign (10 MHz, 100 scenarios)](#27-primary-campaign-88-mhz-25-cap)
 13. [SCA-joint probe](#28-sca-joint-methodology-probe)
 14. [Residual policy on SCA](#29-residual-policy-on-sca)
 15. [TD3 Algorithm 2](#210-td3-algorithm-2-reproduction)
@@ -71,9 +75,10 @@
 
 | Parameter       | Value                                                                                                                                                                                                       |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Area**        | **100 × 100 m** (headline); **500 × 500 m** field test at 25% cap ([§2.6](#26-paper-field-500--500-m-88-mhz-25-cap)); 20 kHz check at both fields ([§0.3](#03-control-paper-500--500-m-field-still-20-khz)) |
-| **Seeds**       | 20 consecutive seeds per sweep point (`seed_start = 1`)                                                                                                                                                     |
-| **Methods**     | SCA, random, k-means, PSO *(PSO is external)*; opt-in `sca_multistart`, `sca_anchor`; TD3 Algorithm 2 not replayed in 2026-09-18 regen ([§2.10](#210-td3-algorithm-2-reproduction))                                                                                       |
+| **Area**        | **100 × 100 m** (headline); **500 × 500 m** is a legacy 8.8 MHz field test at the same 25% cap fraction ([§2.6](#26-paper-field-500--500-m-88-mhz-25-cap)); 20 kHz check at both fields ([§0.3](#03-control-paper-500--500-m-field-still-20-khz)) |
+| **B_sys**       | **10 MHz** headline (`PRIMARY_B_SYS_HZ`). Legacy sweeps at 8.8 / 7 / 2.4 MHz stay in the ledger                                                                                                                                                                              |
+| **Seeds**       | **100** consecutive seeds on the headline campaign (`seed_start = 1`). Legacy §VII sweeps used 20                                                                                                                                                                            |
+| **Methods**     | SCA, random, k-means, PSO *(PSO is external)*; opt-in `sca_anchor` on the same 100 seeds. `sca_multistart` and TD3 Algorithm 2 remain the 8.8 MHz ledger ([§2.9](#29-residual-policy-on-sca), [§2.10](#210-td3-algorithm-2-reproduction))                                 |
 | **Random UAVs** | `place_random` uses a **salted** `numpy` stream (`SeedSequence([seed, UAVR])`) so UAV placement is not IoT zenith on the same integer seed ([§2.16](#216-random-uav-placement-fix))                                                                                          |
 | **Score**       | Python `evaluate()` on every method; placement baselines re-scored with the same frozen-geometry bandwidth LP as SCA’s B step                                                                               |
 | **SCA backend** | CVXPY for campaigns; MATLAB CVX+MOSEK spot-validated                                                                                                                                                        |
@@ -81,27 +86,33 @@
 
 
 
-### Headline result @ J = 3 (8.8 MHz, 25% primary cap)
+### Headline result @ J = 3 (10 MHz, 25% cap, 100 scenarios)
+
+**Source:** `results/campaign_10mhz_cap25_n100.json` (baselines) and `results/eval_10mhz_cap25_100m_n100/` (zenith-anchor on the same seeds). Area **100 × 100 m**, `B_sys` = **10 MHz**, per-link cap **25%** (2.50 MHz/link), seeds **1–100**, I = 10, J = 3. The two rows under the primary row are the legacy **8.8 MHz / n = 20** ledger.
 
 
-| Field / role                           | Cap     | SCA       | Random | K-means | PSO   | Feasible | Spread    |
-| -------------------------------------- | ------- | --------- | ------ | ------- | ----- | -------- | --------- |
-| **100 × 100 m** (primary)              | **25%** | **10.172** | 9.950  | 10.110   | 10.120 | 100%     | **0.223** |
-| 100 × 100 m (tighter-cap sensitivity)  | 15%     | 8.895     | 8.649  | 8.838   | 8.849 | 100%     | 0.245     |
-| 500 × 500 m (field test, same 25% cap) | 25%     | 8.300     | 6.016  | 7.474   | 8.122 | 100%     | **2.284** |
+| Field / role                              | Cap     | SCA        | Random | K-means | PSO    | Feasible | Spread    |
+| ----------------------------------------- | ------- | ---------- | ------ | ------- | ------ | -------- | --------- |
+| **100 × 100 m** (primary, 10 MHz, n=100) | **25%** | **10.172** | 9.950  | 10.110  | 10.120 | 100%     | **0.223** |
+| 100 × 100 m (8.8 MHz, 15% sensitivity)    | 15%     | 8.895      | 8.649  | 8.838   | 8.849  | 100%     | 0.245     |
+| 500 × 500 m (8.8 MHz field test, n=20)    | 25%     | 8.300      | 6.016  | 7.474   | 8.122  | 100%     | **2.284** |
 
 
-**25% is the primary cap:** leftover-dump stress test adopted **before** the random-placement fix and independent of any single p-value. After the fix ([§2.16](#216-random-uav-placement-fix)), at default J = 3 on the **20-seed campaign**, SCA vs random is **+0.173 Mbps, 20/20, p<0.001** (was +0.019, 15/20, p=0.123 when random shared the IoT RNG stream). A **15%** cap remains tighter-cap sensitivity (search-selected). See [§2.7](#27-primary-campaign-88-mhz-25-cap) and [§2](#2-sweep-axes-at-88-mhz-15-cap).
+**Conclusion.** On this baseline, frozen SCA ranks first among the four campaign methods: **10.172** Mbps versus PSO **10.120**, k-means **10.110**, and random **9.950**, all **100%** feasible. Paired SCA−random is **+0.223 ± 0.122 Mbps, 100/100, p<0.001**. SCA−k-means is **+0.062 ± 0.037, 100/100**. SCA−PSO is **+0.052 ± 0.039, 97/100** (3 losses). Bonferroni over the three baselines and BH-FDR over **24/24** unique sweep points both stay significant. The zenith radio ceiling on this channel is **10.213 Mbps** (`SE_zenith × B_sys`); SCA at J = 3 sits **0.041 Mbps** under it, so the 100 m field is a leftover-dump stress test near saturation. The gap is largest when UAVs are scarce (J = 1, SCA−random **+0.609**) and shrinks by J = 5 (SCA **10.202**, zenith-anchor **10.208**). Opt-in zenith-anchor scores **10.188** Mbps at the default point (**+0.015 ± 0.021** vs SCA, **79/100** wins, **11** losses, **10** ties, Wilcoxon p ≈ **9×10⁻²²**). Only **9/100** of those gains clear the **0.05 Mbps** practical bar, so anchor is a real but small nick on this field. λ and CPU move SCA by **< 0.01 Mbps**. `T_k = 0.8` s stays **0%** feasible for frozen nearest-association SCA (PSO **9/100**). Full tables: [§2.7](#27-primary-campaign-88-mhz-25-cap). Paired readout: [§3.1](#31-default-point--j--3-i--10-25-primary).
 
-The 500 m campaign uses the **same 25% primary cap**. See [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap).
+**25% remains the primary cap:** leftover-dump stress test, **2.50 MHz/link** at 10 MHz (~4 links to exhaust the pool). The legacy 8.8 MHz / 20-seed cell, after the random-placement fix ([§2.16](#216-random-uav-placement-fix)), was SCA vs random **+0.173 Mbps, 20/20, p<0.001**. A **15%** cap remains the 8.8 MHz tighter-cap sensitivity. See [§2](#2-sweep-axes-at-88-mhz-15-cap).
 
-**Algorithm 2 TD3** (policy export, same 20 default seeds): **8.917 Mbps**, TD3−SCA **−0.030** Mbps (2/20, p<0.001). Beats post-fix random **20/20** (+0.144, p<0.001). Never overtakes SCA on any of 29 sweep points. See [§2.10](#210-td3-algorithm-2-reproduction).
+The 500 m row is the legacy **8.8 MHz** field test at the same 25% fraction. See [§2.6](#26-paper-field-500--500-m-88-mhz-25-cap).
+
+**Zenith-anchor SCA** on the headline seeds is the paragraph above (`default_j3_paired_eval.json`, mean wall **5.1 s**). The older 8.8 MHz ranking story is unchanged in role: n20 @ 500 m / J=3 **8.490** vs SCA **8.300** (+0.190, 14/20 practical); n100 bank @ 500 m **8.481** vs SCA **8.228** (+0.253, **71/100** practical). See [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
+
+**Algorithm 2 TD3** was not re-run at 10 MHz. On the legacy 8.8 MHz / 20-seed campaign it scores **8.917 Mbps**, TD3−SCA **−0.030** Mbps (2/20, p<0.001), and beats post-fix random **20/20**. See [§2.10](#210-td3-algorithm-2-reproduction).
 
 **7 MHz extra B_sys** (no TD3, 2026-09-11): SCA 7.132 / 7.115 / 7.073 Mbps at no-cap / 25% / 15%. Matches `(7/8.8)×` the 8.8 MHz SCA to 0.001–0.003 Mbps. See [§2.11](#211-7-mhz-no-cap-15-25).
 
-**Zenith-anchor SCA** (opt-in; replayed 2026-09-18): LP-scored IoT-subset placement + frozen-SCA polish. Never worse than one-shot SCA by construction. n20 @ 500 m / J=3: **8.490** vs SCA **8.300** (+0.190, 14/20 practical); n100 bank @ 500 m: **8.481** vs SCA **8.228** (+0.253, **71/100** practical). n20 @ 100 m: **8.964** vs SCA **8.946** (+0.017). J/I 500 m sweeps, 15% cap, and \(T_k=0.8\) process-cohesive probes unchanged in role — see [§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement).
-
 ### Last regeneration
+
+**2026-10-07 (headline doc sync)** — Primary tables, paired tests, and the conclusion in this file now follow `results/campaign_10mhz_cap25_n100.json` (100×100 m, 10 MHz, 25% cap, seeds 1–100) and `results/eval_10mhz_cap25_100m_n100/` (zenith-anchor). Paired SCA-vs-baseline readout: `results/campaign_10mhz_cap25_n100_paired.json` via `scripts/lib/paired_winrate.py`. Legacy 8.8 MHz sections are labeled as such. Campaign JSON was not re-run.
 
 **2026-09-23 (doc sync from artifacts)** — Refreshed dynamic tables in this file from `results/*.json` (headline campaign, `sca_multistart_cases_analysis.json`, `sca_anchor_cases_analysis.json`). Protected headline JSON unchanged. `python scripts/orchestration/sync_results_md.py`. pytest **201/201**.
 
@@ -290,13 +301,15 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 
 | File                                            | B_sys       | Per-link cap | n_runs | Role                                                                       |
 | ----------------------------------------------- | ----------- | ------------ | ------ | -------------------------------------------------------------------------- |
+| `results/campaign_10mhz_cap25_n100.json`        | **10 MHz**  | **25%**      | **100** | **Primary campaign** (100 × 100 m, seeds 1–100)                           |
+| `results/eval_10mhz_cap25_100m_n100/`           | 10 MHz      | 25%          | 100    | Zenith-anchor on the same seeds; `SUMMARY.md`, paired default point       |
 | `results/check_bsys_20khz.json`                 | 20 kHz      | none         | 20     | Model-free ceiling + 100 m vs **500 m** control                            |
 | `results/campaign_20khz.json`                   | 20 kHz      | none         | 20     | Table II diagnostic, 100 m, all axes (infeasible)                          |
 | `results/campaign_20khz_cap25.json`             | 20 kHz      | 25%          | 20     | Same, capped                                                               |
 | `results/campaign_2.4mhz.json`                  | 2.4 MHz     | none         | 20     | Mid-bandwidth, saturated                                                   |
 | `results/campaign_2.4mhz_cap25.json`            | 2.4 MHz     | 25%          | 20     | Mid-bandwidth, differentiated                                              |
 | `results/campaign_8.8mhz_n20.json`              | 8.8 MHz     | none         | 20     | Saturated control (2026-09-05 refresh)                                     |
-| `results/campaign_8.8mhz_cap25_si12k.json`      | **8.8 MHz** | **25%**      | **20** | **Primary campaign** (100 × 100 m; random fix 2026-09-18)              |
+| `results/campaign_8.8mhz_cap25_si12k.json`      | 8.8 MHz     | 25%          | 20     | Legacy headline (100 × 100 m; random fix 2026-09-18)                       |
 | `results/campaign_8.8mhz_cap25_n100.json`       | 8.8 MHz     | 25%          | 100    | High-stat §VII sweep (100 m)                                               |
 | `results/campaign_8.8mhz_cap25_n200.json`       | 8.8 MHz     | 25%          | 200    | High-stat §VII sweep (100 m; PPT)                                          |
 | `results/campaign_8.8mhz_cap25_n100_500m.json`  | 8.8 MHz     | 25%          | 100    | High-stat §VII sweep (500 m)                                               |
@@ -330,7 +343,8 @@ SCA optimizes (17) as written, so the objective does **not** behave the way the 
 
 | File                                                       | Contents                                                    |
 | ---------------------------------------------------------- | ----------------------------------------------------------- |
-| `results/campaign_8.8mhz_cap25_si12k_paired.json` / `.csv` | Paired stats (25% primary)                                  |
+| `results/campaign_10mhz_cap25_n100_paired.json` / `.csv` | Paired stats (10 MHz, 25%, n=100 primary)            |
+| `results/campaign_8.8mhz_cap25_si12k_paired.json` / `.csv` | Paired stats (legacy 8.8 MHz, 25%, n=20)                    |
 | `results/campaign_8.8mhz_cap25_si12k_losses.json`          | Loss-seed forensics (J = 3, 25% primary)                    |
 | `results/campaign_8.8mhz_cap15_n20_paired.json` / `.csv`   | Paired SCA vs baselines (15% sensitivity)                   |
 | `results/campaign_8.8mhz_cap15_n20_losses.json`            | Loss-seed forensics (J = 3, 15% sensitivity)                |
@@ -401,6 +415,9 @@ Unless noted:
 
 | Parameter      | Value                                                                                                      |
 | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| Area           | **100 × 100 m**                                                                                            |
+| System bandwidth | **B_sys = 10 MHz**                                                                                       |
+| Seeds          | **100** (seeds 1–100)                                                                                      |
 | IoT devices    | **I = 10**                                                                                                 |
 | UAVs           | **J = 3**                                                                                                  |
 | Arrival rate   | **λ = 2/s**                                                                                                |
@@ -409,7 +426,7 @@ Unless noted:
 | Process groups | **K = 2**, **5 IoTs each**                                                                                 |
 | Task size      | **S_i = 12,000 bytes**                                                                                     |
 | Task cycles    | **L = 3.75×10⁶ cycles/task**                                                                               |
-| Per-link cap   | **25%** of `B_sys` (2.20 MHz/link) primary leftover-dump stress test; **15%** is a tighter-cap sensitivity |
+| Per-link cap   | **25%** of `B_sys` (**2.50 MHz/link**); **15%** is an 8.8 MHz tighter-cap sensitivity |
 
 
 ---
@@ -437,7 +454,7 @@ The argument to lead with is §0.1, not this campaign table. The 100 × 100 m sw
 
 **Interpretation:** If 20 kHz is the (27) cap, total spectrum is the bottleneck and 7–14 Mbps is impossible without trusting the simulator. QoS (`R_min = 10` kbps per active link) also fails: meeting it on ten associated links needs on the order of **~102 kHz** at 100 m (`∑_i R_min / SE_{ij}`), and more at 500 m where SE is worse. AoDT cannot be met either. `S_i` / `L` do not enter the §0.1 bound.
 
-**Settled** `S_i` **/** `L` **defaults:** `S_i = 12{,}000` bytes (`96{,}000` bit), `L = 3.75\times10^6` cycles/task (`\mu \approx 53.3` /s). Not in Table II. Prior placeholder runs used `10{,}000` bit and `L=10^6`; see [§10](#10-s_i--l-correction--settled-defaults-vs-old-placeholders). Primary campaign `campaign_8.8mhz_cap25_si12k.json` uses the settled values.
+**Settled** `S_i` **/** `L` **defaults:** `S_i = 12{,}000` bytes (`96{,}000` bit), `L = 3.75\times10^6` cycles/task (`\mu \approx 53.3` /s). Not in Table II. Prior placeholder runs used `10{,}000` bit and `L=10^6`; see [§10](#10-s_i--l-correction--settled-defaults-vs-old-placeholders). The 10 MHz primary campaign and the legacy `campaign_8.8mhz_cap25_si12k.json` both use the settled values.
 
 - `S_i` only enters upload delay (Eq. 11) and thus the AoDT bandwidth floor.
 - `L` only scales `μ_j`; it does not enter the radio model.
@@ -453,7 +470,7 @@ The argument to lead with is §0.1, not this campaign table. The 100 × 100 m sw
 | Cap 25% | 2.428 Mbps | Yes (100%)            |
 
 
-At J = 3 with cap 25% (`campaign_2.4mhz_cap25.json`, 2026-09-05): SCA 2.428, PSO 2.423, k-means 2.420, random 2.414 Mbps — gaps **< 0.01 Mbps**. Without cap, PSO/k-means are within **~0.005 Mbps** of SCA. Ordering still favours SCA at J = 3 but margins are tighter than the 8.8 MHz 25% primary campaign.
+At J = 3 with cap 25% (`campaign_2.4mhz_cap25.json`, 2026-09-05): SCA 2.428, PSO 2.423, k-means 2.420, random 2.414 Mbps — gaps **< 0.01 Mbps**. Without cap, PSO/k-means are within **~0.005 Mbps** of SCA. Ordering still favours SCA at J = 3 but margins are tighter than the 10 MHz / 25% primary campaign (spread 0.223 Mbps).
 
 ### 1.3 8.8 MHz, no cap
 
@@ -472,7 +489,7 @@ Spread **< 0.03 Mbps** (`campaign_8.8mhz_n20.json`, 2026-09-05). **λ**, **CPU**
 
 
 
-### 1.4 8.8 MHz, 25% cap *(primary)*
+### 1.4 8.8 MHz, 25% cap *(legacy, n = 20)*
 
 
 | Method @ J=3 | Mean Mbps | Feasible |
@@ -483,7 +500,7 @@ Spread **< 0.03 Mbps** (`campaign_8.8mhz_n20.json`, 2026-09-05). **λ**, **CPU**
 | K-means      | 8.901     | 100%     |
 
 
-Spread **0.173 Mbps**. SCA vs random is **+0.173 Mbps, 20/20, p<0.001** (post-fix; see [§2.16](#216-random-uav-placement-fix)). Primary leftover-dump stress test; cap chosen independently of that p-value. See [§2.7](#27-primary-campaign-88-mhz-25-cap).
+Spread **0.173 Mbps**. SCA vs random is **+0.173 Mbps, 20/20, p<0.001** (post-fix; see [§2.16](#216-random-uav-placement-fix)). This is the legacy 8.8 MHz cell. The primary leftover-dump stress test is the 10 MHz / 100-scenario campaign in [§1.7](#17-10-mhz-25-cap-primary-100-scenarios) and [§2.7](#27-primary-campaign-88-mhz-25-cap).
 
 ### 1.5 8.8 MHz, 15% cap *(tighter-cap sensitivity)*
 
@@ -500,7 +517,7 @@ Spread **0.245 Mbps**. SCA vs random is **+0.245 Mbps, 20/20, p<0.001** (Bonferr
 
 ### 1.6 7 MHz (extra B_sys, no TD3)
 
-**2026-09-11.** Same 20-seed five-axis grid as the 8.8 MHz campaigns. Methods: random, k-means, PSO, SCA. Not Table II; not a replacement for the 8.8 MHz headline.
+**2026-09-11.** Same 20-seed five-axis grid as the 8.8 MHz campaigns. Methods: random, k-means, PSO, SCA. Not Table II; not a replacement for the 10 MHz headline.
 
 
 | Cap @ J=3 | SCA   | Random | K-means | PSO   | Spread | SCA vs random          |
@@ -511,6 +528,22 @@ Spread **0.245 Mbps**. SCA vs random is **+0.245 Mbps, 20/20, p<0.001** (Bonferr
 
 
 SCA at J=3 is **7/8.8** of the matching 8.8 MHz SCA to **0.001–0.003 Mbps**. Same leftover-dump / cap physics, smaller pool. Full tables: [§2.11](#211-7-mhz-no-cap-15-25).
+
+### 1.7 10 MHz, 25% cap *(primary, 100 scenarios)*
+
+**Source:** `campaign_10mhz_cap25_n100.json`, UAV-axis J = 3. Zenith-anchor from `eval_10mhz_cap25_100m_n100/eval_all_methods_summary.csv`.
+
+
+| Method @ J=3   | Mean Mbps | Std   | Feasible |
+| -------------- | --------- | ----- | -------- |
+| **sca_anchor** | **10.188** | 0.010 | 100%     |
+| **SCA**        | **10.172** | 0.026 | 100%     |
+| PSO            | 10.120    | 0.045 | 100%     |
+| K-means        | 10.110    | 0.048 | 100%     |
+| Random         | 9.950     | 0.119 | 100%     |
+
+
+Spread **0.223 Mbps** (SCA − random). Paired SCA−random **+0.223 ± 0.122 Mbps, 100/100, p<0.001**. Anchor − SCA **+0.015 ± 0.021**, **79/100** wins, **9/100** above 0.05 Mbps. Radio ceiling **10.213 Mbps**. Sweep tables: [§2.7](#27-primary-campaign-88-mhz-25-cap).
 
 ---
 
@@ -620,16 +653,16 @@ Campaign Mbps means are `mean(all 20 seeds)` — `campaign._summarize` does not 
 
 ### 2.6 Paper field 500 × 500 m (8.8 MHz, 25% cap)
 
-**Source:** `campaign_8.8mhz_cap25_si12k_500m.json` (2026-09-07, 20 seeds). Field-size test at the **same 25% primary cap**. A 500 m campaign at 15% has not been run.
+**Source:** `campaign_8.8mhz_cap25_si12k_500m.json` (2026-09-07, 20 seeds). Field-size test at the **same 25% cap fraction**, on the legacy **8.8 MHz** pool. A 500 m campaign at 15% has not been run. The 10 MHz / 100 m headline is [§2.7](#27-primary-campaign-88-mhz-25-cap).
 
-Same 25% cap as the 100 m primary campaign, but IoTs and UAVs are placed in the paper’s **500 × 500 m** field. Zenith max SNR is unchanged (`H = 100` m); mean link quality is worse, so sum rates drop ~0.6–0.7 Mbps at J = 3 relative to 100 m **at the same 25% cap**.
+IoTs and UAVs are placed in the paper’s **500 × 500 m** field. Zenith max SNR is unchanged (`H = 100` m); mean link quality is worse, so sum rates drop ~0.6–0.7 Mbps at J = 3 relative to the 8.8 MHz 100 m campaign **at the same 25% cap**.
 
-#### Default point — J = 3, I = 10 (both columns 25% cap)
+#### Default point — J = 3, I = 10 (both columns 8.8 MHz, 25% cap)
 
 
-| Method  | 100 m (25% primary) | 500 m (25%) | Δ (500 − 100) |
-| ------- | ------------------- | ----------- | ------------- |
-| **SCA** | 8.946               | **8.300**   | −0.646        |
+| Method  | 100 m (8.8 MHz, n=20) | 500 m (25%) | Δ (500 − 100) |
+| ------- | --------------------- | ----------- | ------------- |
+| **SCA** | 8.946                 | **8.300**   | −0.646        |
 | PSO     | 8.905               | 8.122       | −0.783        |
 | Random  | 8.773               | 6.016       | −2.757        |
 | K-means | 8.901               | 7.474       | −1.427        |
@@ -661,18 +694,113 @@ Plot: `python scripts/plot/plot_paper_figures.py --campaign results/campaign_8.8
 
 n100 at the same field: [§2.12](#212-n100-monte-carlo-bank-88-mhz). Algorithm 2 TD3 stays next to k-means (7.510 vs SCA 8.228 Mbps, 0/100 wins). Do not mix that 100-layout bank with this 20-seed campaign table.
 
-### 2.7 Primary campaign: 8.8 MHz, 25% cap
+<a id="27-primary-campaign-88-mhz-25-cap"></a>
 
-**Source:** `campaign_8.8mhz_cap25_si12k.json` (100 × 100 m).
+### 2.7 Primary campaign: 10 MHz, 25% cap, 100 × 100 m, 100 scenarios
 
-25% is the **primary leftover-dump stress test**, chosen independently of the SCA-vs-random p-value. Without a per-link cap the frozen-q LP puts ~95% of `B_sys` on the best-SE link at every J; a 25% cap pins max share at 0.25 (~4 links to exhaust the pool). A 15% cap pins it at 0.15 (~7 links) and remains a tighter-cap **sensitivity** (search-selected from a cap×J grid). The J fade of the rate gap is **SE spread**, not dump fade: `SE_max` stays ≈ 1.021 (zenith at H = 100 m) while `SE_min` / `SE_mean` rise with J. See `results/cap_binding_diagnostic.json` and `results/se_spread_by_j.json`.
+**Source:** `results/campaign_10mhz_cap25_n100.json` (random, k-means, PSO, SCA). Zenith-anchor means are from `results/eval_10mhz_cap25_100m_n100/` (`anchor_*_n100_100m.csv` and the merged IoT sweep). Anchor was not run on the CPU axis. Paired tests: `results/campaign_10mhz_cap25_n100_paired.json`.
 
-At default J = 3 (post-fix), SCA vs random is **+0.173 ± 0.101 Mbps, 20/20, p<0.001**. That does not change why 25% was adopted as the primary cap (chosen before this fix).
+25% is the **primary leftover-dump stress test**. At 10 MHz that cap is **2.50 MHz/link** (~4 links to exhaust the pool). Without a per-link cap the frozen-q LP puts ~95% of `B_sys` on the best-SE link at every J. The zenith radio ceiling here is **10.213 Mbps**. A 15% cap remains the legacy 8.8 MHz tighter-cap **sensitivity**. The J fade of the rate gap is **SE spread**, not dump fade: `SE_max` stays ≈ 1.021 (zenith at H = 100 m) while `SE_min` / `SE_mean` rise with J. See `results/cap_binding_diagnostic.json` and `results/se_spread_by_j.json`.
+
+Means below are over all 100 seeds, including infeasible scores. Every feasible-axis row is **100%** feasible. The exception is **T_k = 0.8 s**.
 
 #### Default point — J = 3, I = 10
 
 
-| Method  | 25% (primary) | 15% (sensitivity) | Δ (15 − 25) |
+| Method     | Mean Mbps | Std   | Feasible |
+| ---------- | --------- | ----- | -------- |
+| sca_anchor | **10.188** | 0.010 | 100%     |
+| **SCA**    | **10.172** | 0.026 | 100%     |
+| PSO        | 10.120    | 0.045 | 100%     |
+| K-means    | 10.110    | 0.048 | 100%     |
+| Random     | 9.950     | 0.119 | 100%     |
+
+
+Ranking: **sca_anchor > SCA > PSO > k-means > random**. Spread SCA−random **0.223 Mbps**.
+
+#### Fig. 6 analogue — UAV count J (I = 10)
+
+
+| J   | SCA    | Random | K-means | PSO    | sca_anchor |
+| --- | ------ | ------ | ------- | ------ | ---------- |
+| 1   | 9.953  | 9.344  | 9.730   | 9.760  | 9.974      |
+| 2   | 10.116 | 9.774  | 10.001  | 10.042 | 10.147     |
+| 3   | 10.172 | 9.950  | 10.110  | 10.120 | 10.188     |
+| 4   | 10.195 | 10.002 | 10.160  | 10.166 | 10.204     |
+| 5   | 10.202 | 10.042 | 10.188  | 10.186 | 10.208     |
+
+
+**Analysis.** Sum rate rises with J for every method and approaches the **10.213 Mbps** ceiling (anchor at J = 5 is **10.208**). SCA leads the four campaign methods at every J. Paired SCA−random is **+0.609** at J = 1 (98/100) and **+0.160** at J = 5 (100/100). Vs k-means / PSO the edge drops below 0.05 Mbps at J = 4–5 (still 100/100 and 99/100 or 95/100, FDR-significant).
+
+#### Fig. 7 analogue — IoT count I (J = 3)
+
+The IoT axis was re-solved (`rerun_iots_fig7.py`, I ∈ {10, 15, 20, 25, 30}). I = 10 here is **10.174** Mbps for SCA, **0.001 Mbps** above the UAV-axis default row. Use the UAV-axis J = 3 row as the headline default. Do not pool the two.
+
+
+| I   | SCA    | Random | K-means | PSO    | sca_anchor | Feasible |
+| --- | ------ | ------ | ------- | ------ | ---------- | -------- |
+| 10  | 10.174 | 9.951  | 10.111  | 10.120 | 10.188     | 100%     |
+| 15  | 10.170 | 10.003 | 10.118  | 10.128 | 10.182     | 100%     |
+| 20  | 10.164 | 10.024 | 10.119  | 10.127 | 10.173     | 100%     |
+| 25  | 10.154 | 10.024 | 10.116  | 10.122 | 10.162     | 100%     |
+| 30  | 10.145 | 10.018 | 10.111  | 10.119 | 10.152     | 100%     |
+
+
+**Analysis.** SCA and anchor decline slowly as I grows. Random rises toward them, so SCA−random shrinks from **0.223** at I = 10 to **0.127** at I = 30 (100/100). SCA stays first among the campaign methods at every I.
+
+#### Fig. 8 analogue — Arrival rate λ (I = 10, J = 3)
+
+
+| λ (/s) | SCA    | Random | K-means | PSO    | sca_anchor |
+| ------ | ------ | ------ | ------- | ------ | ---------- |
+| 1.0    | 10.167 | 9.941  | 10.107  | 10.117 | 10.183     |
+| 1.5    | 10.171 | 9.947  | 10.109  | 10.119 | 10.186     |
+| 2.0    | 10.172 | 9.950  | 10.110  | 10.120 | 10.188     |
+| 2.5    | 10.173 | 9.951  | 10.111  | 10.120 | 10.188     |
+| 3.0    | 10.174 | 9.951  | 10.111  | 10.120 | 10.189     |
+| 3.5    | 10.174 | 9.952  | 10.111  | 10.121 | 10.189     |
+
+
+**Analysis.** With settled `L`, AoDT binds at `T_k = 2.8 s` and the comm score still moves by **< 0.01 Mbps** on SCA across this λ grid. **Do not pool λ = 2.0 with the UAV-axis J = 3 row** (it is the same default scenario).
+
+#### Fig. 9 analogue — AoDT threshold T_k (I = 10, J = 3)
+
+
+| T_k (s) | SCA    | Random | K-means | PSO    | sca_anchor | SCA feasible | PSO feasible |
+| ------- | ------ | ------ | ------- | ------ | ---------- | ------------ | ------------ |
+| **0.8** | 10.118 | 9.416  | 9.874   | 9.800  | 10.118     | **0%**       | **9%**       |
+| 1.2     | 10.118 | 9.855  | 10.074  | 10.091 | 10.140     | 100%         | 100%         |
+| 1.6     | 10.150 | 9.914  | 10.096  | 10.109 | 10.167     | 100%         | 100%         |
+| 2.0     | 10.161 | 9.934  | 10.104  | 10.115 | 10.178     | 100%         | 100%         |
+| 2.4     | 10.169 | 9.943  | 10.108  | 10.118 | 10.184     | 100%         | 100%         |
+| 2.8     | 10.172 | 9.950  | 10.110  | 10.120 | 10.188     | 100%         | 100%         |
+| 3.0     | 10.174 | 9.952  | 10.111  | 10.121 | 10.189     | 100%         | 100%         |
+
+
+**Analysis.** T_k = 0.8 s is **0%** feasible for SCA, k-means, random, and sca_anchor under frozen nearest-association (PSO **9/100**). The 0.8 s means are infeasible scores. The same nearest-association blocker as [§2.4](#24-fig-9-analogue--aodt-threshold-t_k-i--10-j--3) and [§2.8](#28-sca-joint-methodology-probe) still applies: publish the feasible-axis Mbps, and keep the 0% column as a discrete-init fact. For T_k ≥ 1.2 s the score rises toward the default plateau. Anchor’s largest step above SCA on this axis is at T_k = 1.2 s (**10.140** vs **10.118**).
+
+#### Fig. 10 analogue — UAV CPU f_j (I = 10, J = 3)
+
+Anchor was not run on this axis.
+
+
+| f_j (×10⁸ c/s) | SCA    | Random | K-means | PSO    | SCA feasible |
+| -------------- | ------ | ------ | ------- | ------ | ------------ |
+| 0.5            | 10.165 | 9.945  | 10.109  | 10.119 | 100%         |
+| 1.0            | 10.171 | 9.948  | 10.110  | 10.120 | 100%         |
+| 1.5            | 10.172 | 9.949  | 10.110  | 10.120 | 100%         |
+| 2.0            | 10.172 | 9.950  | 10.110  | 10.120 | 100%         |
+| 2.5            | 10.173 | 9.950  | 10.110  | 10.120 | 100%         |
+
+
+**Analysis.** After the (24) init repair, **100/100** seeds are feasible at f_j = 0.5×10⁸ and the comm score stays on the default plateau (**≤ 0.008 Mbps** from 0.5 to 2.5). **Do not pool CPU rows with J = 3.**
+
+#### Legacy default point — 8.8 MHz, n = 20
+
+**Source:** `campaign_8.8mhz_cap25_si12k.json` vs `campaign_8.8mhz_cap15_n20.json`. Same-B_sys comparison for the 15% sensitivity, at the legacy 8.8 MHz pool.
+
+
+| Method  | 25% (8.8 MHz) | 15% (sensitivity) | Δ (15 − 25) |
 | ------- | ------------- | ----------------- | ----------- |
 | **SCA** | **8.946**     | 8.895             | −0.052      |
 | PSO     | 8.902         | 8.849             | −0.053      |
@@ -680,13 +808,13 @@ At default J = 3 (post-fix), SCA vs random is **+0.173 ± 0.101 Mbps, 20/20, p<0
 | Random  | 8.773         | 8.649             | −0.124      |
 
 
-On identical post-fix layouts a tighter cap **lowers** the LP optimum. Random drops **0.124 Mbps** from 25% to 15% (the old −0.008 was a pre-fix / post-fix mix). Paired vs-random at 25%: **+0.173 ± 0.101 Mbps, 20/20, p<0.001** (`campaign_8.8mhz_cap25_si12k_paired.json`). Full 25% axis tables remain in the primary campaign JSON; do not mix them with the 15% tables in §2.1–2.5.
+On identical post-fix layouts a tighter cap **lowers** the LP optimum. Random drops **0.124 Mbps** from 25% to 15%. Paired vs-random at 8.8 MHz / 25%: **+0.173 ± 0.101 Mbps, 20/20, p<0.001** (`campaign_8.8mhz_cap25_si12k_paired.json`). Do not mix these rows with the 10 MHz tables above or with the 15% axis tables in §2.1–2.5.
 
-> **Cap×J grid (archived, pre-fix random).** `bw_cap_by_J_grid.json` and the 24% “significance turns off” / U-shaped-in-cap story used the zenith-aliased random stream. They contradict the post-fix primary campaign (J=3 @ 25%: **+0.173 Mbps, 20/20, p<0.001**). Do **not** quote that landscape as a current result. Re-run `scripts/tools/bw_cap_by_j_grid.py` only if you need a post-fix cap map; 15% and 25% campaigns already exist.
+> **Cap×J grid (archived, pre-fix random).** `bw_cap_by_J_grid.json` and the 24% “significance turns off” / U-shaped-in-cap story used the zenith-aliased random stream. They contradict the post-fix 8.8 MHz cell (J=3 @ 25%: **+0.173 Mbps, 20/20, p<0.001**) and the 10 MHz headline (J=3 @ 25%: **+0.223 Mbps, 100/100, p<0.001**). Do **not** quote that landscape as a current result. Re-run `scripts/tools/bw_cap_by_j_grid.py` only if you need a post-fix cap map; 15% and 25% campaigns already exist.
 
 #### Cap × J search *(archived — pre-fix random)*
 
-**Do not quote as current.** The 30-cell grid (`bw_cap_by_J_grid.json`: caps 15–30% × J=1–5, 20 seeds, SCA vs random) and the J=3 bisection (`bw_boundary_refine_j3.json`) used the zenith-aliased random stream. That is why they report J=3 @ 25% as Δ=+0.019 / q=0.137 and “significance turns off at 24%.” The **current** 25% campaign at the same cell is **+0.173 Mbps, 20/20, p<0.001**. Mixing one post-fix row into that table produced a fake U-shape.
+**Do not quote as current.** The 30-cell grid (`bw_cap_by_J_grid.json`: caps 15–30% × J=1–5, 20 seeds, SCA vs random) and the J=3 bisection (`bw_boundary_refine_j3.json`) used the zenith-aliased random stream. That is why they report J=3 @ 25% as Δ=+0.019 / q=0.137 and “significance turns off at 24%.” The post-fix **8.8 MHz** cell at that cap is **+0.173 Mbps, 20/20, p<0.001**. The **10 MHz** headline at J = 3 is **+0.223 Mbps, 100/100, p<0.001**. Mixing one post-fix row into that table produced a fake U-shape.
 
 15% remains a tighter-cap **sensitivity** because it was search-selected, not because the archived grid’s FDR map is still valid. Binding diagnostics (`cap_binding_diagnostic.json`, `se_spread_by_j.json`) are geometry/LP facts and do not depend on random UAV xy.
 
@@ -1025,7 +1153,7 @@ Paired SCA − baseline at J = 3 (Wilcoxon, 20 seeds):
 
 **T_k = 0.8 s.** SCA feasible **0/20** on all three caps (k-means/random 0/20; PSO 2/20). AoDT construction, not spectrum. Same frozen nearest-`a` failure as 8.8 MHz.
 
-**What this does not show.** TD3 was not run. 500 m was not run at 7 MHz. 7 MHz is not a candidate to replace 8.8 MHz as the headline `B_sys`.
+**What this does not show.** TD3 was not run. 500 m was not run at 7 MHz. 7 MHz is not a candidate to replace 10 MHz as the headline `B_sys`.
 
 ### 2.12 n100 / n200 Monte Carlo banks (8.8 MHz)
 
@@ -1109,7 +1237,7 @@ Perfect = 100% feasible at J=3, SCA uniquely best, Wilcoxon p<0.05 vs random, sp
 
 **Search-selected “best perfect” is 8.8 MHz / 12%** (spread 0.184, SCA 8.816). That is a **score artifact** (`40 × spread`; spread ∝ Hertz at fixed cap). SCA is only **0.001 Mbps** above PSO in that **pre-fix** fine-search cell (8.816 vs 8.815). Do **not** replace headline `B_sys` or cap.
 
-**Headline 8.8 MHz / 25%** (primary campaign, post-fix): SCA **8.946**, random **8.773**, spread **0.173**, SCA−random **+0.173**, **20/20**, p<0.001 ([§2.16](#216-random-uav-placement-fix)). Fine-search cells at other MHz values still use **pre-fix random and pre-fix PSO** (PSO particle inits call `place_random`). The quoted 8.8 MHz / 12% spread **0.184** is that pre-fix fine-search cell; the four-test rematch at the same cap is **0.266** after the random replay ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)). Keep 25% as the leftover-dump stress test ([§2.7](#27-primary-campaign-88-mhz-25-cap)).
+**Legacy 8.8 MHz / 25%** (post-fix n = 20): SCA **8.946**, random **8.773**, spread **0.173**, SCA−random **+0.173**, **20/20**, p<0.001 ([§2.16](#216-random-uav-placement-fix)). The current headline is the 10 MHz / 100-scenario cell in [§2.7](#27-primary-campaign-88-mhz-25-cap) (SCA **10.172**, random **9.950**, SCA−random **+0.223**, **100/100**). Fine-search cells at other MHz values still use **pre-fix random and pre-fix PSO** (PSO particle inits call `place_random`). The quoted 8.8 MHz / 12% spread **0.184** is that pre-fix fine-search cell; the four-test rematch at the same cap is **0.266** after the random replay ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)). Keep 25% as the leftover-dump stress test.
 
 **10% / 12% ranking in this grid is not current.** “PSO first on all 18 bandwidths at 10%” and “SCA uniquely best at 12%” used zenith-aliased PSO inits. Do not promote a fine-search cap from those ranks.
 
@@ -1416,11 +1544,43 @@ E2 (constant leftover room) and E3 / no-cap runs were skipped.
 
 ## 3. Paired statistics (SCA vs baselines, same seed)
 
-**Primary source:** `campaign_8.8mhz_cap25_si12k_paired.json`  
+**Primary source:** `campaign_10mhz_cap25_n100_paired.json` (from `campaign_10mhz_cap25_n100.json`, `scripts/lib/paired_winrate.py`)  
+**Anchor source:** `results/eval_10mhz_cap25_100m_n100/default_j3_paired_eval.json`  
+**Legacy source:** `campaign_8.8mhz_cap25_si12k_paired.json`  
 **Sensitivity source:** `campaign_8.8mhz_cap15_n20_paired.json`  
-**Delta:** SCA − baseline (Mbps) · **Test:** Wilcoxon signed-rank (two-sided) · **Std:** sample std of 20 paired deltas, not SEM
+**Delta:** SCA − baseline (Mbps) · **Test:** Wilcoxon signed-rank (two-sided) · **Std:** sample std of the paired deltas, not SEM
 
-### 3.1 Default point — J = 3, I = 10 (25% primary)
+<a id="31-default-point--j--3-i--10-25-primary"></a>
+
+### 3.1 Default point — J = 3, I = 10 (10 MHz, 25%, n = 100)
+
+
+| Baseline | Mean Δ | Std Δ | Wins   | Losses | Wilcoxon p | Bonferroni p_adj (m=3) | Verdict         |
+| -------- | ------ | ----- | ------ | ------ | ---------- | ---------------------- | --------------- |
+| Random   | +0.223 | 0.122 | 100/100 | 0      | 1.6×10⁻³⁰  | 4.7×10⁻³⁰              | **Significant** |
+| K-means  | +0.062 | 0.037 | 100/100 | 0      | 1.6×10⁻³⁰  | 4.7×10⁻³⁰              | **Significant** |
+| PSO      | +0.052 | 0.039 | 97/100  | 3      | 1.2×10⁻²³  | 3.5×10⁻²³              | **Significant** |
+
+
+All three default-point gaps clear the **0.05 Mbps** practical bar. **Zero** paired losses vs random at J = 3.
+
+**Zenith-anchor − SCA** on the same 100 seeds: **+0.015 ± 0.021 Mbps**, **79** wins, **11** losses, **10** ties, **9/100** practical (Δ > 0.05 Mbps), Wilcoxon p = **9.0×10⁻²²**.
+
+### 3.1b Regime map — BH-FDR over 24 unique sweep points *(10 MHz primary)*
+
+Repeated default ticks excluded (λ = 2.0, T_k = 2.8 s, f_j = 2×10⁸, and the IoT-axis I = 10 tick). The IoT axis was re-solved, so I = 10 is not a bitwise copy of UAV-axis J = 3; it is still excluded as the repeated default tick. Family size **24**.
+
+
+| Baseline    | FDR q < 0.05 | Practical Δ > 0.05 Mbps | Notes |
+| ----------- | ------------ | ----------------------- | ----- |
+| **Random**  | **24 / 24**  | **24 / 24**             | Default J = 3: +0.223 Mbps, 100/100. J = 1 is 98/100 |
+| **K-means** | **24 / 24**  | **18 / 24**             | Below 0.05 Mbps at J = 4–5, T_k = 1.2 s, and I = 20–30 |
+| **PSO**     | **24 / 24**  | **13 / 24**             | Below 0.05 Mbps at J = 4–5, λ = 1, T_k = 1.2–2.0 s, f_j = 0.5×10⁸, and I = 15–30 |
+
+
+Every unique point is FDR-significant. The **0.05 Mbps** bar still holds for random on the whole unique grid, and for k-means and PSO at the default point. It drops off at J = 4–5 and at large I, where every method is already close to the **10.213 Mbps** ceiling, and on the tighter feasible AoDT cells (T_k = 1.2–2.0 s) for PSO.
+
+### 3.1c Legacy default point and FDR (8.8 MHz, n = 20)
 
 
 | Baseline | Mean Δ | Std Δ | Wins  | Wilcoxon p | Bonferroni p_adj | Verdict         |
@@ -1430,18 +1590,7 @@ E2 (constant leftover room) and E3 / no-cap runs were skipped.
 | PSO      | +0.045 | 0.027 | 19/20 | <0.001     | <0.001           | **Significant** |
 
 
-FDR vs random at 25%: **25 / 25** unique sweep points (BH q < 0.05), including default J = 3. **Zero** paired losses vs random at J = 3 (pre-fix: 5/20 losses on seeds 7, 11, 13, 18, 19 when random shared the IoT RNG). See [§2.16](#216-random-uav-placement-fix).
-
-### 3.1b Regime map — BH-FDR over 25 unique sweep points *(25% primary)*
-
-Repeated default-scenario copies (λ = 2.0 and f_j = 2.0; I = 10 duplicate of J = 3) excluded. Source: `campaign_8.8mhz_cap25_si12k_paired.json` after 2026-09-18 regen.
-
-
-| Baseline    | FDR q < 0.05 | Notes |
-| ----------- | ------------ | ----- |
-| **Random**  | **25 / 25**  | Default J = 3: +0.173 Mbps, 20/20 |
-| **K-means** | **25 / 25**  | Unchanged vs pre-fix |
-| **PSO**     | **25 / 25**  | Unchanged vs pre-fix |
+FDR on that 8.8 MHz grid: **25 / 25** unique sweep points for random, k-means, and PSO (BH q < 0.05), including default J = 3. **Zero** paired losses vs random at J = 3 (pre-fix: 5/20 losses on seeds 7, 11, 13, 18, 19 when random shared the IoT RNG). See [§2.16](#216-random-uav-placement-fix). Source: `campaign_8.8mhz_cap25_si12k_paired.json`.
 
 ### 3.2 Same tests at 15% (tighter-cap sensitivity)
 
@@ -1507,7 +1656,7 @@ At J = 3, mean over 20 seeds (`campaign_8.8mhz_cap15_n20_losses.json` → `proxy
 
 Both configs: `agreement: ok`. Cap-25 seed 1 matches the campaign CVXPY rate exactly (8.960041 Mbps).
 
-### Default point — 20 paired seeds (J = 3, 25% primary)
+### Default point — 20 paired seeds (J = 3, legacy 8.8 MHz, 25% cap)
 
 **Source:** `scripts/tools/compare_sca_cvxpy_matlab.py` → `results/sca_cvxpy_vs_matlab_j3.json`
 
@@ -1536,7 +1685,7 @@ Differences are **path-dependent** (MATLAB sometimes takes more accepted positio
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unit tests                          | Pass                                                                                                                                                                                                 |
 | 20 kHz infeasible                   | Yes — 0% at 100 m and 500 m; model-free cap 0.997 Mbps (§0)                                                                                                                                          |
-| Rates ≤ bandwidth ceiling           | Yes — ~8.97 Mbps (no cap), ~8.90 (cap15), ~8.95 (cap25), ~7.13 at 7 MHz no-cap, ~2.43 at 2.4 MHz                                                                                                     |
+| Rates ≤ bandwidth ceiling           | Yes — 10 MHz headline ceiling **10.213 Mbps** (SCA 10.172 at J = 3); legacy ~8.97 Mbps (8.8 MHz no cap), ~8.90 (cap15), ~8.95 (cap25), ~7.13 at 7 MHz no-cap, ~2.43 at 2.4 MHz                         |
 | SCA best on feasible points (mean)  | Yes                                                                                                                                                                                                  |
 | λ / CPU vary slightly when feasible | Yes — < 0.03 Mbps                                                                                                                                                                                    |
 | T_k = 0.8 infeasible                | **No** as a model limit — process-cohesive a_{ij} feasible **40/40** at k-means q (seeds 1–40); frozen SCA and best-SE SCA-joint **0/20**; SCA-joint + cohesive candidate **20/20** (§2.4, §2.8, §6) |
@@ -1595,14 +1744,14 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 | Item                                        | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Area 100 × 100 m (headline)                 | **By design.** 20 kHz also checked at 500 × 500 m (§0.3)                                                                                                                                                                                                                                                                                                                                                                                              |
-| TD3 (Algorithm 2)                           | **Measured** (2026-09-10 college-server CUDA). Policy export; default J=3 **8.917 Mbps**, TD3−SCA **−0.030** (2/20, p<0.001); beats post-fix random **20/20** (+0.144); **0/29** sweep points with TD3 mean > SCA. See [§2.10](#210-td3-algorithm-2-reproduction).                                                                                                                                                                                                                              |
+| TD3 (Algorithm 2)                           | **Measured** on the legacy 8.8 MHz / 20-seed campaign (2026-09-10 college-server CUDA). Policy export; default J=3 **8.917 Mbps**, TD3−SCA **−0.030** (2/20, p<0.001); beats post-fix random **20/20** (+0.144); **0/29** sweep points with TD3 mean > SCA. Not re-run at 10 MHz. See [§2.10](#210-td3-algorithm-2-reproduction).                                                                                                                                                                                                                              |
 | TD3 residual-on-SCA (proposed)              | Same stack, different interface to (P). Scripts in §2.9; not a new swarm                                                                                                                                                                                                                                                                                                                                                                              |
 | Zenith-anchor SCA (opt-in)                  | **Measured** (2026-09-12), remaining-before-headline probes included. Never worse than frozen SCA by construction. Ranking method at 500 m across J, I, and 15% cap ([§2.15](#215-zenith-anchor-sca-cap-aware-subset-placement)); leftover-dump nick at 100 m; \(T_k=0.8\) **20/20** with process-cohesive flag. Does not replace default campaign SCA. Exploits this reproduction’s per-link cap, not Khalaf’s (P). K-medoids control: [§2.17](#217-min-spectrum-e1-k-medoids-e1b). |
 | Min-spectrum / Path B                       | **Measured.** Frozen leftover-dump geometry is not min-Hertz geometry (500 m J=2 k-means uses fewer Hertz than zenith-subset). E1b beats one-shot k-means on Hertz (n=50) via extra covering inits, not zenith LP. Write Path A; do not title the paper as adaptive spectrum. |
 | Paper Mbps targets                          | Explicitly not pursued                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 20 kHz as (27) cap                          | **Real** model infeasibility — not a solver artifact (§0)                                                                                                                                                                                                                                                                                                                                                                                             |
 | 15% per-link cap (sensitivity)              | Search-selected; campaign still the tighter-cap sensitivity. The cap×J FDR map that “picked” it is **archived** (pre-fix random, [§2.7](#27-primary-campaign-88-mhz-25-cap)). |
-| 25% per-link cap (primary)                  | Leftover-dump stress test. Post-fix vs-random at J = 3 is **+0.173 Mbps, 20/20, p<0.001** ([§2.16](#216-random-uav-placement-fix)). Pre-fix “n.s. at J=3” / “turns off at 24%” was the zenith-aliased random stream. |
+| 25% per-link cap (primary)                  | Leftover-dump stress test at **10 MHz / 100 seeds**. Vs-random at J = 3 is **+0.223 Mbps, 100/100, p<0.001** ([§3.1](#31-default-point--j--3-i--10-25-primary)). Legacy 8.8 MHz post-fix cell was **+0.173, 20/20**. Pre-fix “n.s. at J=3” / “turns off at 24%” was the zenith-aliased random stream. |
 | PSO                                         | External baseline; equal-share inner fitness. Particle inits call `place_random`, so 12%/15% PSO had to be replayed after the RNG fix ([§2.14](#214-88-mhz-12-vs-25-four-test-rematch)). |
 | Eq. (17) vs Fig. 11 narrative               | **Open (paper intent)** — not a code bug (§8.1)                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Eq. (4) angle unit                          | **Checked.** Default radians; deg reading gives SNR ≈ 90 at zenith and ~57 Mbps at J = 3 (§0.2). Radians adopted.                                                                                                                                                                                                                                                                                                                                     |
@@ -1620,17 +1769,17 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 
 ### Audit (short)
 
-> Eq. (6) and constraint (27) imply R_{\mathrm{sum}}\le B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}*{\max}). With B*{\mathrm{sys}}=20\mathrm{kHz} this is at most 0.997 Mbps even at \mathrm{SNR}=10^{15}, so Figs. 6–10 (7–14 Mbps, and Fig. 7 increasing with I) rule out reading Table II’s 20 kHz as the (27) sum cap. If the table’s “Minimum bandwidth allocation” is instead a per-link floor, matching Fig. 6’s 8.8 Mbps at I=10 on the written channel (\mathrm{SNR}\approx 1.03) needs ~862 kHz per link — **43×** the stated 20 kHz — or an undisclosed (27) cap of ~8.6 MHz. Under the cap reading, 20 kHz is 0% feasible at both 100 × 100 m and 500 × 500 m. At feasible bandwidths the primary leftover-dump stress test is a **25%** per-link cap (not part of Problem (P)). After correcting random UAV placement (salted RNG), at default J = 3 SCA vs random is **+0.173 Mbps, 20/20, p<0.001**; SCA vs k-means and vs PSO remain significant on all 25 unique sweep points (FDR). A **15%** cap is retained as tighter-cap sensitivity, not as the primary ranking config.
+> Eq. (6) and constraint (27) imply R_{\mathrm{sum}}\le B_{\mathrm{sys}}\log_2(1+\mathrm{SNR}*{\max}). With B*{\mathrm{sys}}=20\mathrm{kHz} this is at most 0.997 Mbps even at \mathrm{SNR}=10^{15}, so Figs. 6–10 (7–14 Mbps, and Fig. 7 increasing with I) rule out reading Table II’s 20 kHz as the (27) sum cap. If the table’s “Minimum bandwidth allocation” is instead a per-link floor, matching Fig. 6’s 8.8 Mbps at I=10 on the written channel (\mathrm{SNR}\approx 1.03) needs ~862 kHz per link — **43×** the stated 20 kHz — or an undisclosed (27) cap of ~8.6 MHz. Under the cap reading, 20 kHz is 0% feasible at both 100 × 100 m and 500 × 500 m. At feasible bandwidths the primary leftover-dump stress test is a **25%** per-link cap on a **10 MHz** pool (2.50 MHz/link; the cap is not part of Problem (P)). On 100 × 100 m, 100 scenarios, default J = 3, SCA vs random is **+0.223 Mbps, 100/100, p<0.001**; SCA vs k-means and vs PSO remain significant on all 24 unique sweep points (FDR). A **15%** cap on the legacy 8.8 MHz grid is retained as tighter-cap sensitivity.
 
 
 
-### Headline result (cap 25% primary, J = 3)
+### Headline result (10 MHz, 25% cap, 100 × 100 m, 100 scenarios, J = 3)
 
-> SCA achieves 8.946 Mbps mean sum rate vs 8.773 (random), 8.901 (k-means), and 8.902 (PSO) on the 20-seed primary campaign (post-fix). Paired vs random is +0.173 ± 0.101 Mbps, 20/20, Wilcoxon p < 0.001. Vs k-means and vs PSO the paired tests remain significant (20/20 and 19/20, both p < 0.001).
+> On the primary campaign (10 MHz, 25% per-link cap, 100 × 100 m, 100 seeds) SCA achieves 10.172 Mbps mean sum rate versus 9.950 (random), 10.110 (k-means), and 10.120 (PSO), all 100% feasible. Paired versus random is +0.223 ± 0.122 Mbps, 100/100, Wilcoxon p = 1.6×10⁻³⁰. Versus k-means the gap is +0.062 ± 0.037 (100/100); versus PSO it is +0.052 ± 0.039 (97/100). BH-FDR is significant on 24/24 unique sweep points for each baseline. The zenith ceiling is 10.213 Mbps, so this field is near saturation: the SCA−random gap falls from +0.609 Mbps at J = 1 to +0.160 Mbps at J = 5. Opt-in zenith-anchor scores 10.188 Mbps (+0.015 ± 0.021 versus SCA, 79/100 wins, 11 losses, p = 9.0×10⁻²²), with 9/100 seeds above the 0.05 Mbps practical bar.
 
 
 
-### TD3 Algorithm 2 (policy export, same 20 seeds)
+### TD3 Algorithm 2 (legacy 8.8 MHz, policy export, 20 seeds)
 
 > Algorithm 2 TD3 scores 8.917 Mbps at default J = 3: 0.030 ± 0.020 Mbps below SCA (2/20, p<0.001), 0.144 ± 0.105 Mbps above post-fix random (20/20, p<0.001), and 0.016 Mbps above k-means (20/20). The TD3−SCA gap shrinks from −0.030 Mbps at I=10 to −0.014 at I=32 but never changes sign (0/20 TD3 wins at I=32). TD3 mean exceeds SCA on 0 of 29 sweep points. Per-instance training is ~97 s vs SCA’s 0.89 s at J=3 (~110×).
 
@@ -1638,13 +1787,13 @@ Algorithm 1 as implemented freezes a_{ij} and b_{ij} after nearest-UAV / CPU-sta
 
 ### Multi-start SCA (keep-best extra inits)
 
-> Keep-best of one-shot k-means SCA plus four extra inits is never worse than frozen SCA **by construction** (the frozen candidate is in the pool). At the default point (post-fix) it scores 8.961 Mbps vs SCA 8.946 and random 8.773 (+0.014 vs SCA, 13/20 strictly better; +0.188 vs random, 20/20). Cost is ~5.6 s/seed, **~5×** SCA. Algorithm 2 TD3 was not replayed in the 2026-09-18 regen.
+> Keep-best of one-shot k-means SCA plus four extra inits is never worse than frozen SCA **by construction** (the frozen candidate is in the pool). On the legacy 8.8 MHz / 20-seed point (post-fix) it scores 8.961 Mbps vs SCA 8.946 and random 8.773 (+0.014 vs SCA, 13/20 strictly better; +0.188 vs random, 20/20). Cost is ~5.6 s/seed, **~5×** SCA. This wrapper was not re-run on the 10 MHz / 100-scenario headline. Algorithm 2 TD3 was not replayed in the 2026-09-18 regen.
 
 
 
 ### Zenith-anchor SCA (opt-in; leftover-dump structure)
 
-> Under leftover-dump (27) plus a 25% per-link cap, k-means is the wrong prior: the LP dumps leftover Hertz onto the highest-SE links, and SE is maximal at zenith. Enumerating those J-subsets, scoring each with one frozen-q LP, and polishing the top-3 with unmodified Algorithm 1 is never worse than one-shot SCA by construction. At 500 × 500 m / J=3 it scores **8.490 Mbps** vs SCA 8.300 and multi-start 8.399 (+0.190 / +0.091; 14/20 practical vs SCA). The 100-layout bank is **+0.253 Mbps** vs SCA (71/100 practical). At 100 × 100 m leftover dump compresses the same wrapper to +0.017 Mbps. Pair with the p-median control: at 500 m J=3, p-median SCA matches zenith-subset at 8.490 Mbps (n=20) and 8.478 vs 8.481 on the n100 bank (70/100 vs 71/100 practical vs SCA). The leftover-dump *prior* is park-on-IoTs, not the LP as a subset oracle. Do not quote +1.02 Mbps vs unpolished k-means as the anchoring claim (that mixes in Algorithm 1’s +0.83 polish). This exploits a cap this reproduction added; it is not a claim that Algorithm 1 is wrong on Khalaf’s uncapped (P).
+> Under leftover-dump (27) plus a 25% per-link cap, k-means is the wrong prior: the LP dumps leftover Hertz onto the highest-SE links, and SE is maximal at zenith. Enumerating those J-subsets, scoring each with one frozen-q LP, and polishing the top-3 with unmodified Algorithm 1 is never worse than one-shot SCA by construction. On the 10 MHz / 100 × 100 m / 100-scenario headline it scores **10.188 Mbps** vs SCA 10.172 (+0.015 ± 0.021; 79/100 wins, 11 losses, 9/100 practical). At the legacy 8.8 MHz 500 × 500 m / J=3 cell it scores **8.490 Mbps** vs SCA 8.300 and multi-start 8.399 (+0.190 / +0.091; 14/20 practical vs SCA). The 100-layout 500 m bank is **+0.253 Mbps** vs SCA (71/100 practical). Pair with the p-median control: at 500 m J=3, p-median SCA matches zenith-subset at 8.490 Mbps (n=20) and 8.478 vs 8.481 on the n100 bank (70/100 vs 71/100 practical vs SCA). The leftover-dump *prior* is park-on-IoTs, not the LP as a subset oracle. Quote the polished gap versus frozen SCA. This exploits a cap this reproduction added; it is a wrapper around Algorithm 1 on this reproduction’s capped radio.
 
 
 

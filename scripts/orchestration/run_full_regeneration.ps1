@@ -1,4 +1,4 @@
-# Full test + experiment regeneration (docs/RESULTS.md §9)
+# Full test + experiment regeneration (docs/results_old.md §9)
 $ErrorActionPreference = "Stop"
 $env:PYTHONPATH = "src"
 Set-Location $PSScriptRoot\..

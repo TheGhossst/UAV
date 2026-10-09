@@ -1,4 +1,4 @@
-"""Shared paths for docs/RESULTS.md §2.9 residual-on-SCA experiments."""
+"""Shared paths for docs/results_old.md §2.9 residual-on-SCA experiments."""
 
 from __future__ import annotations
 

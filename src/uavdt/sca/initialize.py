@@ -67,7 +67,7 @@ def initialize_sca(scenario: Scenario, seed: int) -> tuple[np.ndarray, Allocatio
     Nearest-a is not rematched: it can split N_k across UAVs so some IoTs
     forward (T_u2u). At T_k = 0.8 s that already makes the AoDT slack
     negative even though a no-forwarding a_ij at the same q is feasible
-    (see docs/RESULTS.md §2.4). Changing a here would move the campaign.
+    (see docs/results_old.md §2.4). Changing a here would move the campaign.
     """
     cfg = scenario.cfg
     uav = place_kmeans(scenario, seed)

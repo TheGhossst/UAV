@@ -1,6 +1,6 @@
 """Keep-best multi-start SCA. Does not edit frozen Algorithm 1.
 
-Experiment A (docs/RESULTS.md §2.9): extra random / k-means inits find
+Experiment A (docs/results_old.md §2.9): extra random / k-means inits find
 16–72 m basins that one-shot k-means SCA misses. This module is that
 keep-best loop as a campaign method (`sca_multistart`). Frozen SCA stays
 the headline solver. Extra starts reuse `solve_sca` with a different q0;

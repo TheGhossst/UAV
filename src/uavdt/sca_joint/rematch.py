@@ -56,7 +56,7 @@ def centroid_cohesive_association(
     scenario: Scenario,
     uav_xyz_m: np.ndarray,
 ) -> np.ndarray:
-    """Hand construction from docs/RESULTS.md §2.4: N_k → UAV nearest the centroid."""
+    """Hand construction from docs/results_old.md §2.4: N_k → UAV nearest the centroid."""
     i, j = scenario.iot_xyz_m.shape[0], uav_xyz_m.shape[0]
     a = np.zeros((i, j), dtype=float)
     for proc in scenario.processes:

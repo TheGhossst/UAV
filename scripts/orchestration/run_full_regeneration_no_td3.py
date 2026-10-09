@@ -180,7 +180,7 @@ def _n100_baseline(log_path: Path) -> None:
 def _patch_results_md(log_path: Path) -> None:
     camp = ROOT / PRIMARY_CAMPAIGN_REL
     if not camp.exists():
-        _log("skip RESULTS.md patch (no primary campaign yet)", log_path)
+        _log("skip results_old.md patch (no primary campaign yet)", log_path)
         return
     _run([PY, "scripts/orchestration/sync_results_md.py"], log_path)
 

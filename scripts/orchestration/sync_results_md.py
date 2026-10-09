@@ -1,4 +1,7 @@
-"""Refresh dynamic numeric tables in docs/RESULTS.md from on-disk artifacts.
+"""Refresh dynamic numeric tables in docs/results_old.md from on-disk artifacts.
+
+The live headline is docs/results_new.md (server_results/results/run_10mhz_cap25).
+This script still patches the archived ledger only.
 
 Does not re-run campaigns. Re-runs lightweight analyze scripts, then patches
 headline / bank / anchor tables and pytest counts.
@@ -20,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-RESULTS_MD = ROOT / "docs" / "RESULTS.md"
+RESULTS_MD = ROOT / "docs" / "results_old.md"
 PY = sys.executable
 
 ANALYZE = (
@@ -139,7 +142,7 @@ def sync_results_md(*, skip_analyze: bool = False) -> None:
     if hdr:
         spread = max(hdr.values()) - min(hdr.values())
         row = (
-            f"| **100 × 100 m** (primary)              | **25%** | "
+            f"| **100 × 100 m** (primary, 10 MHz, n=100) | **25%** | "
             f"**{hdr['sca']:.3f}** | {hdr.get('random', 0):.3f}  | "
             f"{hdr.get('kmeans', 0):.3f}   | {hdr.get('pso', 0):.3f} | 100%     | "
             f"**{spread:.3f}** |"
@@ -231,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-analyze",
         action="store_true",
-        help="Only patch RESULTS.md (analyze JSON must exist)",
+        help="Only patch docs/results_old.md (analyze JSON must exist)",
     )
     args = parser.parse_args(argv)
     sync_results_md(skip_analyze=args.skip_analyze)
