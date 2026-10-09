@@ -8,3 +8,4 @@ results/
 .coverage
 htmlcov/
 latex/
+_paper_extract/
