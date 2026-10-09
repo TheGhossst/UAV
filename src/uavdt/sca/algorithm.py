@@ -68,7 +68,9 @@ class SCAResult:
     def to_jsonable(self) -> dict:
         hist = [asdict(row) for row in self.history]
         ev = self.true_eval
+        iot = self.diagnostics.get("iot_xyz_m")
         return {
+            "iot_xyz_m": list(iot) if iot is not None else [],
             "uav_xyz_m": self.uav_xyz_m.tolist(),
             "association": self.allocation.hard_association().tolist(),
             "processing": self.allocation.hard_processing().tolist(),
@@ -878,6 +880,7 @@ def solve_sca(
         "final_step_m": step,
         "rejected_steps": rejected_steps,
         "step_size_reductions": n_reductions,
+        "iot_xyz_m": scenario.iot_xyz_m.tolist(),
         **assignment_diag(),
     }
     return SCAResult(

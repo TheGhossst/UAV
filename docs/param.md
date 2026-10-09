@@ -576,7 +576,7 @@ TASK_CYCLES = None
 Before claiming reproduction, verify. This milestone uses a **100 × 100 m**
 headline field (intentional modification; paper §VII uses 500 × 500 m). A
 20 kHz control and optional 8.8 MHz cap25 campaign at 500 m are documented in
-`docs/RESULTS.md`.
+`docs/results_new.md` (current) and `docs/results_old.md` (archived ledger).
 
 ### Core model (this repo — done)
 
@@ -584,7 +584,7 @@ headline field (intentional modification; paper §VII uses 500 × 500 m). A
 - [x] `sigma = 0.01` is kept separate from `noise_power` (`σ²` in Eq. (6)).
 - [x] The radio profile in use is named next to any absolute rate; Table II
       20 kHz as the (27) cap is bounded by Eq. (6)+(27) at 0.997 Mbps even at
-      `SNR=10^15` (`docs/RESULTS.md` §0).
+      `SNR=10^15` (`docs/results_old.md` §0).
 - [x] IoT coordinates are generated inside the configured field (**100 × 100 m**
       default; `--area-m 500` for paper-field runs).
 - [x] UAV height is fixed at `100 m`.
@@ -604,7 +604,7 @@ headline field (intentional modification; paper §VII uses 500 × 500 m). A
 
 ### Reporting & artifacts
 
-- [x] Paired statistics and FDR documented (`docs/RESULTS.md` §3).
+- [x] Paired statistics and FDR documented (`docs/results_new.md`, and the archived grid in `docs/results_old.md` §3).
 - [x] Paper-style figures from campaign JSON (`scripts/plot/plot_paper_figures.py`).
 - [ ] Runtime reported in every published table (optional for writeup).
 - [ ] SCA convergence curves saved for every campaign seed (available via

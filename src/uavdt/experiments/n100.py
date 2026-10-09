@@ -91,7 +91,12 @@ def summarize_runs(runs: list[MethodRun]) -> dict:
     }
 
 
-def run_to_record(run: MethodRun, *, scenario_id: int) -> dict:
+def run_to_record(
+    run: MethodRun,
+    *,
+    scenario_id: int,
+    iot_xyz_m: np.ndarray,
+) -> dict:
     ev = run.true_eval
     c = ev.constraints
     return {
@@ -105,6 +110,7 @@ def run_to_record(run: MethodRun, *, scenario_id: int) -> dict:
         "max_AoDT_s": float(np.max(ev.aodt_s)),
         "rho": [float(x) for x in ev.rho],
         "uav_xyz_m": np.asarray(run.uav_xyz_m, dtype=float).tolist(),
+        "iot_xyz_m": np.asarray(iot_xyz_m, dtype=float).tolist(),
         "violations": {
             "qos": int(c.qos_violations),
             "aodt": int(c.aodt_violations),
@@ -221,7 +227,11 @@ def evaluate_bank(
                 uav_xyz_m=uav_arg,
             )
             run.diagnostics.setdefault("wall_clock_s", perf_counter() - t0)
-            done[key] = run_to_record(run, scenario_id=int(rec["id"]))
+            done[key] = run_to_record(
+                run,
+                scenario_id=int(rec["id"]),
+                iot_xyz_m=sc.iot_xyz_m,
+            )
             if ckpt is not None:
                 _atomic_write_json(ckpt, {"runs": done})
             if method in {

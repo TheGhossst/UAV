@@ -268,7 +268,7 @@ R_{\mathrm{sum}}=\sum_{i=1}^{I}\sum_{j=1}^{J}a_{ij}r_{ij}.
 | `S_i` (labeled bytes in the text; no Table II value) | Config `task_size_bits`. Eq. (11) is implemented as `D=S/r` with `r` in bit/s. A `--task-size-bytes` flag multiplies by 8 and **labels that conversion as an interpretation**, not as a paper equation. |
 | `L` (cycles/task) | Config `task_cycles`. Required for `μ_j`. |
 | Base of `20 log` in Eqs. (1)–(2) | Implemented as \(\log_{10}\) (dB). |
-| Units of \(\arcsin(H/d)\) in Eq. (4) | Default **radians** (as written). `los_angle_unit="deg"` is an optional Al-Hourani-style reading, not the default. **Sensitivity (2026-09-08):** zenith SNR **1.03** (rad) vs **90.5** (deg); J = 3 seed 1 sum rate **8.91** vs **57.23** Mbps. Only radians matches §VII-scale rates. See `docs/RESULTS.md` §0.2. |
+| Units of \(\arcsin(H/d)\) in Eq. (4) | Default **radians** (as written). `los_angle_unit="deg"` is an optional Al-Hourani-style reading, not the default. **Sensitivity (2026-09-08):** zenith SNR **1.03** (rad) vs **90.5** (deg); J = 3 seed 1 sum rate **8.91** vs **57.23** Mbps. Only radians matches §VII-scale rates. See `docs/results_old.md` §0.2. |
 | Table II “Noise power, σ = 10×10^{-3} W” vs Eq. (6) `σ²` | Config stores `sigma=0.01`. Eq. (6) uses `noise_power = sigma**2`. |
 | Table II “Minimum bandwidth allocation, `B_sys` = 20{,}000 Hz” vs constraint (27) | **(27) is a sum ceiling** (`∑ B_{ij} ≤ B_sys`); the table adjective is “Minimum.” Same symbol, no second bandwidth number, no min-bandwidth constraint in Problem (P). Simulator uses 20 kHz as the (27) cap (Reading A). The alternative is that (27)’s cap is **undisclosed** (Reading B). See §4.1. |
 | How `B_ij` is chosen (only `∑ B_ij ≤ B_sys` is written) | `B_ij` is an explicit matrix. Placement-only runs may use **equal split** among associated links; that is not claimed as the paper’s optimizer. |
@@ -327,7 +327,7 @@ instead a per-link floor (Reading B), Fig. 7’s slope is the right
 channel needs **~862 kHz/link (43×** the stated 20 kHz), and Fig. 7’s
 14 Mbps at `I=32` needs **~428 kHz/link (21×)**. The number (27)
 actually used is then **not in the paper**, and it is not a rounding
-of 20{,}000 Hz. Details: `docs/RESULTS.md` §0.2.
+of 20{,}000 Hz. Details: `docs/results_old.md` §0.2.
 
 **This reproduction (DERIVED from Eqs. (1)–(6), (25), (31)):**
 
@@ -459,7 +459,7 @@ grouping; `process_cohesive_candidate=True`) recovers 20/20 feasible at
 \(T_k=0.8\) s — confirmation that the blocker was the greedy proposal,
 not the LP. Problem (P) is feasible at \(T_k=0.8\) s under that
 construction at k-means \(q\) on 40/40 geometries (seeds 1–20 and
-held-out 21–40; see `docs/RESULTS.md` §2.8 and §6). Default SCA-joint
+held-out 21–40; see `docs/results_old.md` §2.8 and §6). Default SCA-joint
 stays best-SE-only so recorded probe JSON remains reproducible. The
 probe does not replace frozen SCA. TD3 is a separate opt-in solver
 (`uavdt.td3`) and does not change this probe.
@@ -501,7 +501,7 @@ including `step_size` still above `min_step_size`). **`CONVERGED`**
 requires `accepted_steps >= 1`. **`MAX_ITERATIONS`** if the iteration
 cap is hit with remaining `step_size` still above `min_step_size` —
 **including** the case `accepted_steps == 0` (Python `classify_stop_reason`
-does not remap that case to `STEP_SIZE_LIMIT`; see `docs/RESULTS.md` §6).
+does not remap that case to `STEP_SIZE_LIMIT`; see `docs/results_old.md` §6).
 A MOSEK `Solved` subproblem is **not** by itself convergence.
 
 Python `classify_stop_reason` and MATLAB `classify_stop_reason` in

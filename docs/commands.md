@@ -50,7 +50,7 @@ pip install -e ".[td3]"                  # + PyTorch (TD3 only)
 
 ## 1. Run everything from scratch
 
-Replays the full experiment ledger in `docs/RESULTS.md`: tests, headline
+Replays the archived experiment ledger in `docs/results_old.md`: tests, headline
 campaign, sensitivity runs, AoDT arrival-pattern study, solver cross-check,
 SCA-joint probes, paired stats, and sweep plots. **Several hours on a laptop.**
 
@@ -290,7 +290,7 @@ python scripts/tools/compare_cap12_vs_cap25.py
 Outputs: `results/campaign_8.8mhz_cap12_n20.json`,
 `campaign_8.8mhz_cap12_n20_500m.json`, `results/n100_cap12/eval.json`,
 `results/n100_500m_cap12/eval.json`, `results/compare_cap12_vs_cap25.txt`.
-Keep `PRIMARY_MAX_BW_SHARE = 0.25`. See `docs/RESULTS.md` §2.14.
+Keep `PRIMARY_MAX_BW_SHARE = 0.25`. See `docs/results_old.md` §2.14.
 
 ### High-statistics replay (100 seeds per point)
 
@@ -722,6 +722,7 @@ f_j: 0.5e8 … 2.5e8  cycles/s
 ## Related docs
 
 - [`docs/EXPERIMENTS.md`](EXPERIMENTS.md) — campaign ledger and freeze policy
-- [`docs/RESULTS.md`](RESULTS.md) — headline numbers and regeneration log
+- [`docs/results_new.md`](results_new.md) — current 10 MHz / 100-scenario numbers
+- [`docs/results_old.md`](results_old.md) — archived ledger and regeneration log
 - [`docs/REPRODUCTION.md`](REPRODUCTION.md) — parameter ledger and model scope
 - [`docs/param.md`](param.md) — default vs external parameters

@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-12
 
-Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMENTS.md`.
+Quick reference. Current numbers: `docs/results_new.md`. Archived detail: `docs/results_old.md` §2.9–§2.15 and `docs/EXPERIMENTS.md`.
 
 **§2.9 layout:** scripts → `scripts/experiments/residual_on_sca/`; JSON → `results/residual_on_sca/`. Old `scripts/run_*.py` shims still work.
 
@@ -46,7 +46,7 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMEN
 - [x] Null confirmed: at fixed cap, J=3 spread ∝ `B_sys` (r²=1.000 except 25%)
 - [x] Perfect 42 = all 12% + all 15% + 18% at 8.3–8.8 MHz. Score-best 8.8/12% is an artifact — do not promote
 - [x] 10% PSO best 18/18. Headline 8.8/25% unchanged (spread 0.046, p=0.123)
-- [x] `scripts/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt` · `docs/RESULTS.md` §2.13
+- [x] `scripts/analyze_bw_fine_search.py` → `results/bw_fine_7p1_8p8/analysis.txt` · `docs/results_old.md` §2.13
 
 ---
 
@@ -74,7 +74,7 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMEN
 - [x] `--axis all`, 20 seeds, methods random/k-means/PSO/SCA (**no TD3**)
 - [x] No cap / 15% / 25% → `results/campaign_7mhz_n20.json`, `_cap15_n20.json`, `_cap25_n20.json`
 - [x] SCA at J=3: **7.132 / 7.073 / 7.115** Mbps; linear vs 8.8 MHz to **0.001–0.003 Mbps**
-- [x] `docs/RESULTS.md` §2.11
+- [x] `docs/results_old.md` §2.11
 
 ---
 
@@ -84,7 +84,7 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMEN
 - [x] Policy export on every seed; official Mbps == `policy_export`
 - [x] Default J=3: TD3 **8.917** Mbps, TD3−SCA **−0.030** (2/20, p<0.001)
 - [x] **0/29** sweep points with TD3 mean > SCA; gap vs SCA shrinks as I grows but does not change sign
-- [x] `docs/RESULTS.md` §2.10 + `python scripts/analyze_td3_vs_methods.py`
+- [x] `docs/results_old.md` §2.10 + `python scripts/analyze_td3_vs_methods.py`
 - [x] 500 m n100 TD3 (2026-09-11): **7.510 Mbps**, TD3−SCA **−0.718** (0/100). Stays with k-means.
 
 ---
@@ -102,7 +102,7 @@ Quick reference. Details in `docs/RESULTS.md` §2.9–§2.15 and `docs/EXPERIMEN
 ## Optional (after core runs)
 
 - [x] Add TD3 to the paper-style 25% grid — done via `run_td3_full_eval.py` (baselines reused; does not overwrite `campaign_8.8mhz_cap25_si12k.json`)
-- [x] Update `docs/RESULTS.md` §2.9 with Experiment B + CMA-ES + tie-audit (2026-09-10)
+- [x] Update `docs/results_old.md` §2.9 with Experiment B + CMA-ES + tie-audit (2026-09-10)
 - [x] Experiment C + §2.9 readout (2026-09-10; `assoc_oracle_n20.json`, **flat_at_frozen_q**)
 - [ ] Runtime in published tables (optional per `docs/param.md`; Alg. 2 vs SCA wall-clock is in §2.10)
 

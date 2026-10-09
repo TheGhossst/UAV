@@ -23,10 +23,10 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Headline `sca` = dynamic assignment (CVXPY); `frozen_sca` = fixed \(a,b\). MATLAB path remains frozen-only. Opt-in `dynamic_assignment` on `SCASettings`. |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
 | Multi-start SCA (`uavdt.sca_multistart`, method=`sca_multistart`) | Opt-in keep-best extra inits of frozen SCA (Experiment A: 2 random + 2 k-means **plus** the frozen k-means start). Never worse than one-shot SCA **by construction** while `include_frozen` is True (default). Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA. Writes separately named files (`results/sca_multistart_n20.json`, `_n20_500m.json`, `n100/eval_multistart.json`, `n100_500m_cap25/eval_multistart.json`). |
-| Zenith-anchor SCA (`uavdt.sca_anchor`, method=`sca_anchor`) | Opt-in: enumerate (or beam-search) zenith J-subsets of IoTs, score each with the frozen-q bandwidth LP, polish top-K with unmodified `solve_sca`, keep-best with frozen k-means SCA. Never worse than one-shot SCA **by construction** while `include_frozen` is True. Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA as the default campaign method. Remaining-before-headline probes (I-axis 500 m, 15% 500 m, \(T_k=0.8\)) are measured — [`novelty.md`](novelty.md), [`RESULTS.md`](RESULTS.md) §2.15. Writes separately named files (`results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`, `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`, `_500m.json`, `campaign_sca_anchor_iots_500m.json`, `sca_anchor_tk08.json`). |
+| Zenith-anchor SCA (`uavdt.sca_anchor`, method=`sca_anchor`) | Opt-in: enumerate (or beam-search) zenith J-subsets of IoTs, score each with the frozen-q bandwidth LP, polish top-K with unmodified `solve_sca`, keep-best with frozen k-means SCA. Never worse than one-shot SCA **by construction** while `include_frozen` is True. Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA as the default campaign method. Remaining-before-headline probes (I-axis 500 m, 15% 500 m, \(T_k=0.8\)) are measured — [`novelty.md`](novelty.md), [`results_old.md`](results_old.md) §2.15. Writes separately named files (`results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`, `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`, `_500m.json`, `campaign_sca_anchor_iots_500m.json`, `sca_anchor_tk08.json`). |
 | P-median SCA (`uavdt.placement.kmedoids`, method=`sca_medoid`) | Opt-in covering control: p-median / k-medoids on IoT xy, **same** leftover-dump LP + Algorithm 1 polish as zenith-subset. Does **not** edit `uavdt.sca`. Writes `min_spectrum_n20_*.json` (Mbps + Hertz) via `scripts/campaigns/run_min_spectrum.py`. |
 | Continuous-candidate SCA (method=`sca_continuous`) | Opt-in control: ~120 uniform UAV layouts, **same** leftover-dump LP + top-3 polish + keep-best as zenith-subset, but **not** parked on IoTs. Tests “many candidates + LP screening” vs park-on-IoTs. Does **not** edit `uavdt.sca`. Writes `sca_continuous_n20_500m.json`, `n100_500m_cap25/eval_continuous.json`. |
-| Min-spectrum E1 / E1b (`uavdt.min_spectrum`, `min_spectrum_place`) | E1: freeze leftover-dump geometry, binary-search min `B_sys` (Hertz). E1b: keep-best on the Hertz bound, not leftover dump. Does **not** edit `uavdt.sca`. Does **not** overwrite headline JSON. Ledger: [`RESULTS.md`](RESULTS.md) §2.17. E2/E3 skipped. |
+| Min-spectrum E1 / E1b (`uavdt.min_spectrum`, `min_spectrum_place`) | E1: freeze leftover-dump geometry, binary-search min `B_sys` (Hertz). E1b: keep-best on the Hertz bound, not leftover dump. Does **not** edit `uavdt.sca`. Does **not** overwrite headline JSON. Ledger: [`results_old.md`](results_old.md) §2.17. E2/E3 skipped. |
 | TD3 (`uavdt.td3`, method=`td3`) | Opt-in. Default `TD3Settings` is Algorithm 2 **reproduction** (k-means residual, leftover inner \(B\), penalty reward, policy export). `TD3Settings.residual_on_sca()` / `--td3-preset residual-on-sca` is the **proposed interface to (P)**: residual \(\Delta q\) on the SCA incumbent, frozen SCA \(a,b\), inner frozen-\(q\) LP, feasible-Mbps reward, incumbent snapshot export. Does **not** change `SimConfig`. Not in default `METHODS`. |
 | New work | Baselines, sweeps, reporting, SCA-joint probe, multi-start SCA, zenith-anchor SCA ([`novelty.md`](novelty.md)), p-median SCA, min-spectrum E1/E1b, TD3 (Alg. 2 + residual-on-SCA preset), association oracle (`uavdt.assoc_search`, Experiment C) |
 
@@ -131,7 +131,7 @@ python -m uavdt campaign --axis uavs --methods random,kmeans,pso,sca --bandwidth
 python scripts/campaigns/run_sca_joint_campaign.py
 python scripts/campaigns/run_tk08_followup.py
 
-# One-command replay of docs/RESULTS.md §9 (primary + cap15 + 500 m + sca-joint + analysis)
+# One-command replay of docs/results_old.md §9 (primary + cap15 + 500 m + sca-joint + analysis)
 # scripts/orchestration/run_full_regeneration.ps1
 # Full bandwidth preset sweep (long, 7 configs): scripts/run_all_bandwidth_campaigns.ps1
 # Extra 7 MHz trio (no TD3): scripts/run_7mhz_campaigns.ps1
@@ -209,7 +209,7 @@ primary campaign.
   `scripts/campaigns/run_min_spectrum.py`, `run_e1b.py`,
   `scripts/analyze/analyze_min_spectrum.py`). Covering control + Hertz
   readout. Does not overwrite headline campaigns. Ledger:
-  [`RESULTS.md`](RESULTS.md) §2.17.
+  [`results_old.md`](results_old.md) §2.17.
 - TD3 Algorithm 2 reproduction (`results/campaign_8.8mhz_cap25_td3.json`,
   `results/n100/eval_td3.json`, `results/n100_500m_cap25/eval_td3.json`;
   analysis `scripts/analyze/analyze_td3_vs_methods.py`). Policy export. Do not cite
@@ -249,7 +249,7 @@ Published score is always Python `evaluate()` (Eq. (17) AoDT). Fig. 11
 and `aodt-compare` add FCFS / FCFS-P / LCFS-S simulations beside that
 score; they do not replace it.
 
-Full analysis, audit paragraph, and tables: **`docs/RESULTS.md`**.
+Current 10 MHz / 100-scenario tables: **`docs/results_new.md`**. Archived audit and 8.8 MHz ledger: **`docs/results_old.md`**.
 
 **Figures:** `pip install -r requirements-dev.txt` then
 `python scripts/plot/plot_paper_figures.py` → `results/figures/` (25% primary).

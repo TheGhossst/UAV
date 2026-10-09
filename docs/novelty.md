@@ -2,13 +2,13 @@
 
 **Status:** remaining headline probes measured 2026-09-12 (I-axis 500 m, 15% 500 m, \(T_k=0.8\)). Opt-in (`method="sca_anchor"` / `uavdt.sca_anchor`). Khalaf’s Algorithm 1 remains the paper’s solver and the default campaign method. This wrapper is the proposed ranking method at 500 m.
 
-This note is the standalone description of the method: physics, algorithm, knobs, measured stats, and what may honestly be called novelty. Campaign tables and paired readout live in [`RESULTS.md` §2.15](RESULTS.md#215-zenith-anchor-sca-cap-aware-subset-placement) and `results/sca_anchor_cases_analysis.txt`.
+This note is the standalone description of the method: physics, algorithm, knobs, measured stats, and what may honestly be called novelty. Campaign tables and paired readout live in [`results_old.md` §2.15](results_old.md#215-zenith-anchor-sca-cap-aware-subset-placement) and `results/sca_anchor_cases_analysis.txt`.
 
 ---
 
 ## 1. The claim, in one paragraph
 
-Every real uplink has a per-device bandwidth limit (carrier bandwidth, channelisation, device RF). A sum-rate objective with **no** per-link cap is the unphysical case: leftover-dump constraint (27) then puts ~95% of `B_sys` on one link, which is the degeneracy [`RESULTS.md` §2.7](RESULTS.md#27-primary-campaign-88-mhz-25-cap) already documents.
+Every real uplink has a per-device bandwidth limit (carrier bandwidth, channelisation, device RF). A sum-rate objective with **no** per-link cap is the unphysical case: leftover-dump constraint (27) then puts ~95% of `B_sys` on one link, which is the degeneracy [`results_old.md` §2.7](results_old.md#27-primary-campaign-88-mhz-25-cap) already documents.
 
 Under leftover-dump (27) plus **any** per-link cap fraction \(c\), the frozen-q bandwidth LP dumps leftover Hertz onto about \(k=\lceil 1/c\rceil\) highest spectral-efficiency (SE) links. SE is maximal when a UAV sits at zenith over an IoT. So the placement problem is combinatorial: **which J IoTs the UAVs hover over**, subject to the 10 m UAV separation and QoS floors for everyone else. The top-\(k\) structure is a family, not a 25%-only trick. The paper’s uncapped model is the degenerate \(k=1\) case.
 
@@ -34,7 +34,7 @@ Constraint (27) is a sum cap on allocated Hertz: \(\sum_{i,j} B_{ij} \le B_{\mat
 
 Without a per-link cap the dump is top-1: one zenith link takes almost all leftover Hertz. That is why the no-cap radio collapses to a single-link geometry and why SCA already walks toward zenith from k-means. A per-link cap is the physically standard constraint that *spreads* the dump across \(k=\lceil 1/c\rceil\) links and turns placement into subset selection.
 
-Headline operating point: \(B_{\mathrm{sys}} = 10\) MHz, `PRIMARY_MAX_BW_SHARE = 0.25` (2.50 MHz per link, \(k=4\)); legacy 8.8 MHz artifacts remain under `results/campaign_8.8mhz_*`. Tightening the cap (15%, \(k=7\); 12%, \(k=9\)) binds harder and can invert the SCA vs PSO ranking; 25% is the leftover-dump stress test, not a third of Problem (P). See [`RESULTS.md` §2.7, §2.13, §2.14](RESULTS.md).
+Headline operating point: \(B_{\mathrm{sys}} = 10\) MHz, `PRIMARY_MAX_BW_SHARE = 0.25` (2.50 MHz per link, \(k=4\)), 100 scenarios at 100 m and 500 m. Current tables are in [`results_new.md`](results_new.md). Legacy 8.8 MHz artifacts remain under `results/campaign_8.8mhz_*`. Tightening the cap (15%, \(k=7\); 12%, \(k=9\)) binds harder and can invert the SCA vs PSO ranking; 25% is the leftover-dump stress test, not a third of Problem (P). The 15% / 12% ledger is in [`results_old.md` §2.7, §2.13, §2.14](results_old.md).
 
 ### 2.2 SE is maximal at zenith
 
@@ -42,7 +42,7 @@ Path loss and LoS probability are best when horizontal distance is zero (UAV at 
 
 ### 2.3 Why Algorithm 1 does not walk there from k-means
 
-SCA linearizes the nonconvex rate around the current \(q\). The first-order step improves links that already hold \(B\). If leftover is sitting on a mediocre geometry, the basin can be 16–72 m from a better zenith layout (Experiment A, [`RESULTS.md` §2.9](RESULTS.md#29-residual-policy-on-sca)). One-shot k-means SCA is a local solver of a nonconvex program from the wrong prior. Multi-start samples more of the same family (random / extra k-means). It finds some distant basins; it does not search the combinatorial set of zenith J-subsets.
+SCA linearizes the nonconvex rate around the current \(q\). The first-order step improves links that already hold \(B\). If leftover is sitting on a mediocre geometry, the basin can be 16–72 m from a better zenith layout (Experiment A, [`results_old.md` §2.9](results_old.md#29-residual-policy-on-sca)). One-shot k-means SCA is a local solver of a nonconvex program from the wrong prior. Multi-start samples more of the same family (random / extra k-means). It finds some distant basins; it does not search the combinatorial set of zenith J-subsets.
 
 ### 2.4 Why Experiment C is a different (flat) probe
 
@@ -382,7 +382,7 @@ Wall **9.1 s/seed** (~2 s above the 25% default, from doubling the LP oracle). T
 | \(T_k=0.8\) s + process-cohesive | **Measured** (§5.9). **20/20** feasible, **8.430** vs cohesive SCA-joint **8.393** |
 | λ / CPU / AoDT axes | Only the UAV and IoT axes were merged onto the 500 m campaign |
 
-The remaining-before-headline bar in [`RESULTS.md` §2.15](RESULTS.md#215-zenith-anchor-sca-cap-aware-subset-placement) is cleared. Default `--methods` is still `random,kmeans,pso,sca`. Do not overwrite the protected headline JSON.
+The remaining-before-headline bar in [`results_old.md` §2.15](results_old.md#215-zenith-anchor-sca-cap-aware-subset-placement) is cleared. Default `--methods` is still `random,kmeans,pso,sca`. Do not overwrite the protected headline JSON.
 
 ---
 
@@ -415,9 +415,9 @@ Protected files this method must never overwrite: `results/campaign_8.8mhz_cap25
 
 ## 9. Related notes in this repo
 
-- Frozen SCA and leftover-dump physics: [`RESULTS.md`](RESULTS.md) §0, §2.7
-- Multi-start / Experiment A basins: [`RESULTS.md`](RESULTS.md) §2.9
-- TD3 bookend: [`RESULTS.md`](RESULTS.md) §2.10
-- n100 banks: [`RESULTS.md`](RESULTS.md) §2.12
-- This method’s campaign section: [`RESULTS.md`](RESULTS.md) §2.15
+- Frozen SCA and leftover-dump physics: [`results_old.md`](results_old.md) §0, §2.7
+- Multi-start / Experiment A basins: [`results_old.md`](results_old.md) §2.9
+- TD3 bookend: [`results_old.md`](results_old.md) §2.10
+- n100 banks: [`results_old.md`](results_old.md) §2.12
+- This method’s campaign section: [`results_old.md`](results_old.md) §2.15
 - Freeze ledger: [`EXPERIMENTS.md`](EXPERIMENTS.md)

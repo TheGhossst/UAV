@@ -58,9 +58,15 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
         lambda_i_per_s=float(args.lambda_i),
         aodt_threshold_s=float(args.aodt_threshold),
         los_angle_unit=args.los_angle_unit,
-        max_bw_share=args.max_bw_share,
+        max_bw_share=_max_bw_share_from_args(args),
         download_time_s=float(args.download_time),
     )
+
+
+def _max_bw_share_from_args(args: argparse.Namespace) -> float | None:
+    if getattr(args, "no_per_link_cap", False):
+        return None
+    return args.max_bw_share
 
 
 def _add_shared(p: argparse.ArgumentParser) -> None:
@@ -106,6 +112,11 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
             f"{SENSITIVITY_MAX_BW_SHARE:g} tighter-cap sensitivity). "
             "Not in Problem (P) or Table II."
         ),
+    )
+    p.add_argument(
+        "--no-per-link-cap",
+        action="store_true",
+        help="No per-link B_ij cap (paper (26)-(27) only). Overrides --max-bw-share.",
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
     p.add_argument(
@@ -817,7 +828,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
 
     if args.bandwidth_preset is None:
         args.bandwidth_preset = PRIMARY_B_SYS_PRESET
-    if args.max_bw_share is None:
+    if not getattr(args, "no_per_link_cap", False) and args.max_bw_share is None:
         args.max_bw_share = PRIMARY_MAX_BW_SHARE
     cfg = config_for_counts(int(args.num_iot), int(args.num_uav), _cfg_from_args(args))
     solver = args.solver

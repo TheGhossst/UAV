@@ -12,7 +12,8 @@ TD3 hyperparameters live in `TD3Settings` (`uavdt.td3`). They are **not** on
 | --- | --- |
 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | Parameter ledger, paper vs modification vs external |
 | [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) | Campaign axes, methods, frozen-SCA rules |
-| [`docs/RESULTS.md`](docs/RESULTS.md) | Current experimental outcomes and audit |
+| [`docs/results_new.md`](docs/results_new.md) | Current 10 MHz / 25% / 100-scenario results |
+| [`docs/results_old.md`](docs/results_old.md) | Archived ledger: 8.8 MHz, TD3, 20 kHz audit |
 | [`docs/param.md`](docs/param.md) | Quick parameter reference |
 
 ---
@@ -455,7 +456,7 @@ at 25% primary and 15% tighter-cap sensitivity), 20 seeds each. Requires PowerSh
 .\scripts\run_all_bandwidth_campaigns.ps1
 ```
 
-### `run_full_regeneration.ps1` — replay docs/RESULTS.md §9
+### `run_full_regeneration.ps1` — replay docs/results_old.md §9
 
 Runs pytest, check_bsys, primary + cap15 + 500 m campaigns, fig11,
 spot-validate, SCA-joint probe, tk08 follow-ups, and analysis/plots.
@@ -539,11 +540,12 @@ python scripts/check_bsys_20khz.py --n-runs 20
 This reproduction follows the paper's equations but does **not** tune
 parameters to match published Mbps figures. Under Eq. (6) and constraint (27),
 Table II's `B_sys = 20 kHz` caps the system at **~0.997 Mbps** regardless of
-SNR — not the 7–14 Mbps quoted in §VII. Headline experiments use **2.4 MHz**
-and **8.8 MHz** at **100 × 100 m**, with an optional **25% per-link bandwidth
-cap** (`--max-bw-share 0.25`) as the primary leftover-dump stress test. A **15%**
-cap (`--max-bw-share 0.15`) remains in the CLI and campaign scripts as a
-tighter-cap sensitivity. Both are external parameters, not part of Problem (P).
+SNR — not the 7–14 Mbps quoted in §VII. The current server baseline is
+**10 MHz** at **100 × 100 m** and **500 × 500 m**, with a **25% per-link
+bandwidth cap** (`--max-bw-share 0.25`, 2.50 MHz/link) and **100 scenarios**.
+Older sweeps used **2.4 MHz** and **8.8 MHz**. A **15%** cap
+(`--max-bw-share 0.15`) remains a tighter-cap sensitivity in the archived
+ledger. Both caps are external parameters, not part of Problem (P).
 
 See [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) §4.1 for the full 20 kHz
-fork analysis and [`docs/RESULTS.md`](docs/RESULTS.md) for current numbers.
+fork analysis and [`docs/results_new.md`](docs/results_new.md) for current numbers.
