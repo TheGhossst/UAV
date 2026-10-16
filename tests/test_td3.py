@@ -278,6 +278,8 @@ def test_run_method_tiny_td3():
     assert run.diagnostics.get("n_move") == 2 * cfg.num_uav
     assert run.diagnostics.get("actor_layer_norm") is True
     assert run.diagnostics.get("export_actor") == "best_checkpoint"
+    assert run.diagnostics.get("n_episodes") == 3
+    assert run.diagnostics.get("best_actor_episode_Mbps") is not None
     assert METHODS == ("random", "kmeans", "pso", "sca")
 
 
@@ -463,3 +465,99 @@ def test_run_method_tiny_residual_on_sca():
     assert str(d.get("label", "")).startswith("Residual policy on SCA")
     if run.feasible and d.get("origin_feasible"):
         assert float(d["delta_vs_origin_Mbps"]) >= -1e-4
+
+
+def test_warmup_episodes_do_not_checkpoint_the_actor():
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("cvxpy")
+    _ = torch
+    from uavdt.experiments.methods import run_method
+
+    cfg = SimConfig(b_sys_hz=2.4e6)
+    sc = generate_scenario(1, cfg)
+    settings = TD3Settings(
+        total_steps=20,
+        horizon=5,
+        hidden=32,
+        batch_size=8,
+        warmup_steps=20,
+        buffer_size=64,
+        log_every=0,
+    )
+    run = run_method(sc, "td3", seed=1, td3_settings=settings)
+    assert run.diagnostics["n_episodes"] == 4
+    assert run.diagnostics["n_updates"] == 0
+    assert run.diagnostics["best_actor_episode_Mbps"] is None
+
+
+def test_ignored_discrete_heads_are_not_trained():
+    torch = pytest.importorskip("torch")
+    from uavdt.td3.agent import TD3Agent
+
+    settings = _tiny()
+    agent = TD3Agent(8, 6, settings, seed=0, n_move=2, n_assoc=2)
+    assert agent.actor.disc_head is not None
+    disc_w = agent.actor.disc_head.weight.detach().clone()
+    disc_b = agent.actor.disc_head.bias.detach().clone()
+    move_w = agent.actor.move_head.weight.detach().clone()
+    rng = np.random.default_rng(0)
+    obs = rng.normal(size=(8,)).astype(np.float32)
+    for _ in range(40):
+        agent.replay.add(
+            obs,
+            agent.sample_warmup_action(rng),
+            float(rng.normal()),
+            obs,
+            False,
+        )
+        agent.update()
+    assert torch.equal(agent.actor.disc_head.weight, disc_w)
+    assert torch.equal(agent.actor.disc_head.bias, disc_b)
+    assert not torch.equal(agent.actor.move_head.weight, move_w)
+
+
+def test_policy_export_nearest_matches_averaged_xy():
+    from uavdt.td3.solve import deterministic_policy_export
+
+    cfg = SimConfig()
+    sc = generate_scenario(1, cfg)
+    iot = np.array(sc.iot_xyz_m, dtype=float, copy=True)
+    iot[0, :3] = (50.0, 50.0, 0.0)
+    sc.iot_xyz_m = iot
+    settings = TD3Settings(
+        horizon=2,
+        export_avg_steps=2,
+        log_every=0,
+        move_mode="absolute",
+        assoc_mode="nearest",
+        process_mode="cpu_stable",
+        action_heads="move_only",
+    )
+    env = UAVAoDTEnv(sc, settings, seed=1)
+
+    def _xy(x_u0: float) -> np.ndarray:
+        # absolute decode: x = 50 * (a + 1) on the 100 m field
+        def axis(meters: float) -> float:
+            return meters / 50.0 - 1.0
+
+        return np.array(
+            [axis(x_u0), axis(50.0), axis(70.0), axis(50.0), axis(50.0), axis(10.0)],
+            dtype=float,
+        )
+
+    class _Script:
+        def __init__(self) -> None:
+            self.actions = [_xy(40.0), _xy(80.0)]
+            self.i = 0
+
+        def select_action(self, obs: np.ndarray, *, noise: bool) -> np.ndarray:
+            action = self.actions[self.i]
+            self.i += 1
+            return action
+
+    policy = deterministic_policy_export(env, _Script(), settings)
+    uav = policy["uav_xyz_m"]
+    np.testing.assert_allclose(uav[0, 0], 60.0, atol=1e-6)
+    np.testing.assert_allclose(uav[1, 0], 70.0, atol=1e-6)
+    exported = np.argmax(policy["allocation"].hard_association(), axis=1)
+    assert int(exported[0]) == 0

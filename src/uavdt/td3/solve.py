@@ -10,7 +10,11 @@ import numpy as np
 from uavdt.constraints import pairwise_uav_distance_m
 from uavdt.evaluator import EvalResult, evaluate
 from uavdt.models import Allocation, Scenario
-from uavdt.resources import equal_share_bandwidth_hz, nearest_association
+from uavdt.resources import (
+    cpu_stable_processing,
+    equal_share_bandwidth_hz,
+    nearest_association,
+)
 from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
 from uavdt.sca.settings import SCASettings
 from uavdt.td3.env import UAVAoDTEnv
@@ -82,8 +86,32 @@ def lp_score(
     return uav, alloc, evaluate(scenario, uav, alloc)
 
 
+def allocation_for_exported_q(
+    scenario: Scenario,
+    uav_xyz_m: np.ndarray,
+    last_allocation: Allocation,
+    settings: TD3Settings,
+) -> Allocation:
+    """a/b that belong to the exported UAV xy.
+
+    Nearest association and CPU-stable processing are functions of q.
+    Logit and frozen heads stay on the last policy step.
+    """
+    a = last_allocation.hard_association()
+    if settings.assoc_mode == "nearest":
+        a = nearest_association(scenario.iot_xyz_m, uav_xyz_m)
+    if settings.process_mode == "cpu_stable":
+        b = cpu_stable_processing(scenario, a)
+    else:
+        b = last_allocation.hard_processing()
+    bw = np.asarray(last_allocation.bandwidth_hz, dtype=float)
+    if bw.shape != a.shape:
+        bw = np.zeros_like(a)
+    return Allocation(association=a, processing=b, bandwidth_hz=bw.copy())
+
+
 def deterministic_policy_export(env: UAVAoDTEnv, agent, settings: TD3Settings) -> dict:
-    """One noise-free episode: last-N UAV xy mean, last-step a/b (inner B)."""
+    """One noise-free episode: last-N UAV xy mean, a/b consistent with that xy."""
     cfg = env.scenario.cfg
     n_roll = int(settings.horizon)
     n_avg = min(int(settings.export_avg_steps), n_roll)
@@ -112,6 +140,9 @@ def deterministic_policy_export(env: UAVAoDTEnv, agent, settings: TD3Settings) -
     uav[:, 0] = np.clip(uav[:, 0], 0.0, cfg.area_x_m)
     uav[:, 1] = np.clip(uav[:, 1], 0.0, cfg.area_y_m)
     uav[:, 2] = cfg.uav_height_m
+    export_alloc = allocation_for_exported_q(
+        env.scenario, uav, allocs[-1], settings
+    )
     last_uav = qs[-1]
     last_a = allocs[-1].hard_association()
     nearest = nearest_association(env.scenario.iot_xyz_m, last_uav)
@@ -120,7 +151,7 @@ def deterministic_policy_export(env: UAVAoDTEnv, agent, settings: TD3Settings) -
     pair = [float(dists[p, q]) for p in range(j) for q in range(p + 1, j)]
     return {
         "uav_xyz_m": uav,
-        "allocation": allocs[-1],
+        "allocation": export_alloc,
         "policy_inner_mean_Mbps": float(np.mean(inner_rates[-n_avg:])),
         "policy_inner_last_Mbps": float(inner_rates[-1]),
         "policy_inner_feas_mean": float(np.mean(inner_feas[-n_avg:])),
@@ -128,7 +159,7 @@ def deterministic_policy_export(env: UAVAoDTEnv, agent, settings: TD3Settings) -
         "mean_move_action_norm": float(np.mean(move_norms)) if move_norms else 0.0,
         "nearest_agree": float(np.mean(np.argmax(last_a, axis=1) == np.argmax(nearest, axis=1))),
         "min_pairwise_m": float(min(pair)) if pair else None,
-        "uav_loads": [float(x) for x in last_a.sum(axis=0)],
+        "uav_loads": [float(x) for x in export_alloc.hard_association().sum(axis=0)],
         "n_rollout": n_roll,
         "n_avg": n_avg,
     }
@@ -211,6 +242,9 @@ def solve_td3(
     window_feas: list[float] = []
     ep_mbps: list[float] = []
     ep_scores: list[float] = []
+    # Warmup (and an under-filled replay) is uniform random, not the actor.
+    # Those episode means must not be stored as the best actor.
+    ep_from_actor = True
     verbose = log_every > 0
     preset = "residual-on-sca" if settings.is_residual_on_sca() else "alg2"
     if verbose:
@@ -223,7 +257,9 @@ def solve_td3(
             f"log_every={log_every}"
         )
     for t in range(settings.total_steps):
-        if t < warmup or agent.replay.size < settings.batch_size:
+        from_actor = t >= warmup and agent.replay.size >= settings.batch_size
+        if not from_actor:
+            ep_from_actor = False
             action = agent.sample_warmup_action(rng)
         else:
             action = agent.select_action(obs, noise=True)
@@ -245,11 +281,13 @@ def solve_td3(
             window_mbps.pop(0)
             window_feas.pop(0)
         if done:
-            agent.consider_checkpoint(float(np.mean(ep_scores)))
+            if ep_from_actor and ep_scores:
+                agent.consider_checkpoint(float(np.mean(ep_scores)))
             ep_mbps = []
             ep_scores = []
-            n_episodes += 1
+            ep_from_actor = True
             if t + 1 < settings.total_steps:
+                n_episodes += 1
                 obs = env.reset()
             else:
                 obs = next_obs
@@ -273,7 +311,7 @@ def solve_td3(
                 )
             )
 
-    if ep_scores:
+    if ep_scores and ep_from_actor:
         agent.consider_checkpoint(float(np.mean(ep_scores)))
     if settings.export_actor == "best_checkpoint":
         agent.load_best_actor()

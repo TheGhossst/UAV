@@ -54,7 +54,9 @@ class TD3Settings:
     # Official score: trained policy (noise-free rollout), not best-snapshot.
     # "best_snapshot" is the old bookkeeping export (kept for A/B).
     export_mode: str = "policy"
-    # Average last N UAV xy of the deterministic eval episode; a/b from last step.
+    # Average last N UAV xy of the deterministic eval episode.
+    # Nearest / CPU-stable a,b are recomputed at that xy. Logit and frozen
+    # heads stay at the last step.
     export_avg_steps: int = 10
     # Keep movement pre-tanh O(1). Dead tanh ( |z|→12–16, actor→±1 ) was the
     # n=20 BEFORE failure. EXTERNAL — not Table II.

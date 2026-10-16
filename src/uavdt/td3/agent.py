@@ -158,6 +158,33 @@ class TD3Agent:
     def q1(self, obs: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         return self.critic1(obs, self.pack_for_critic(action))
 
+    def _logit_penalty(self, disc: torch.Tensor | None) -> torch.Tensor | None:
+        """L2 on discrete heads the decoder actually reads.
+
+        Nearest association and CPU-stable processing ignore those logits.
+        Penalizing them still backprops into the shared backbone.
+        """
+        coef = float(self.settings.actor_logit_l2)
+        if disc is None or coef == 0.0:
+            return None
+        assoc_used = self.settings.assoc_mode in {"logits", "logits_plus_dist"}
+        proc_used = self.settings.process_mode == "logits"
+        if self.n_assoc is None:
+            chunks = [disc] if (assoc_used or proc_used) else []
+        else:
+            n_assoc = min(int(self.n_assoc), int(disc.shape[-1]))
+            chunks = []
+            if assoc_used and n_assoc > 0:
+                chunks.append(disc[..., :n_assoc])
+            if proc_used and n_assoc < int(disc.shape[-1]):
+                chunks.append(disc[..., n_assoc:])
+        if not chunks:
+            return None
+        flat = torch.cat(
+            [chunk.reshape(chunk.shape[0], -1) for chunk in chunks], dim=-1
+        )
+        return coef * flat.square().mean()
+
     def update(self) -> None:
         s, a, r, s2, done = self.replay.sample(self.settings.batch_size)
         with torch.no_grad():
@@ -181,8 +208,9 @@ class TD3Agent:
         pi, z_move, disc = self.actor.forward_parts(s)
         q = self.critic1(s, self.pack_for_critic(pi)).mean()
         pen = self.settings.actor_preact_l2 * z_move.square().mean()
-        if disc is not None:
-            pen = pen + self.settings.actor_logit_l2 * disc.square().mean()
+        logit_pen = self._logit_penalty(disc)
+        if logit_pen is not None:
+            pen = pen + logit_pen
         actor_loss = -q + pen
         self.actor_opt.zero_grad()
         actor_loss.backward()

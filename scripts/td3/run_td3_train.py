@@ -98,6 +98,8 @@ def train(args: argparse.Namespace) -> dict:
     feas: list[bool] = []
     episode_returns: list[float] = []
     ep_ret = 0.0
+    ep_scores: list[float] = []
+    ep_from_actor = True
     n_episodes = 1
     warmup = int(settings.warmup_steps)
     t0 = perf_counter()
@@ -112,7 +114,9 @@ def train(args: argparse.Namespace) -> dict:
     )
 
     for t in range(settings.total_steps):
-        if t < warmup or agent.replay.size < settings.batch_size:
+        from_actor = t >= warmup and agent.replay.size >= settings.batch_size
+        if not from_actor:
+            ep_from_actor = False
             action = agent.sample_warmup_action(rng)
         else:
             action = agent.select_action(obs, noise=True)
@@ -125,11 +129,19 @@ def train(args: argparse.Namespace) -> dict:
         rates.append(float(ev.sum_rate_mbps))
         feas.append(bool(ev.feasible))
         ep_ret += float(reward)
+        if settings.reward_mode == "feasible_rate":
+            ep_scores.append(float(reward))
+        else:
+            ep_scores.append(float(ev.sum_rate_mbps))
         if done:
+            if ep_from_actor and ep_scores:
+                agent.consider_checkpoint(float(np.mean(ep_scores)))
             episode_returns.append(ep_ret)
             ep_ret = 0.0
-            n_episodes += 1
+            ep_scores = []
+            ep_from_actor = True
             if t + 1 < settings.total_steps:
+                n_episodes += 1
                 obs = env.reset()
             else:
                 obs = next_obs
@@ -153,6 +165,10 @@ def train(args: argparse.Namespace) -> dict:
                 )
             )
 
+    if ep_scores and ep_from_actor:
+        agent.consider_checkpoint(float(np.mean(ep_scores)))
+    if settings.export_actor == "best_checkpoint":
+        agent.load_best_actor()
     if env.best is None:
         raise RuntimeError("TD3 produced no snapshot")
     train_best = env.best
@@ -192,7 +208,7 @@ def train(args: argparse.Namespace) -> dict:
         "paper": "Khalaf et al. IEEE TNSM 2026 Algorithm 2 fill-in",
         "note": (
             "Per-instance TD3. TD3Settings, not Table II. "
-            "Inner B is equal-share; export uses frozen-q LP + evaluate()."
+            "Inner B is leftover-dump; export uses frozen-q LP + evaluate()."
         ),
         "seed": int(args.seed),
         "device": device,
