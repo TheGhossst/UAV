@@ -334,6 +334,24 @@ def test_cli_residual_preset_does_not_clobber_export_mode():
     assert s1.action_heads == "move_only"
 
 
+def test_cli_device_flag_sets_torch_device_without_changing_defaults():
+    from uavdt.experiments.cli import _td3_settings_from_args
+
+    parser = build_parser()
+    omitted = parser.parse_args(["td3", "--seed", "1"])
+    assert omitted.device is None
+    assert _td3_settings_from_args(omitted).device == "cpu"
+    cuda = parser.parse_args(["n100", "--methods", "td3", "--device", "cuda"])
+    assert _td3_settings_from_args(cuda).device == "cuda"
+    indexed = parser.parse_args(
+        ["campaign", "--methods", "td3", "--device", "cuda:1"]
+    )
+    assert _td3_settings_from_args(indexed).device == "cuda:1"
+    bad = parser.parse_args(["td3", "--seed", "1", "--device", "mps"])
+    with pytest.raises(ValueError, match="device must be"):
+        _td3_settings_from_args(bad)
+
+
 def test_decode_move_only_and_frozen_requires_origin():
     cfg = SimConfig()
     sc = generate_scenario(1, cfg)

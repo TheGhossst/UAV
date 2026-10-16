@@ -171,6 +171,29 @@ def _add_td3_preset_args(p: argparse.ArgumentParser) -> None:
         default=None,
         help="Override TD3Settings.export_mode (default follows the preset).",
     )
+    p.add_argument(
+        "--device",
+        default=None,
+        help=(
+            "TD3 torch device: cpu, cuda, cuda:N, or auto. "
+            "Omit to keep TD3Settings (cpu). The environment step stays on CPU."
+        ),
+    )
+
+
+def _resolve_td3_device(raw: str) -> str:
+    name = raw.strip()
+    if name == "auto":
+        import torch
+
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if name == "cpu" or name == "cuda":
+        return name
+    if name.startswith("cuda:"):
+        index = name.split(":", 1)[1]
+        if index.isdigit():
+            return name
+    raise ValueError(f"device must be cpu, cuda, cuda:N, or auto, got {raw!r}")
 
 
 def _td3_settings_from_args(args: argparse.Namespace) -> TD3Settings:
@@ -200,6 +223,9 @@ def _td3_settings_from_args(args: argparse.Namespace) -> TD3Settings:
         val = getattr(args, name, None)
         if val is not None:
             updates[name] = val
+    raw_device = getattr(args, "device", None)
+    if raw_device:
+        updates["device"] = _resolve_td3_device(str(raw_device))
     if updates:
         settings = replace(settings, **updates)
     return settings
