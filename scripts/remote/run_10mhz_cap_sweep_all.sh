@@ -34,13 +34,19 @@
 #   bash scripts/remote/run_10mhz_cap_sweep_all.sh --dry-run
 #   bash scripts/remote/run_10mhz_cap_sweep_all.sh --n-runs 2 --n-scenarios 2 \
 #     --areas 100 --methods random
+#
+# TD3 on a GPU server uses scripts/remote/run_10mhz_td3_all.sh, which sets
+# the environment variables this file reads (output root, helper, device).
 
 set -euo pipefail
 
 SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 ROOT="$(cd "$(dirname "$SOURCE")/../.." && pwd)"
-HELPER="${ROOT}/scripts/remote/run_10mhz_cap_sweep_jobs.py"
-OUT="${ROOT}/results/run_10mhz_cap_sweep"
+HELPER="${UAVDT_SWEEP_HELPER:-${ROOT}/scripts/remote/run_10mhz_cap_sweep_jobs.py}"
+OUT="${UAVDT_SWEEP_OUT:-${ROOT}/results/run_10mhz_cap_sweep}"
+LAUNCHER="${UAVDT_SWEEP_LAUNCHER:-scripts/remote/run_10mhz_cap_sweep_all.sh}"
+LOG_HINT="${UAVDT_SWEEP_LOG_HINT:-results/run_10mhz_cap_sweep/current.log}"
+BANNER="${UAVDT_SWEEP_BANNER:-10 MHz cap sweep}"
 LEDGER="${OUT}/jobs.jsonl"
 RUNLOG="${OUT}/run.log"
 PIDFILE="${OUT}/pid"
@@ -63,7 +69,7 @@ fi
 
 N_RUNS=100
 N_SCENARIOS=100
-METHODS="random,kmeans,sca,sca_multistart,sca_anchor"
+METHODS="${UAVDT_SWEEP_METHODS:-random,kmeans,sca,sca_multistart,sca_anchor}"
 AREAS="100,500"
 EXPERIMENTS="n100,campaign"
 CAPS="none,10,12,15,18,20,22,25"
@@ -157,6 +163,12 @@ prepare_cmd() {
   )
   [[ "$PLOTS" == 1 ]] && py+=(--plots)
   [[ "$FORCE" == 1 ]] && py+=(--force)
+  if [[ -n "${UAVDT_TD3_DEVICE:-}" ]]; then
+    py+=(--device "$UAVDT_TD3_DEVICE")
+  fi
+  if [[ "$method" == "td3" ]]; then
+    py+=(--td3-preset "${UAVDT_TD3_PRESET:-alg2}")
+  fi
   argv_out=$("${py[@]}")
   CMD=("$PY")
   while IFS= read -r arg || [[ -n "${arg:-}" ]]; do
@@ -222,6 +234,27 @@ preflight() {
     echo "  export PY=\"\$PWD/.venv/bin/python\"" >&2
     exit 1
   fi
+  local dev="${UAVDT_TD3_DEVICE:-}"
+  if [[ "$dev" == cuda || "$dev" == cuda:* ]]; then
+    if ! "$PY" -c "import torch" >/dev/null 2>&1; then
+      echo "Cannot import torch with: $PY" >&2
+      echo "TD3 is optional in requirements.txt. From the repo root, in the same venv:" >&2
+      echo "  ${PY} -m pip install -e \".[td3]\"" >&2
+      echo "For a CUDA build (check nvidia-smi for driver/CUDA), use PyTorch's index, e.g.:" >&2
+      echo "  ${PY} -m pip install torch --index-url https://download.pytorch.org/whl/cu124" >&2
+      echo "Then verify:" >&2
+      echo "  ${PY} -c \"import torch; print(torch.__version__, 'cuda=', torch.cuda.is_available())\"" >&2
+      echo "CPU-only fallback (slow): bash ${LAUNCHER} --background --device cpu ..." >&2
+      exit 1
+    fi
+    if ! "$PY" -c "import torch, sys; sys.exit(0 if torch.cuda.is_available() else 1)"; then
+      echo "CUDA is not available to ${PY} (TD3 device is ${dev})." >&2
+      echo "Check nvidia-smi and reinstall torch with a CUDA wheel, e.g.:" >&2
+      echo "  ${PY} -m pip install torch --index-url https://download.pytorch.org/whl/cu124" >&2
+      echo "Or run on CPU: bash ${LAUNCHER} --background --device cpu ..." >&2
+      exit 1
+    fi
+  fi
 }
 
 launch_background() {
@@ -239,8 +272,8 @@ launch_background() {
   mkdir -p "$OUT"
   if already_running; then
     echo "already running (pid $(tr -d '[:space:]' < "$PIDFILE"))"
-    echo "status: bash scripts/remote/run_10mhz_cap_sweep_all.sh --status"
-    echo "log:    tail -f results/run_10mhz_cap_sweep/current.log"
+    echo "status: bash ${LAUNCHER} --status"
+    echo "log:    tail -f ${LOG_HINT}"
     exit 0
   fi
   rm -f "$PIDFILE"
@@ -257,7 +290,7 @@ launch_background() {
     if [[ -f "$PIDFILE" ]] && already_running; then
       break
     fi
-    if [[ -f "${OUT}/console.log" ]] && grep -q "Cannot import uavdt" "${OUT}/console.log"; then
+    if [[ -f "${OUT}/console.log" ]] && grep -Eq "Cannot import uavdt|Cannot import torch|CUDA is not available" "${OUT}/console.log"; then
       echo "Python environment failed; see ${OUT}/console.log" >&2
       exit 1
     fi
@@ -272,10 +305,10 @@ launch_background() {
     exit 1
   fi
   echo "started pid $(tr -d '[:space:]' < "$PIDFILE")"
-  echo "log:    tail -f results/run_10mhz_cap_sweep/current.log"
-  echo "status: bash scripts/remote/run_10mhz_cap_sweep_all.sh --status"
-  echo "stop:   bash scripts/remote/run_10mhz_cap_sweep_all.sh --stop"
-  echo "resume: bash scripts/remote/run_10mhz_cap_sweep_all.sh --background"
+  echo "log:    tail -f ${LOG_HINT}"
+  echo "status: bash ${LAUNCHER} --status"
+  echo "stop:   bash ${LAUNCHER} --stop"
+  echo "resume: bash ${LAUNCHER} --background"
 }
 
 stop_run() {
@@ -297,7 +330,7 @@ stop_run() {
     rm -f "$PIDFILE" "$CURRENT_JOB_FILE"
   fi
   echo "stopped pid ${pid}"
-  echo "resume: bash scripts/remote/run_10mhz_cap_sweep_all.sh --background"
+  echo "resume: bash ${LAUNCHER} --background"
 }
 
 show_status() {
@@ -329,9 +362,32 @@ show_status() {
 run_one() {
   local job="$1" cap_slug="$2" kind="$3" area="$4" method="$5" out_rel="$6"
   local settings last bind_rc t0 rc cmd_str safe joblog waited reaped
+  local alt stem_src stem_dst sfx
   settings="${out_rel%.json}.settings.json"
   safe="${job//\//_}"
   joblog="${OUT}/logs/${safe}.log"
+
+  # Finished cap-25 n100 TD3 banks live under the placement tree. Reuse them
+  # so the GPU queue does not retrain those two seeds.
+  if [[ "$FORCE" != 1 && "$method" == "td3" && "$kind" == "n100" && "$cap_slug" == "cap25" ]]; then
+    alt="results/run_10mhz_cap25/${area}m/n100_td3.json"
+    if [[ ! -f "${ROOT}/${out_rel}" && -f "${ROOT}/${alt}" ]]; then
+      if "$PY" "$HELPER" complete \
+        --path "$alt" --kind n100 --method td3 --cap cap25 --area "$area" \
+        --n-runs "$N_RUNS" --n-scenarios "$N_SCENARIOS"; then
+        mkdir -p "$(dirname "${ROOT}/${out_rel}")"
+        cp -a "${ROOT}/${alt}" "${ROOT}/${out_rel}"
+        stem_src="${alt%.json}"
+        stem_dst="${out_rel%.json}"
+        for sfx in .csv _summary.csv .checkpoint.json; do
+          if [[ -f "${ROOT}/${stem_src}${sfx}" ]]; then
+            cp -a "${ROOT}/${stem_src}${sfx}" "${ROOT}/${stem_dst}${sfx}"
+          fi
+        done
+        log "reused ${alt} as ${out_rel}"
+      fi
+    fi
+  fi
 
   if [[ "$FORCE" != 1 ]]; then
     if "$PY" "$HELPER" complete \
@@ -363,7 +419,19 @@ run_one() {
   fi
 
   set +e
-  if [[ "$FORCE" == 1 ]]; then
+  if [[ "$method" == "td3" && "$FORCE" == 1 ]]; then
+    "$PY" "$HELPER" bind-settings \
+      --path "$settings" --kind "$kind" --area "$area" --method "$method" \
+      --cap "$cap_slug" \
+      --n-runs "$N_RUNS" --n-scenarios "$N_SCENARIOS" --force \
+      --td3-preset "${UAVDT_TD3_PRESET:-alg2}"
+  elif [[ "$method" == "td3" ]]; then
+    "$PY" "$HELPER" bind-settings \
+      --path "$settings" --kind "$kind" --area "$area" --method "$method" \
+      --cap "$cap_slug" \
+      --n-runs "$N_RUNS" --n-scenarios "$N_SCENARIOS" \
+      --td3-preset "${UAVDT_TD3_PRESET:-alg2}"
+  elif [[ "$FORCE" == 1 ]]; then
     "$PY" "$HELPER" bind-settings \
       --path "$settings" --kind "$kind" --area "$area" --method "$method" \
       --cap "$cap_slug" \
@@ -496,8 +564,11 @@ run_queue() {
     --n-runs "$N_RUNS" \
     --n-scenarios "$N_SCENARIOS")"
 
-  log "=== 10 MHz cap sweep  caps=${CAPS}  areas=${AREAS}  methods=${METHODS}  experiments=${EXPERIMENTS}  n_runs=${N_RUNS}  n_scenarios=${N_SCENARIOS} ==="
+  log "=== ${BANNER}  caps=${CAPS}  areas=${AREAS}  methods=${METHODS}  experiments=${EXPERIMENTS}  n_runs=${N_RUNS}  n_scenarios=${N_SCENARIOS} ==="
   log "py=$PY  root=$ROOT"
+  if [[ -n "${UAVDT_TD3_DEVICE:-}" ]]; then
+    log "td3 device=${UAVDT_TD3_DEVICE} preset=${UAVDT_TD3_PRESET:-alg2}"
+  fi
   while IFS= read -r line || [[ -n "${line:-}" ]]; do
     line="${line//$'\r'/}"
     [[ -z "$line" ]] && continue

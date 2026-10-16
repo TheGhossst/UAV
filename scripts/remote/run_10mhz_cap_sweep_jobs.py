@@ -206,6 +206,7 @@ def job_settings(
     share: float | None,
     n_runs: int,
     n_scenarios: int,
+    td3_preset: str | None = None,
 ) -> dict[str, Any]:
     settings: dict[str, Any] = {
         "bandwidth_preset": "10mhz",
@@ -235,6 +236,9 @@ def job_settings(
     if method == "sca_multistart":
         settings["multistart_random"] = 2
         settings["multistart_kmeans"] = 2
+    if method == "td3":
+        # Device is intentionally absent: a CPU checkpoint may resume on CUDA.
+        settings["td3_preset"] = td3_preset or "alg2"
     return settings
 
 
@@ -249,6 +253,8 @@ def build_argv(
     n_scenarios: int,
     plots: bool,
     force: bool,
+    device: str | None = None,
+    td3_preset: str | None = None,
 ) -> list[str]:
     slug = cap_slug(share)
     common = [
@@ -326,6 +332,10 @@ def build_argv(
         ]
     if method == "sca_multistart":
         cmd += ["--multistart-random", "2", "--multistart-kmeans", "2"]
+    if method == "td3":
+        cmd += ["--td3-preset", td3_preset or "alg2"]
+        if device:
+            cmd += ["--device", device]
     return cmd
 
 
@@ -589,6 +599,8 @@ def cmd_argv(args: argparse.Namespace) -> int:
         n_scenarios=int(args.n_scenarios),
         plots=bool(args.plots),
         force=bool(args.force),
+        device=getattr(args, "device", None),
+        td3_preset=getattr(args, "td3_preset", None),
     ):
         print(part)
     return 0
@@ -629,6 +641,7 @@ def cmd_bind(args: argparse.Namespace) -> int:
         share=share,
         n_runs=int(args.n_runs),
         n_scenarios=int(args.n_scenarios),
+        td3_preset=getattr(args, "td3_preset", None),
     )
     return bind_settings(resolve(args.path), expected, force=bool(args.force))
 
@@ -714,12 +727,32 @@ def cmd_self_check(_args: argparse.Namespace) -> int:
         n_scenarios=100,
         plots=False,
         force=False,
+        device="cuda",
     )
     if "0.15" not in argv2:
         raise SystemExit("cap15 argv missing share")
     plan = build_plan(["random"], [100], ["n100"], [None, 0.25])
     if len(plan) != 2:
         raise SystemExit(f"expected 2 jobs, got {len(plan)}")
+    argv3 = build_argv(
+        kind="n100",
+        area=100,
+        method="td3",
+        share=0.25,
+        out_rel="results/run_10mhz_td3/cap25/100m/n100_td3.json",
+        n_runs=100,
+        n_scenarios=100,
+        plots=False,
+        force=False,
+        device="cuda",
+        td3_preset="alg2",
+    )
+    if argv3[argv3.index("--device") + 1] != "cuda":
+        raise SystemExit(f"td3 device missing: {argv3}")
+    if argv3[argv3.index("--td3-preset") + 1] != "alg2":
+        raise SystemExit(f"td3 preset missing: {argv3}")
+    if "--device" in argv2:
+        raise SystemExit("non-td3 argv must not set --device")
     print("self-check ok")
     return 0
 
@@ -742,6 +775,10 @@ def build_parser() -> argparse.ArgumentParser:
     argv.add_argument("--n-scenarios", required=True, type=int)
     argv.add_argument("--plots", action="store_true")
     argv.add_argument("--force", action="store_true")
+    argv.add_argument("--device", default=None)
+    argv.add_argument(
+        "--td3-preset", default=None, choices=("alg2", "residual-on-sca")
+    )
     argv.set_defaults(func=cmd_argv)
 
     complete = sub.add_parser("complete")
@@ -775,6 +812,9 @@ def build_parser() -> argparse.ArgumentParser:
     bind.add_argument("--n-runs", required=True, type=int)
     bind.add_argument("--n-scenarios", required=True, type=int)
     bind.add_argument("--force", action="store_true")
+    bind.add_argument(
+        "--td3-preset", default=None, choices=("alg2", "residual-on-sca")
+    )
     bind.set_defaults(func=cmd_bind)
 
     merge = sub.add_parser("merge")

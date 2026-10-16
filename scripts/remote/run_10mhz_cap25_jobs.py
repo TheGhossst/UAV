@@ -36,6 +36,7 @@ METHOD_ALIASES = {
     "zenith-anchor": "sca_anchor",
     "anchor": "sca_anchor",
     "sca_anchor": "sca_anchor",
+    "td3": "td3",
 }
 AREA_ALIASES = {
     "100": 100,
