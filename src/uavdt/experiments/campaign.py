@@ -106,6 +106,7 @@ def _campaign_header(cfg: SimConfig, settings: CampaignSettings) -> dict:
         "sca_joint_probe": "sca_joint" in settings.methods,
         "sca_multistart": "sca_multistart" in settings.methods,
         "sca_anchor": "sca_anchor" in settings.methods,
+        "sca_anchor_frozen": "sca_anchor_frozen" in settings.methods,
         "sca_medoid": "sca_medoid" in settings.methods,
         "sca_continuous": "sca_continuous" in settings.methods,
         "td3_opt_in": "td3" in settings.methods,

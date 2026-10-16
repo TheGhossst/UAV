@@ -5,7 +5,9 @@ Headline ``sca`` runs Algorithm~1 with dynamic $a_{ij}$ / $b_{ij}$ updates.
 SCA-joint is a methodology probe (method=\"sca_joint\").
 Multi-start SCA is opt-in (method=\"sca_multistart\"): keep-best extra
 inits of frozen-SCA. Zenith-anchor SCA is opt-in (method=\"sca_anchor\"):
-LP-scored IoT-subset placement + SCA polish. P-median / k-medoids SCA
+LP-scored IoT-subset placement, polished with the same dynamic
+assignment SCA as headline ``sca``. ``sca_anchor_frozen`` is the same
+search polished with frozen association and processing. P-median / k-medoids SCA
 is opt-in (method=\"sca_medoid\"): covering subsets, same polish.
 Continuous-candidate SCA is opt-in (method=\"sca_continuous\"):
 uniform UAV layouts, same LP + polish budget as zenith-subset.
@@ -34,13 +36,14 @@ from uavdt.td3.settings import TD3Settings
 
 
 # Headline campaign methods. Opt-in: sca_joint, sca_multistart, sca_anchor,
-# sca_medoid, sca_continuous, td3.
+# sca_anchor_frozen, sca_medoid, sca_continuous, td3.
 METHODS = ("random", "kmeans", "pso", "sca")
 KNOWN_METHODS = METHODS + (
     "frozen_sca",
     "sca_joint",
     "sca_multistart",
     "sca_anchor",
+    "sca_anchor_frozen",
     "sca_medoid",
     "sca_continuous",
     "td3",
@@ -235,17 +238,22 @@ def _run_sca_anchor(
 
     from uavdt.sca_anchor import solve_sca_anchor
 
+    settings = sca_settings or SCASettings()
     ms = anchor_settings
     if method_name == "sca_medoid":
         ms = dc_replace(anchor_settings or AnchorSettings(), selection="medoid")
     elif method_name == "sca_continuous":
         ms = dc_replace(anchor_settings or AnchorSettings(), selection="continuous")
+    elif method_name == "sca_anchor":
+        settings = replace(settings, dynamic_assignment=True)
+    elif method_name == "sca_anchor_frozen":
+        settings = replace(settings, dynamic_assignment=False)
     t0 = perf_counter()
     try:
         result = solve_sca_anchor(
             scenario,
             seed,
-            settings=sca_settings,
+            settings=settings,
             anchor=ms,
         )
     except RuntimeError as exc:
@@ -329,8 +337,10 @@ def run_method(
             scenario, seed, sca_settings, multistart_settings
         )
 
-    if name == "sca_anchor":
-        return _run_sca_anchor(scenario, seed, sca_settings, anchor_settings)
+    if name in {"sca_anchor", "sca_anchor_frozen"}:
+        return _run_sca_anchor(
+            scenario, seed, sca_settings, anchor_settings, method_name=name
+        )
 
     if name == "sca_medoid":
         return _run_sca_anchor(

@@ -4,18 +4,24 @@ Leftover-dump (27) plus a per-link cap puts leftover Hertz on about
 ``1/cap`` highest-SE links. SE is maximal at zenith, so a natural prior
 is ``UAV j`` hovering over a distinct IoT. This module enumerates those
 J-subsets (or beam-searches when ``C(I,J)`` is large), scores each with
-one frozen-q bandwidth LP, polishes the top-K with unmodified
-``solve_sca``, and keep-bests against frozen k-means SCA.
+one frozen-q bandwidth LP, polishes the top-K with ``solve_sca``
+under the caller's ``SCASettings``, and keep-bests against that same
+one-shot k-means SCA.
 
-Opt-in method ``sca_anchor``. Frozen SCA stays the headline solver.
-Never worse than one-shot SCA while ``include_frozen=True``.
+``run_method("sca_anchor")`` sets ``dynamic_assignment=True``, matching
+headline SCA. ``run_method("sca_anchor_frozen")`` keeps association and
+processing fixed (display label ``anchor(frozen)``). A direct
+``solve_sca_anchor`` call follows the settings it is given.
+
+Opt-in methods. Never worse than their own one-shot SCA while
+``include_frozen=True``.
 """
 
 from __future__ import annotations
 
 import itertools
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
@@ -622,11 +628,10 @@ def _run_one(
 ) -> tuple[SCAResult | None, float, str | None]:
     t0 = perf_counter()
     try:
-        polish = replace(sca_settings, dynamic_assignment=False)
         result = solve_sca(
             scenario,
             seed,
-            settings=polish,
+            settings=sca_settings,
             uav_xyz_m=uav,
             allocation=allocation,
         )
@@ -643,7 +648,7 @@ def solve_sca_anchor(
     settings: SCASettings | None = None,
     anchor: AnchorSettings | None = None,
 ) -> SCAResult:
-    """Enumerate zenith anchors, polish top-K, keep-best with frozen SCA."""
+    """Enumerate zenith anchors, polish top-K, keep-best with one-shot SCA."""
     sca_settings = settings or SCASettings()
     ms = anchor or AnchorSettings()
     scored = score_anchor_combos(

@@ -9,6 +9,7 @@ import numpy as np
 METHOD_ORDER = (
     "sca",
     "sca_anchor",
+    "sca_anchor_frozen",
     "sca_multistart",
     "td3",
     "kmeans",
@@ -19,6 +20,7 @@ METHOD_ORDER = (
 METHOD_LABELS = {
     "sca": "SCA",
     "sca_anchor": "SCA zenith-anchor",
+    "sca_anchor_frozen": "anchor(frozen)",
     "sca_multistart": "SCA multi-start",
     "td3": "TD3",
     "kmeans": "K-means",
@@ -29,6 +31,7 @@ METHOD_LABELS = {
 METHOD_STYLES = {
     "sca": {"color": "#1f77b4", "marker": "o"},
     "sca_anchor": {"color": "#e377c2", "marker": "*"},
+    "sca_anchor_frozen": {"color": "#c49c94", "marker": "X"},
     "sca_multistart": {"color": "#8c564b", "marker": "v"},
     "td3": {"color": "#17becf", "marker": "P"},
     "kmeans": {"color": "#ff7f0e", "marker": "s"},
@@ -203,6 +206,7 @@ def _per_scenario(plt, payload, methods, note, out: Path) -> Path:
     line_styles = {
         "sca": {"linewidth": 2.4, "alpha": 1.0, "zorder": 5},
         "sca_anchor": {"linewidth": 2.2, "alpha": 0.95, "zorder": 4.5},
+        "sca_anchor_frozen": {"linewidth": 1.6, "alpha": 0.85, "zorder": 4.2},
         "sca_multistart": {"linewidth": 2.0, "alpha": 0.9, "zorder": 4},
         "random": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},
         "kmeans": {"linewidth": 1.5, "alpha": 0.72, "zorder": 3},

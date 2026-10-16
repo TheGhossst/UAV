@@ -30,6 +30,8 @@ def test_known_methods_keep_anchor_opt_in():
     assert "sca_medoid" not in METHODS
     assert "sca_continuous" not in METHODS
     assert "sca_anchor" in KNOWN_METHODS
+    assert "sca_anchor_frozen" in KNOWN_METHODS
+    assert "sca_anchor_frozen" not in METHODS
     assert "sca_medoid" in KNOWN_METHODS
     assert "sca_continuous" in KNOWN_METHODS
     assert METHODS == ("random", "kmeans", "pso", "sca")
@@ -39,6 +41,8 @@ def test_campaign_cli_accepts_sca_anchor():
     assert _parse_methods("sca_anchor") == ("sca_anchor",)
     assert _parse_methods("random,sca,sca_anchor")[-1] == "sca_anchor"
     assert _parse_methods("sca_continuous") == ("sca_continuous",)
+    assert _parse_methods("anchor(frozen)") == ("sca_anchor_frozen",)
+    assert _parse_methods("sca_anchor_frozen") == ("sca_anchor_frozen",)
 
 
 def test_n_combos_and_separation_guard():
@@ -142,8 +146,30 @@ def test_run_method_tags_sca_anchor():
     )
     assert run.method == "sca_anchor"
     assert run.diagnostics.get("method") == "sca_anchor"
+    assert run.diagnostics.get("dynamic_assignment") is True
+    assert run.diagnostics.get("delta_vs_frozen_Mbps") >= -1e-9
     assert run.feasible
     assert run.sum_rate_mbps > 0.0
+
+
+def test_run_method_frozen_anchor_keeps_fixed_assignment():
+    from uavdt.experiments.method_labels import label_for
+
+    cfg = SimConfig(b_sys_hz=8.8e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    run = run_method(
+        sc,
+        "sca_anchor_frozen",
+        seed=1,
+        sca_settings=SCASettings(
+            solver=None, max_iterations=1, dynamic_assignment=True
+        ),
+        anchor_settings=AnchorSettings(top_k=1, include_frozen=True),
+    )
+    assert run.method == "sca_anchor_frozen"
+    assert label_for("sca_anchor_frozen") == "anchor(frozen)"
+    assert run.diagnostics.get("dynamic_assignment") is False
+    assert run.diagnostics.get("delta_vs_frozen_Mbps") >= -1e-9
 
 
 def test_sep_jitter_keeps_close_hosts():

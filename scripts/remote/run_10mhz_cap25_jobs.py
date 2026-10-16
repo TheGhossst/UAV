@@ -36,6 +36,9 @@ METHOD_ALIASES = {
     "zenith-anchor": "sca_anchor",
     "anchor": "sca_anchor",
     "sca_anchor": "sca_anchor",
+    "anchor(frozen)": "sca_anchor_frozen",
+    "anchor_frozen": "sca_anchor_frozen",
+    "sca_anchor_frozen": "sca_anchor_frozen",
     "td3": "td3",
 }
 AREA_ALIASES = {
@@ -295,7 +298,7 @@ def job_settings(
         settings["bank"] = f"data/scenario_bank/n100_i10_j3_{int(area)}m.json"
         settings["num_iot"] = 10
         settings["num_uav"] = 3
-    if method == "sca_anchor":
+    if method in {"sca_anchor", "sca_anchor_frozen"}:
         settings["anchor_max_enumerate"] = 10000
         settings["anchor_top_k"] = 3
         settings["anchor_beam_width"] = 10
@@ -378,7 +381,7 @@ def build_argv(
             cmd.append("--no-resume")
     else:
         raise SystemExit(f"unknown kind {kind!r}")
-    if method == "sca_anchor":
+    if method in {"sca_anchor", "sca_anchor_frozen"}:
         cmd += [
             "--anchor-max-enumerate",
             "10000",

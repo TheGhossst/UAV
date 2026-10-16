@@ -9,6 +9,7 @@ METHOD_LABELS: dict[str, str] = {
     "sca_joint": "SCA-joint",
     "sca_multistart": "SCA multi-start",
     "sca_anchor": "SCA zenith-anchor",
+    "sca_anchor_frozen": "anchor(frozen)",
     "sca_medoid": "SCA medoid",
     "sca_continuous": "SCA continuous",
     "td3": "TD3",

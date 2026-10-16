@@ -259,7 +259,7 @@ def _add_anchor_args(p: argparse.ArgumentParser) -> None:
         "--anchor-top-k",
         type=int,
         default=3,
-        help="Polish the K best LP-scored zenith J-subsets with frozen SCA.",
+        help="Polish the K best LP-scored zenith J-subsets with SCA.",
     )
     p.add_argument(
         "--anchor-max-enumerate",
@@ -699,12 +699,22 @@ def cmd_sca_seq_debug(args: argparse.Namespace) -> int:
     return 0
 
 
+_METHOD_ALIASES = {
+    "anchor(frozen)": "sca_anchor_frozen",
+    "anchor_frozen": "sca_anchor_frozen",
+}
+
+
 def _parse_methods(raw: str) -> tuple[str, ...]:
-    names = tuple(x.strip().lower() for x in raw.split(",") if x.strip())
-    for n in names:
-        if n not in KNOWN_METHODS:
-            raise ValueError(f"unknown method {n!r}; expected {KNOWN_METHODS}")
-    return names
+    names: list[str] = []
+    for part in raw.split(","):
+        name = _METHOD_ALIASES.get(part.strip().lower(), part.strip().lower())
+        if not name:
+            continue
+        if name not in KNOWN_METHODS:
+            raise ValueError(f"unknown method {name!r}; expected {KNOWN_METHODS}")
+        names.append(name)
+    return tuple(names)
 
 
 def _parse_axes(raw: str) -> tuple[str, ...]:
@@ -1143,7 +1153,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--methods",
         type=str,
         default="random,kmeans,pso,sca",
-        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,sca_medoid][,sca_continuous][,td3]. Opt-in: sca_joint, sca_multistart, sca_anchor, sca_medoid, sca_continuous, td3.",
+        help="Comma-separated: random,kmeans,pso,sca[,sca_joint][,sca_multistart][,sca_anchor][,sca_anchor_frozen][,sca_medoid][,sca_continuous][,td3]. Opt-in: sca_joint, sca_multistart, sca_anchor, sca_anchor_frozen (anchor(frozen)), sca_medoid, sca_continuous, td3.",
     )
     camp.add_argument(
         "--n-runs",
@@ -1243,7 +1253,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="random,kmeans,pso,sca",
         help=(
             "Comma-separated: random,kmeans,pso,sca[,frozen_sca][,sca_joint]"
-            "[,sca_multistart][,sca_anchor][,sca_medoid][,sca_continuous][,td3]"
+            "[,sca_multistart][,sca_anchor][,sca_anchor_frozen][,sca_medoid]"
+            "[,sca_continuous][,td3]. sca_anchor_frozen is anchor(frozen)."
         ),
     )
     n100.add_argument("--max-iterations", type=int, default=30)

@@ -240,6 +240,7 @@ def evaluate_bank(
                 "frozen_sca",
                 "sca_multistart",
                 "sca_anchor",
+                "sca_anchor_frozen",
                 "sca_medoid",
                 "sca_continuous",
             }:
