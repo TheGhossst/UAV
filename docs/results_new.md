@@ -9,7 +9,7 @@
 | **Cap sweep** | `results/run_10mhz_cap_sweep/` (no cap, 10, 12, 15, 18, 20, 22, 25%; both fields; n100 bank and full campaign) |
 | **Protocol** | `B_sys` = 10 MHz, seeds 1–100, CVXPY, 30 SCA iterations. Headline cap 25% is 2.50 MHz/link |
 | **Fields** | **100 × 100 m** and **500 × 500 m** |
-| **Methods** | random, k-means, SCA, `sca_multistart`, `sca_anchor` |
+| **Methods** | random, k-means, SCA, `sca_multistart`, `sca_anchor` (dynamic assignment polish) |
 | **TD3 (local, 2026-10-12)** | Both n100 banks at 25% only. Algorithm 2, policy export, 7000 steps. `results/run_10mhz_cap25/{100m,500m}/n100_td3.json` |
 | **Not in these runs** | PSO, TD3 sweeps, 20 kHz diagnostic |
 
@@ -24,13 +24,13 @@ On the default point (I = 10, J = 3, λ = 2/s, T_k = 2.8 s, f_j = 2×10⁸), eve
 
 Algorithm 2 TD3 is on the frozen banks only (policy export, 7000 steps), not on the sweeps. It is 100% feasible on both fields, with max AoDT pinned at 2.800 s. At 100 m it is **10.130 ± 0.042 Mbps**: SCA leads by **0.043 ± 0.031** (97/100, 33 practical, p = 2.7×10⁻²⁷), and TD3 leads k-means by **0.019 ± 0.017** (96/100, 6 practical). At 500 m it is **8.559 ± 0.658 Mbps**: the SCA lead opens to **0.859 ± 0.502** (100/100, 96 practical, p = 1.6×10⁻³⁰), while TD3 still leads k-means by **0.081 ± 0.061** (99/100, 64 practical) and random by **1.894 ± 1.202** (95/100, 94 practical). The 100→500 m drop is **1.571 Mbps**, next to k-means (1.633) and larger than SCA (0.754). Mean wall-clock is **69 s** per seed at 100 m and **71 s** at 500 m.
 
-At **100 × 100 m** the radio is close to the zenith ceiling (**10.213 Mbps**). SCA is **10.172 Mbps**, **+0.223 ± 0.122** above random (100/100) and **+0.062 ± 0.037** above k-means (100/100). Zenith-anchor adds **+0.015 ± 0.021** over the separate SCA campaign (79/100 wins, 11 losses, 9/100 above 0.05 Mbps). Multi-start adds **+0.011 ± 0.019** (58/100 wins, 8/100 practical). The SCA−random gap shrinks from **+0.609 Mbps** at J = 1 to **+0.160 Mbps** at J = 5.
+At **100 × 100 m** the radio is close to the zenith ceiling (**10.213 Mbps**). SCA is **10.172 Mbps**, **+0.223 ± 0.122** above random (100/100) and **+0.062 ± 0.037** above k-means (100/100). Zenith-anchor adds **+0.015 ± 0.021** over headline SCA (80/100 wins, 0 losses, 20 ties, 9/100 above 0.05 Mbps). Multi-start adds **+0.011 ± 0.019** (58/100 wins, 8/100 practical). The SCA−random gap shrinks from **+0.609 Mbps** at J = 1 to **+0.160 Mbps** at J = 5.
 
-At **500 × 500 m** placement still matters. SCA is **9.418 Mbps**, **+2.753 ± 1.117** above random and **+0.940 ± 0.508** above k-means (both 100/100). Zenith-anchor is **9.682 Mbps**, **+0.264 ± 0.298** over SCA (86/100 wins, **65/100** practical). Multi-start is **+0.171 ± 0.274** (54/100 wins, 45/100 practical). Moving from 100 m to 500 m costs SCA **0.754 Mbps**, TD3 **1.571 Mbps**, and random **3.285 Mbps**.
+At **500 × 500 m** placement still matters. SCA is **9.418 Mbps**, **+2.753 ± 1.117** above random and **+0.940 ± 0.508** above k-means (both 100/100). Zenith-anchor is **9.684 Mbps**, **+0.266 ± 0.298** over SCA (84/100 wins, 0 losses, 16 ties, 65/100 practical). Multi-start is **+0.171 ± 0.274** (54/100 wins, 45/100 practical). Moving from 100 m to 500 m costs SCA **0.754 Mbps**, TD3 **1.571 Mbps**, and random **3.285 Mbps**.
 
 Paired tests are Wilcoxon signed-rank on the same seed, from the five per-method campaign JSON files. BH-FDR over the 24 unique sweep points (repeated default ticks excluded) is **24/24** for SCA versus random and versus k-means on both fields. λ and CPU move the default-point score by well under 0.1 Mbps. T_k = 0.8 s is 0% feasible for every method on both fields. The IoT-axis I = 10 row was solved separately from the UAV-axis J = 3 row; use J = 3 as the headline default.
 
-`sca_anchor` and `sca_multistart` keep the best candidate inside their own run (`best_Mbps` ≥ `frozen_Mbps`). The win/loss counts above compare those outputs with the separately solved `campaign_sca.json` column, so a seed can still land below that SCA column.
+`sca_anchor` keep-bests against dynamic one-shot k-means SCA (same assignment policy as headline SCA). Anchor − SCA counts use `n100_sca_anchor.json` vs `n100_sca.json`.
 
 The cap sweep uses the same frozen banks, so each cap is paired on the same 100 layouts. At every cap from 10% to 25%, on both fields, the bank ranking is **sca_anchor > sca_multistart > SCA > k-means > random**, and the default point is 100% feasible. With no per-link cap the anchor−SCA gap shrinks to **+0.003 ± 0.004** at 100 m (0/100 above 0.05 Mbps) and **+0.069 ± 0.112** at 500 m (36/100 practical). Multi-start's mean is then **0.0004 Mbps** above anchor at 100 m (p = 0.029) and **0.002 Mbps** above it at 500 m (p = 0.20). At 500 m the anchor−SCA practical count stays between **53 and 72** out of 100 from 10% through 25%, and is largest at 20% (**+0.285 ± 0.321**, 72/100). At 100 m that count peaks at 10% (**34/100**) and is at most 10/100 from 18% through 25%. T_k = 0.8 s stays 0% feasible at every cap.
 
@@ -60,7 +60,7 @@ Spread from anchor to random: **0.238 Mbps**. SCA to random: **0.223 Mbps**. SCA
 
 | Method | Mean Mbps | Std | Feasible |
 | --- | --- | --- | --- |
-| **sca_anchor** | **9.682** | 0.192 | 100% |
+| **sca_anchor** | **9.684** | 0.192 | 100% |
 | sca_multistart | 9.589 | 0.248 | 100% |
 | **SCA** | **9.418** | 0.394 | 100% |
 | TD3 | 8.559 | 0.658 | 100% |
@@ -80,18 +80,18 @@ Spread from anchor to random: **3.018 Mbps**. SCA to random: **2.753 Mbps**. SCA
 | SCA − TD3 | **+0.043 ± 0.031**, 97/100, 3 losses, 0 ties, 33 practical, p = 2.7×10⁻²⁷ | **+0.859 ± 0.502**, 100/100, 0 losses, 0 ties, 96 practical, p = 1.6×10⁻³⁰ |
 | TD3 − k-means | **+0.019 ± 0.017**, 96/100, 4 losses, 0 ties, 6 practical, p = 8.1×10⁻²⁶ | **+0.081 ± 0.061**, 99/100, 1 loss, 0 ties, 64 practical, p = 3.2×10⁻³⁰ |
 | TD3 − random | **+0.180 ± 0.126**, 96/100, 4 losses, 0 ties, 88 practical, p = 5.0×10⁻²⁶ | **+1.894 ± 1.202**, 95/100, 5 losses, 0 ties, 94 practical, p = 2.0×10⁻²⁵ |
-| anchor − SCA | **+0.015 ± 0.021**, 79/100, 11 losses, 10 ties, 9 practical | **+0.264 ± 0.298**, 86/100, 8 losses, 6 ties, 65 practical |
+| anchor − SCA | **+0.015 ± 0.021**, 80/100, 20 ties, 9 practical, p = 8.3×10⁻²⁵ | **+0.266 ± 0.298**, 84/100, 16 ties, 65 practical, p = 5.2×10⁻²⁶ |
 | multi-start − SCA | **+0.011 ± 0.019**, 58/100, 21 losses, 21 ties, 8 practical | **+0.171 ± 0.274**, 54/100, 22 losses, 24 ties, 45 practical |
 
 
-Practical means a paired gain above **0.05 Mbps**. Anchor versus SCA: p = 9.0×10⁻²² at 100 m and 2.4×10⁻²² at 500 m. Multi-start versus SCA: p = 2.4×10⁻⁹ at 100 m and 1.5×10⁻⁸ at 500 m. The TD3 rows are paired on each frozen bank against that field's `n100_sca.json`, `n100_kmeans.json`, and `n100_random.json`.
+Practical means a paired gain above **0.05 Mbps**. Anchor versus SCA: p = 8.3×10⁻²⁵ at 100 m and 5.2×10⁻²⁶ at 500 m. Multi-start versus SCA: p = 2.4×10⁻⁹ at 100 m and 1.5×10⁻⁸ at 500 m. The TD3 rows are paired on each frozen bank against that field's `n100_sca.json`, `n100_kmeans.json`, and `n100_random.json`.
 
 ### Field drop at J = 3 (500 m − 100 m)
 
 
 | Method | 100 m | 500 m | Δ |
 | --- | --- | --- | --- |
-| sca_anchor | 10.188 | 9.682 | −0.505 |
+| sca_anchor | 10.188 | 9.684 | −0.503 |
 | sca_multistart | 10.184 | 9.589 | −0.595 |
 | SCA | 10.172 | 9.418 | −0.754 |
 | TD3 | 10.130 | 8.559 | −1.571 |
@@ -103,7 +103,9 @@ Practical means a paired gain above **0.05 Mbps**. Anchor versus SCA: p = 9.0×1
 
 ## Sweeps
 
-Means are over all 100 seeds. A cell is 100% feasible unless the feasibility note says otherwise. Columns are random, k-means, SCA, multi-start, zenith-anchor.
+Means are over all 100 seeds. A cell is 100% feasible unless the feasibility note says otherwise. Columns are random, k-means, SCA, multi-start, zenith-anchor (`sca_anchor`, dynamic assignment polish).
+
+The **100 × 100 m** Anchor column is the finished dynamic-assignment campaign (`results/run_10mhz_cap25/100m/campaign_sca_anchor.json`, 28/28 points). Versus the previous polish the largest mean shift is **+0.0007 Mbps**. At three decimals only three cells move, each by **+0.001**: I = 15 (**10.183**), T_k = 1.2 s (**10.141**), and T_k = 1.6 s (**10.168**). Anchor stays above SCA on every feasible point (gap **+0.006** to **+0.031 Mbps**) and above multi-start except at T_k = 0.8 s, where every method is 0% feasible and anchor ties the infeasible SCA score. The **500 × 500 m** Anchor column was not rerun. At J = 3 it is **9.682**, **0.002 Mbps** under the dynamic n100 bank (**9.684**).
 
 ### 100 × 100 m — UAV count J
 
@@ -117,6 +119,8 @@ Means are over all 100 seeds. A cell is 100% feasible unless the feasibility not
 | 5 | 10.042 | 10.188 | 10.202 | 10.207 | 10.208 |
 
 
+
+
 SCA−random is **+0.609** at J = 1 (98/100) and **+0.160** at J = 5 (100/100). Versus k-means the mean gap falls below 0.05 Mbps at J = 4 and J = 5 and stays FDR-significant (100/100).
 
 ### 100 × 100 m — IoT count I
@@ -127,10 +131,12 @@ I = 10 on this axis is SCA **10.174**, about **0.001 Mbps** above the UAV-axis J
 | I | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
 | 10 | 9.951 | 10.111 | 10.174 | 10.185 | 10.188 |
-| 15 | 10.003 | 10.118 | 10.170 | 10.177 | 10.182 |
+| 15 | 10.003 | 10.118 | 10.170 | 10.177 | 10.183 |
 | 20 | 10.024 | 10.119 | 10.164 | 10.168 | 10.173 |
 | 25 | 10.024 | 10.116 | 10.154 | 10.157 | 10.162 |
 | 30 | 10.018 | 10.111 | 10.145 | 10.148 | 10.152 |
+
+
 
 
 SCA declines as I grows. SCA−random at I = 30 is **+0.127** (100/100).
@@ -140,12 +146,14 @@ SCA declines as I grows. SCA−random at I = 30 is **+0.127** (100/100).
 
 | λ (/s) | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
-| 1.0 | 9.941 | 10.107 | 10.167 | 10.178 | 10.183 |
+| 1 | 9.941 | 10.107 | 10.167 | 10.178 | 10.183 |
 | 1.5 | 9.947 | 10.109 | 10.171 | 10.182 | 10.186 |
-| 2.0 | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 |
+| 2 | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 |
 | 2.5 | 9.951 | 10.111 | 10.173 | 10.184 | 10.188 |
-| 3.0 | 9.951 | 10.111 | 10.174 | 10.185 | 10.189 |
+| 3 | 9.951 | 10.111 | 10.174 | 10.185 | 10.189 |
 | 3.5 | 9.952 | 10.111 | 10.174 | 10.185 | 10.189 |
+
+
 
 
 SCA moves by **0.008 Mbps** from λ = 1.0 to λ = 3.5.
@@ -156,12 +164,14 @@ SCA moves by **0.008 Mbps** from λ = 1.0 to λ = 3.5.
 | T_k (s) | Random | K-means | SCA | Multi-start | Anchor | Feasible |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0.8 | 9.416 | 9.874 | 10.118 | 10.145 | 10.118 | **0%** all methods |
-| 1.2 | 9.855 | 10.074 | 10.118 | 10.132 | 10.140 | 100% |
-| 1.6 | 9.914 | 10.096 | 10.150 | 10.162 | 10.167 | 100% |
-| 2.0 | 9.934 | 10.104 | 10.161 | 10.174 | 10.178 | 100% |
+| 1.2 | 9.855 | 10.074 | 10.118 | 10.132 | 10.141 | 100% |
+| 1.6 | 9.914 | 10.096 | 10.150 | 10.162 | 10.168 | 100% |
+| 2 | 9.934 | 10.104 | 10.161 | 10.174 | 10.178 | 100% |
 | 2.4 | 9.943 | 10.108 | 10.169 | 10.180 | 10.184 | 100% |
 | 2.8 | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 | 100% |
 | 3.2 | 9.954 | 10.112 | 10.175 | 10.186 | 10.190 | 100% |
+
+
 
 
 The 0.8 s column is an infeasible score under frozen nearest association. Anchor matches SCA on that row. The feasible score rises from T_k = 1.2 s up to the default plateau.
@@ -172,10 +182,12 @@ The 0.8 s column is an infeasible score under frozen nearest association. Anchor
 | f_j (×10⁸) | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
 | 0.5 | 9.945 | 10.109 | 10.165 | 10.181 | 10.185 |
-| 1.0 | 9.948 | 10.110 | 10.171 | 10.183 | 10.187 |
+| 1 | 9.948 | 10.110 | 10.171 | 10.183 | 10.187 |
 | 1.5 | 9.949 | 10.110 | 10.172 | 10.183 | 10.187 |
-| 2.0 | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 |
+| 2 | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 |
 | 2.5 | 9.950 | 10.110 | 10.173 | 10.184 | 10.188 |
+
+
 
 
 All five CPU rows are 100% feasible. SCA moves by **0.008 Mbps** from 0.5×10⁸ to 2.5×10⁸.
@@ -190,6 +202,8 @@ All five CPU rows are 100% feasible. SCA moves by **0.008 Mbps** from 0.5×10⁸
 | 3 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 |
 | 4 | 7.184 | 9.254 | 9.808 | 9.910 | 10.006 |
 | 5 | 7.553 | 9.735 | 9.987 | 10.065 | 10.101 |
+
+
 
 
 Every J is 100% feasible. Anchor leads at every J. The anchor−SCA gap is **0.205** at J = 1 and **0.113** at J = 5. SCA−random is **2.995** at J = 1 and **2.434** at J = 5.
@@ -208,6 +222,8 @@ I = 10 on this axis is SCA **9.426**, **0.008 Mbps** above the UAV-axis J = 3 ro
 | 30 | 6.470 | 8.246 | 8.721 | 8.801 | 8.848 |
 
 
+
+
 SCA falls by **0.705 Mbps** from I = 10 to I = 30. Anchor stays above SCA at every I. SCA versus random and versus k-means stays above 0.05 Mbps on every unique point of this field (24/24).
 
 ### 500 × 500 m — arrival rate λ
@@ -215,12 +231,14 @@ SCA falls by **0.705 Mbps** from I = 10 to I = 30. Anchor stays above SCA at eve
 
 | λ (/s) | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
-| 1.0 | 6.552 | 8.420 | 9.308 | 9.490 | 9.579 |
+| 1 | 6.552 | 8.420 | 9.308 | 9.490 | 9.579 |
 | 1.5 | 6.634 | 8.462 | 9.391 | 9.564 | 9.654 |
-| 2.0 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 |
+| 2 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 |
 | 2.5 | 6.681 | 8.486 | 9.433 | 9.605 | 9.698 |
-| 3.0 | 6.690 | 8.491 | 9.442 | 9.614 | 9.707 |
+| 3 | 6.690 | 8.491 | 9.442 | 9.614 | 9.707 |
 | 3.5 | 6.697 | 8.495 | 9.445 | 9.621 | 9.714 |
+
+
 
 
 SCA moves by **0.137 Mbps** from λ = 1.0 to λ = 3.5, larger than the 100 m λ sweep and still small next to the placement gaps.
@@ -233,10 +251,12 @@ SCA moves by **0.137 Mbps** from λ = 1.0 to λ = 3.5, larger than the 100 m λ 
 | 0.8 | 4.598 | 6.600 | 8.620 | 9.014 | 8.620 | **0%** all methods |
 | 1.2 | 5.072 | 7.779 | 8.332 | 8.570 | 8.726 | random **78%**; others 100% |
 | 1.6 | 6.099 | 8.227 | 8.988 | 9.186 | 9.267 | 100% |
-| 2.0 | 6.435 | 8.364 | 9.229 | 9.398 | 9.483 | 100% |
+| 2 | 6.435 | 8.364 | 9.229 | 9.398 | 9.483 | 100% |
 | 2.4 | 6.581 | 8.434 | 9.342 | 9.513 | 9.605 | 100% |
 | 2.8 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 | 100% |
 | 3.2 | 6.720 | 8.507 | 9.468 | 9.645 | 9.736 | 100% |
+
+
 
 
 Anchor matches the infeasible SCA score at T_k = 0.8 s. From T_k = 1.2 s upward, anchor is the highest feasible mean.
@@ -247,10 +267,12 @@ Anchor matches the infeasible SCA score at T_k = 0.8 s. From T_k = 1.2 s upward,
 | f_j (×10⁸) | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
 | 0.5 | 6.606 | 8.445 | 9.355 | 9.533 | 9.627 |
-| 1.0 | 6.649 | 8.469 | 9.405 | 9.578 | 9.667 |
+| 1 | 6.649 | 8.469 | 9.405 | 9.578 | 9.667 |
 | 1.5 | 6.660 | 8.475 | 9.413 | 9.584 | 9.677 |
-| 2.0 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 |
+| 2 | 6.665 | 8.478 | 9.418 | 9.589 | 9.682 |
 | 2.5 | 6.668 | 8.479 | 9.421 | 9.592 | 9.685 |
+
+
 
 
 All five rows are 100% feasible. SCA moves by **0.066 Mbps** across this CPU grid.
@@ -259,23 +281,21 @@ All five rows are 100% feasible. SCA moves by **0.066 Mbps** across this CPU gri
 
 ## Cap family
 
-Same 10 MHz protocol and the same n100 banks as the headline. Caps are per-link fractions of `B_sys`: none, then 10, 12, 15, 18, 20, 22, and 25%. The 25% row matches the headline bank. Means below are the frozen-bank default point (I = 10, J = 3). A cell is 100% feasible. Paired counts are anchor minus the separate SCA column on that bank, so they are not the campaign win counts in the headline section.
+Same 10 MHz protocol and the same n100 banks as the headline. Caps are per-link fractions of `B_sys`: none, then 10, 12, 15, 18, 20, 22, and 25%. The 25% row matches the headline bank. Means below are the frozen-bank default point (I = 10, J = 3). A cell is 100% feasible. **Anchor** is zenith-subset SCA with dynamic assignment polish (`n100_sca_anchor.json` at 25%; cap-sweep `sca_anchor` elsewhere until those banks are rerun).
 
 ### 100 × 100 m
 
 
 | Cap | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
-| none | 10.088 | 10.171 | 10.196 | **10.199** | 10.199 |
-| 10% | 9.416 | 9.874 | 9.879 | 9.940 | **9.944** |
-| 12% | 9.623 | 9.973 | 10.025 | 10.058 | **10.065** |
-| 15% | 9.770 | 10.037 | 10.110 | 10.127 | **10.132** |
-| 18% | 9.851 | 10.070 | 10.141 | 10.154 | **10.159** |
-| 20% | 9.889 | 10.086 | 10.152 | 10.168 | **10.173** |
-| 22% | 9.915 | 10.096 | 10.162 | 10.173 | **10.177** |
-| 25% | 9.950 | 10.110 | 10.172 | 10.184 | **10.188** |
-
-
+| none | 10.088 | 10.171 | 10.196 | 10.199 | 10.199 |
+| 10% | 9.416 | 9.874 | 9.879 | 9.940 | 9.944 |
+| 12% | 9.623 | 9.973 | 10.025 | 10.058 | 10.065 |
+| 15% | 9.770 | 10.037 | 10.110 | 10.127 | 10.132 |
+| 18% | 9.851 | 10.070 | 10.141 | 10.154 | 10.159 |
+| 20% | 9.889 | 10.086 | 10.152 | 10.168 | 10.173 |
+| 22% | 9.915 | 10.096 | 10.162 | 10.173 | 10.177 |
+| 25% | 9.950 | 10.110 | 10.172 | 10.184 | 10.188 |
 Tightening the cap lowers every method. From no cap to 10%, anchor falls **0.255 Mbps** and random falls **0.672 Mbps**. SCA minus k-means is only **+0.005 ± 0.020** at 10% (100/100, **3/100** practical) and is back above 0.05 Mbps from 12% up.
 
 ### 500 × 500 m
@@ -283,16 +303,14 @@ Tightening the cap lowers every method. From no cap to 10%, anchor falls **0.255
 
 | Cap | Random | K-means | SCA | Multi-start | Anchor |
 | --- | --- | --- | --- | --- | --- |
-| none | 7.891 | 9.373 | 9.829 | **9.900** | 9.898 |
-| 10% | 4.598 | 6.600 | 7.092 | 7.274 | **7.344** |
-| 12% | 5.126 | 7.171 | 7.946 | 8.138 | **8.210** |
-| 15% | 5.680 | 7.678 | 8.640 | 8.817 | **8.903** |
-| 18% | 6.079 | 8.016 | 9.007 | 9.211 | **9.282** |
-| 20% | 6.281 | 8.184 | 9.150 | 9.353 | **9.434** |
-| 22% | 6.462 | 8.321 | 9.320 | 9.489 | **9.551** |
-| 25% | 6.665 | 8.478 | 9.418 | 9.589 | **9.682** |
-
-
+| none | 7.891 | 9.373 | 9.829 | 9.900 | 9.898 |
+| 10% | 4.598 | 6.600 | 7.092 | 7.274 | 7.344 |
+| 12% | 5.126 | 7.171 | 7.946 | 8.138 | 8.210 |
+| 15% | 5.680 | 7.678 | 8.640 | 8.817 | 8.903 |
+| 18% | 6.079 | 8.016 | 9.007 | 9.211 | 9.282 |
+| 20% | 6.281 | 8.184 | 9.150 | 9.353 | 9.434 |
+| 22% | 6.462 | 8.321 | 9.320 | 9.489 | 9.551 |
+| 25% | 6.665 | 8.478 | 9.418 | 9.589 | 9.684 |
 From no cap to 10%, anchor falls **2.554 Mbps** and random falls **3.293 Mbps**. SCA minus random is **100/100** and **100/100 practical** at every cap, including no cap (**+1.938 ± 1.072**). SCA minus k-means stays practical on at least 67/100 seeds at every cap.
 
 ### Anchor − SCA on the same bank
@@ -307,7 +325,7 @@ From no cap to 10%, anchor falls **2.554 Mbps** and random falls **3.293 Mbps**.
 | 18% | **+0.018 ± 0.021**, 82/100, 8 losses, 10 ties, 8 practical, p = 1.2×10⁻²¹ | **+0.275 ± 0.363**, 76/100, 11 losses, 13 ties, 63 practical, p = 2.7×10⁻¹⁸ |
 | 20% | **+0.021 ± 0.027**, 80/100, 10 losses, 10 ties, 10 practical, p = 1.5×10⁻²⁰ | **+0.285 ± 0.321**, 82/100, 6 losses, 12 ties, 72 practical, p = 1.1×10⁻²² |
 | 22% | **+0.015 ± 0.021**, 84/100, 8 losses, 8 ties, 3 practical, p = 4.2×10⁻²³ | **+0.232 ± 0.281**, 84/100, 3 losses, 13 ties, 69 practical, p = 2.0×10⁻²⁴ |
-| 25% | **+0.015 ± 0.021**, 79/100, 11 losses, 10 ties, 9 practical, p = 9.0×10⁻²² | **+0.264 ± 0.298**, 81/100, 5 losses, 14 ties, 65 practical, p = 2.4×10⁻²² |
+| 25% | **+0.015 ± 0.021**, 80/100, 0 losses, 20 ties, 9 practical, p = 8.3×10⁻²⁵ | **+0.266 ± 0.298**, 84/100, 0 losses, 16 ties, 65 practical, p = 5.2×10⁻²⁶ |
 
 
 Practical means a paired gain above **0.05 Mbps**. On the UAV-count campaign, anchor's mean is above SCA at every J from 1 to 5 for every cap. The no-cap edge is under **0.01 Mbps** at 100 m for every J. At 500 m and 10% the edge grows with J, from **+0.043** at J = 1 to **+0.349** at J = 5.
@@ -324,6 +342,7 @@ T_k = 0.8 s is 0% feasible for every method at every cap on both fields. At 500 
 | `server_results/results/run_10mhz_cap25/500m/campaign_all.csv` | 500 m sweep means |
 | `server_results/results/run_10mhz_cap25/{100m,500m}/campaign_<method>.json` | Per-seed campaign used for the paired tests |
 | `server_results/results/run_10mhz_cap25/{100m,500m}/n100_all_summary.csv` | Frozen-bank default point |
+| `results/run_10mhz_cap25/{100m,500m}/n100_sca_anchor.json` | Zenith-anchor n100 bank (dynamic assignment polish) |
 | `results/run_10mhz_cap25/{100m,500m}/n100_td3.json` | Algorithm 2 TD3, both banks, seeds 1–100 |
 | `server_results/results/run_10mhz_cap25/progress.txt` | Job ledger, all `ok` |
 | `results/run_10mhz_cap_sweep/{nocap,cap10,cap12,cap15,cap18,cap20,cap22,cap25}/{100m,500m}/n100_all.json` | Cap-family frozen bank, per seed |
