@@ -25,6 +25,13 @@ def test_config_for_counts_keeps_two_equal_processes():
     assert len(sc.processes[1].iot_indices) == 16
 
 
+def test_pso_rejects_unknown_fitness():
+    cfg = SimConfig(b_sys_hz=2.4e6)
+    sc = generate_scenario(1, cfg)
+    with pytest.raises(ValueError, match="fitness"):
+        place_pso(sc, seed=1, settings=PSOSettings(fitness="greedy"))
+
+
 def test_pso_respects_field_and_separation():
     cfg = SimConfig(b_sys_hz=2.4e6)
     sc = generate_scenario(1, cfg)
@@ -38,6 +45,20 @@ def test_pso_respects_field_and_separation():
 
 
 cvxpy = pytest.importorskip("cvxpy")
+
+
+def test_pso_lp_fitness_records_mode():
+    cfg = SimConfig(b_sys_hz=2.4e6, max_bw_share=0.25)
+    sc = generate_scenario(1, cfg)
+    run = run_method(
+        sc,
+        "pso",
+        seed=1,
+        pso_settings=PSOSettings(n_particles=2, n_iterations=1, fitness="lp"),
+    )
+    assert run.diagnostics["pso_fitness"] == "lp"
+    assert run.uav_xyz_m.shape == (cfg.num_uav, 3)
+    assert run.true_eval.sum_rate_bit_per_s > 0.0
 
 
 def test_run_method_kmeans_uses_true_evaluator():

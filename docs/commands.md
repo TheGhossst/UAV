@@ -217,7 +217,7 @@ python -m uavdt campaign --axis all --bandwidth-preset 8.8mhz --max-bw-share 0.2
 | `uavs` | UAV count J = 1…5 | I = 10 |
 | `iots` | IoT count I = 10…32 | J = 3 |
 | `lambda` | Arrival rate λ = 1.0…3.5 /s | I = 10, J = 3 |
-| `aodt` | AoDT threshold T_k = 0.8…3.0 s | I = 10, J = 3 |
+| `aodt` | AoDT threshold T_k = 1.2…3.2 s | I = 10, J = 3 |
 | `cpu` | UAV CPU f_j = 0.5e8…2.5e8 cycles/s | I = 10, J = 3 |
 | `all` | All five axes in one JSON | — |
 

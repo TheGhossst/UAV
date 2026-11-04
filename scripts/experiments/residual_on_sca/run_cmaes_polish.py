@@ -6,6 +6,10 @@ Then Algorithm 1 polish from the CMA q with those binaries.
 Usage:
   python scripts/experiments/residual_on_sca/run_cmaes_polish.py
   python scripts/experiments/residual_on_sca/run_cmaes_polish.py --n-runs 1 --max-evals 40
+
+No flags keeps the 8.8 MHz, 25% cap, default-area file. A 10 MHz run must
+pass --bandwidth-preset, --area-m, and a new --out. The legacy file is refused
+when the config is not that 8.8 MHz setup.
 """
 
 from __future__ import annotations
@@ -27,7 +31,7 @@ bootstrap()
 
 from paired_winrate import paired_t, wilcoxon_signed_rank  # noqa: E402
 
-from uavdt.config import PRIMARY_MAX_BW_SHARE, SimConfig  # noqa: E402
+from uavdt.config import BANDWIDTH_PRESETS, PRIMARY_MAX_BW_SHARE, SimConfig  # noqa: E402
 from uavdt.models import Allocation  # noqa: E402
 from uavdt.placement.cmaes import (  # noqa: E402
     apply_residual_xy,
@@ -50,8 +54,35 @@ def _log(msg: str) -> None:
         print(msg.encode("ascii", "replace").decode("ascii"), flush=True)
 
 
-def _cfg() -> SimConfig:
-    return SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE)
+def _cfg(args: argparse.Namespace) -> SimConfig:
+    if args.bandwidth_preset is not None:
+        b_hz = float(BANDWIDTH_PRESETS[args.bandwidth_preset])
+    elif args.bandwidth is not None:
+        b_hz = float(args.bandwidth)
+    else:
+        b_hz = 8.8e6
+    share = None if args.no_per_link_cap else (
+        PRIMARY_MAX_BW_SHARE if args.max_bw_share is None else float(args.max_bw_share)
+    )
+    cfg = SimConfig(
+        b_sys_hz=b_hz,
+        max_bw_share=share,
+        los_angle_unit=str(args.los_angle_unit),
+    )
+    if args.area_m is not None:
+        cfg = cfg.with_square_area_m(float(args.area_m))
+    return cfg
+
+
+def _legacy_cfg(cfg: SimConfig) -> bool:
+    default = SimConfig()
+    return (
+        abs(float(cfg.b_sys_hz) - 8.8e6) < 1.0
+        and cfg.max_bw_share == PRIMARY_MAX_BW_SHARE
+        and str(cfg.los_angle_unit) == "rad"
+        and abs(float(cfg.area_x_m) - float(default.area_x_m)) < 1e-6
+        and abs(float(cfg.area_y_m) - float(default.area_y_m)) < 1e-6
+    )
 
 
 def _jsonable(value):
@@ -160,16 +191,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed-start", type=int, default=21)
     parser.add_argument("--max-evals", type=int, default=400)
     parser.add_argument("--sigma0", type=float, default=5.0)
+    parser.add_argument("--bandwidth-preset", choices=tuple(BANDWIDTH_PRESETS), default=None)
+    parser.add_argument("--bandwidth", type=float, default=None, help="B_sys in Hz")
+    parser.add_argument("--max-bw-share", type=float, default=None)
+    parser.add_argument("--no-per-link-cap", action="store_true")
+    parser.add_argument("--area-m", type=float, default=None)
+    parser.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
     parser.add_argument("--out", type=str, default=str(OUT_DEFAULT))
     args = parser.parse_args(argv)
     out = Path(args.out)
     if out.resolve() == PROTECTED.resolve():
         raise SystemExit(f"refusing to overwrite protected {PROTECTED}")
+    cfg = _cfg(args)
+    if out.resolve() == OUT_DEFAULT.resolve() and not _legacy_cfg(cfg):
+        raise SystemExit(
+            "refusing to overwrite the 8.8 MHz CMA-ES file; pass a new --out"
+        )
     out.parent.mkdir(parents=True, exist_ok=True)
-    cfg = _cfg()
     seeds = tuple(range(int(args.seed_start), int(args.seed_start) + int(args.n_runs)))
     _log(
         f"CMA-ES residual  seeds={seeds[0]}..{seeds[-1]}  "
+        f"B={cfg.b_sys_hz:g} Hz  share={cfg.max_bw_share}  "
+        f"area={cfg.area_x_m:g} m  los={cfg.los_angle_unit}  "
         f"max_evals={args.max_evals}  sigma0={args.sigma0} m"
     )
     rows = []
@@ -189,6 +232,10 @@ def main(argv: list[str] | None = None) -> int:
         "held_out": bool(int(args.seed_start) == 21 and int(args.n_runs) == 20),
         "b_sys_hz": cfg.b_sys_hz,
         "max_bw_share": cfg.max_bw_share,
+        "area_m": [cfg.area_x_m, cfg.area_y_m],
+        "los_angle_unit": cfg.los_angle_unit,
+        "n_runs": len(rows),
+        "seed_start": int(args.seed_start),
         "max_evals": int(args.max_evals),
         "sigma0_m": float(args.sigma0),
         "per_seed": rows,

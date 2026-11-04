@@ -137,6 +137,22 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_pso_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--pso-fitness",
+        choices=("equal_share", "lp"),
+        default="equal_share",
+        help=(
+            "Inner PSO objective. equal_share is the published control. "
+            "lp scores each particle with the frozen-q bandwidth LP."
+        ),
+    )
+
+
+def _pso_settings_from_args(args: argparse.Namespace) -> PSOSettings:
+    return PSOSettings(fitness=str(getattr(args, "pso_fitness", "equal_share")))
+
+
 def _add_td3_preset_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--td3-preset",
@@ -281,6 +297,18 @@ def _add_anchor_args(p: argparse.ArgumentParser) -> None:
             "(T_k=0.8 probe). Default off."
         ),
     )
+    p.add_argument(
+        "--anchor-selection",
+        choices=("enum", "random", "medoid", "continuous"),
+        default="enum",
+        help=(
+            "Which candidates sca_anchor scores. enum is the zenith subset. "
+            "random / medoid / continuous match the control ablations. "
+            "sca_medoid and sca_continuous override this."
+        ),
+    )
+    p.add_argument("--anchor-n-random", type=int, default=1)
+    p.add_argument("--anchor-n-continuous", type=int, default=120)
 
 
 def _anchor_from_args(args: argparse.Namespace) -> AnchorSettings:
@@ -292,6 +320,9 @@ def _anchor_from_args(args: argparse.Namespace) -> AnchorSettings:
         process_cohesive_candidate=bool(
             getattr(args, "anchor_process_cohesive", False)
         ),
+        selection=str(getattr(args, "anchor_selection", "enum")),
+        n_random=int(getattr(args, "anchor_n_random", 1)),
+        n_continuous=int(getattr(args, "anchor_n_continuous", 120)),
     )
 
 
@@ -742,7 +773,7 @@ def cmd_campaign(args: argparse.Namespace) -> int:
             step_size_m=float(args.step_size),
             solver=solver,
         ),
-        pso_settings=PSOSettings(),
+        pso_settings=_pso_settings_from_args(args),
         td3_settings=_td3_settings_from_args(args),
         multistart_settings=_multistart_from_args(args),
         anchor_settings=_anchor_from_args(args),
@@ -913,7 +944,7 @@ def cmd_n100(args: argparse.Namespace) -> int:
                 step_size_m=float(args.step_size),
                 solver=solver,
             ),
-            pso_settings=PSOSettings(),
+            pso_settings=_pso_settings_from_args(args),
             td3_settings=_td3_settings_from_args(args),
             multistart_settings=_multistart_from_args(args),
             anchor_settings=_anchor_from_args(args),
@@ -1140,6 +1171,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="§VII-style sweeps: J, I, λ, T_k, CPU; methods random/kmeans/pso/sca",
     )
     _add_shared(camp)
+    _add_pso_args(camp)
     _add_td3_preset_args(camp)
     _add_multistart_args(camp)
     _add_anchor_args(camp)
@@ -1227,6 +1259,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate 100 area+IoT+UAV scenarios, run SCA/baselines, plot averages",
     )
     _add_shared(n100)
+    _add_pso_args(n100)
     _add_td3_preset_args(n100)
     _add_multistart_args(n100)
     _add_anchor_args(n100)

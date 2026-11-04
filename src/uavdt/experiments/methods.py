@@ -374,7 +374,19 @@ def run_method(
     elif name == "kmeans":
         uav = place_kmeans(scenario, seed)
     else:
-        uav = place_pso(scenario, seed, settings=pso_settings)
+        pso = pso_settings or PSOSettings()
+        uav = place_pso(scenario, seed, settings=pso)
+        diag = {"bandwidth": "frozen_q_lp", "pso_fitness": str(pso.fitness)}
+        alloc = _alloc_at_positions(scenario, uav)
+        ev = evaluate(scenario, uav, alloc)
+        return MethodRun(
+            method=name,
+            seed=seed,
+            uav_xyz_m=uav,
+            allocation=alloc,
+            true_eval=ev,
+            diagnostics=diag,
+        )
 
     alloc = _alloc_at_positions(scenario, uav)
     ev = evaluate(scenario, uav, alloc)

@@ -155,6 +155,20 @@ def point_key(axis: object, x: object) -> tuple[str, float]:
     return (str(axis), round(float(x), 6))
 
 
+# Older campaign JSON still stores T_k = 0.8 s. The sweep no longer does.
+_LEGACY_AODT_S = 0.8
+
+
+def without_legacy_points(
+    keys: set[tuple[str, float]],
+) -> set[tuple[str, float]]:
+    return {
+        key
+        for key in keys
+        if not (key[0] == "aodt" and abs(key[1] - _LEGACY_AODT_S) < 1e-6)
+    }
+
+
 def expected_point_keys(area: float) -> set[tuple[str, float]]:
     headline_sim_config, axes, iter_axis = _grids()
     cfg = headline_sim_config(area_m=float(area))
@@ -220,7 +234,7 @@ def output_complete(
                 return False
             if int(stats.get("n") or -1) != int(n_runs):
                 return False
-        return seen == expected_point_keys(area)
+        return without_legacy_points(seen) == expected_point_keys(area)
     if kind == "n100":
         if int(payload.get("n_scenarios") or -1) != int(n_scenarios):
             return False
@@ -868,8 +882,10 @@ def cmd_self_check(_args: argparse.Namespace) -> int:
         raise SystemExit(f"bad n100 argv: {n100_argv}")
 
     keys = expected_point_keys(100)
-    if len(keys) != 28:
-        raise SystemExit(f"expected 28 sweep points, got {len(keys)}")
+    if len(keys) != 27:
+        raise SystemExit(f"expected 27 sweep points, got {len(keys)}")
+    if any(axis == "aodt" and abs(x - 0.8) < 1e-9 for axis, x in keys):
+        raise SystemExit("T_k = 0.8 s is still in the sweep")
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -889,6 +905,26 @@ def cmd_self_check(_args: argparse.Namespace) -> int:
                 n_scenarios=n_scenarios,
             ):
                 raise SystemExit(f"fake campaign {method} should be complete")
+            if method == "random":
+                legacy = json.loads(path.read_text(encoding="utf-8"))
+                legacy["points"].append(
+                    {
+                        "axis": "aodt",
+                        "x": 0.8,
+                        "by_method": {"random": _fake_method_stats(n_runs, rate)},
+                    }
+                )
+                legacy_path = root / "legacy_tk08.json"
+                legacy_path.write_text(json.dumps(legacy), encoding="utf-8")
+                if not output_complete(
+                    legacy_path,
+                    kind="campaign",
+                    method=method,
+                    area=100,
+                    n_runs=n_runs,
+                    n_scenarios=n_scenarios,
+                ):
+                    raise SystemExit("stored T_k=0.8 point should stay complete")
             bank = _fake_n100(100, method, n_scenarios, rate)
             bpath = method_output(root, "n100", 100, method)
             bpath.write_text(json.dumps(bank), encoding="utf-8")

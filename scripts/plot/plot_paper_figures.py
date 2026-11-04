@@ -374,7 +374,7 @@ def _plot_aodt_sum_rate(ax: plt.Axes, campaign: dict, xlabel: str, title: str) -
     ax.text(
         0.02,
         0.02,
-        r"$T_k\geq1.2$ only ($0.8$ omitted — QoS-infeasible for all methods).",
+        r"$T_k$ from 1.2 s.",
         transform=ax.transAxes,
         fontsize=7,
         color="0.4",

@@ -13,6 +13,9 @@ Usage:
   python scripts/campaigns/run_tk08_followup.py --only cohesive
   python scripts/campaigns/run_tk08_followup.py --only construction
   python scripts/campaigns/run_tk08_followup.py --only tradeoff
+
+The default write stays at 8.8 MHz under results/. A 10 MHz rerun must
+pass --b-sys-hz 10000000 and a different --out-dir.
 """
 
 from __future__ import annotations
@@ -54,9 +57,25 @@ from uavdt.sca_joint.rematch import (  # noqa: E402
 )
 
 RESULTS = ROOT / "results"
-OUT_COHESIVE = RESULTS / "tk08_scajoint_cohesive.json"
-OUT_CONSTRUCTION = RESULTS / "tk08_cohesive_construction.json"
-OUT_TRADEOFF = RESULTS / "tk08_sync_tradeoff_gap.json"
+# Defaults keep the recorded 8.8 MHz files. main() may point a 10 MHz rerun
+# at another directory so those files are not overwritten.
+_RUN = {
+    "b_sys_hz": 8.8e6,
+    "max_bw_share": PRIMARY_MAX_BW_SHARE,
+    "out_dir": RESULTS,
+}
+
+
+def _b_sys() -> float:
+    return float(_RUN["b_sys_hz"])
+
+
+def _share() -> float:
+    return float(_RUN["max_bw_share"])
+
+
+def _out(name: str) -> Path:
+    return Path(_RUN["out_dir"]) / name
 PROTECTED = (
     RESULTS / "tk08_scajoint_feasibility.json",
     RESULTS / "campaign_8.8mhz_cap25_si12k_scajoint.json",
@@ -76,13 +95,20 @@ def _log(msg: str) -> None:
 
 def _cfg() -> SimConfig:
     return replace(
-        config_for_counts(10, 3, SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE)),
+        config_for_counts(
+            10, 3, SimConfig(b_sys_hz=_b_sys(), max_bw_share=_share())
+        ),
         aodt_threshold_s=0.8,
     )
 
 
 def _assert_protected() -> None:
-    for path in (OUT_COHESIVE, OUT_CONSTRUCTION):
+    names = (
+        "tk08_scajoint_cohesive.json",
+        "tk08_cohesive_construction.json",
+        "tk08_sync_tradeoff_gap.json",
+    )
+    for path in (_out(name) for name in names):
         for frozen in PROTECTED:
             if path.resolve() == frozen.resolve():
                 raise SystemExit(f"refusing to overwrite protected file {frozen}")
@@ -196,8 +222,8 @@ def run_cohesive_solver() -> dict:
             "num_iot": 10,
             "num_uav": 3,
             "aodt_threshold_s": 0.8,
-            "b_sys_hz": 8.8e6,
-            "max_bw_share": PRIMARY_MAX_BW_SHARE,
+            "b_sys_hz": _b_sys(),
+            "max_bw_share": _share(),
             "n_runs": N_RUNS,
             "seed_start": SEED_START,
             "process_cohesive_candidate": True,
@@ -221,9 +247,10 @@ def run_cohesive_solver() -> dict:
         },
         "seeds": rows,
     }
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    OUT_COHESIVE.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
-    _log(f"wrote {OUT_COHESIVE}")
+    path = _out("tk08_scajoint_cohesive.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
+    _log(f"wrote {path}")
     s = payload["summary"]
     _log(
         f"  sca_joint+cohesive: feasible={s['n_feasible']}/{s['n']}  "
@@ -326,8 +353,8 @@ def run_construction() -> dict:
             "num_iot": 10,
             "num_uav": 3,
             "aodt_threshold_s": 0.8,
-            "b_sys_hz": 8.8e6,
-            "max_bw_share": PRIMARY_MAX_BW_SHARE,
+            "b_sys_hz": _b_sys(),
+            "max_bw_share": _share(),
             "placement": "kmeans",
             "association": "centroid_cohesive",
             "processing": "process_consistent_processing",
@@ -351,9 +378,10 @@ def run_construction() -> dict:
         },
         "seeds": rows,
     }
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    OUT_CONSTRUCTION.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
-    _log(f"wrote {OUT_CONSTRUCTION}")
+    path = _out("tk08_cohesive_construction.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
+    _log(f"wrote {path}")
     _log(
         f"  construction campaign {campaign['n_cohesive_feasible']}/{campaign['n']}  "
         f"held-out {held['n_cohesive_feasible']}/{held['n']}  "
@@ -365,7 +393,7 @@ def run_construction() -> dict:
 def run_tradeoff_gap() -> dict:
     """Best-SE @ T_k=1.2 minus cohesive @ T_k=0.8 at fixed k-means q (40 seeds)."""
     base = config_for_counts(
-        10, 3, SimConfig(b_sys_hz=8.8e6, max_bw_share=PRIMARY_MAX_BW_SHARE)
+        10, 3, SimConfig(b_sys_hz=_b_sys(), max_bw_share=_share())
     )
     cfg08 = replace(base, aodt_threshold_s=0.8)
     cfg12 = replace(base, aodt_threshold_s=1.2)
@@ -433,8 +461,8 @@ def run_tradeoff_gap() -> dict:
         "config": {
             "num_iot": 10,
             "num_uav": 3,
-            "b_sys_hz": 8.8e6,
-            "max_bw_share": PRIMARY_MAX_BW_SHARE,
+            "b_sys_hz": _b_sys(),
+            "max_bw_share": _share(),
             "campaign_seeds": list(campaign_seeds),
             "held_out_seeds": list(held_out_seeds),
         },
@@ -471,9 +499,10 @@ def run_tradeoff_gap() -> dict:
         },
         "seeds": rows,
     }
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    OUT_TRADEOFF.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
-    _log(f"wrote {OUT_TRADEOFF}")
+    path = _out("tk08_sync_tradeoff_gap.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_py(payload), indent=2), encoding="utf-8")
+    _log(f"wrote {path}")
     s = payload["summary"]["gap_mbps"]
     _log(
         f"  tradeoff gap mean={s['mean']:.3f} median={s['p50']:.3f} "
@@ -489,9 +518,29 @@ def main(argv: list[str] | None = None) -> int:
         choices=("all", "cohesive", "construction", "tradeoff"),
         default="all",
     )
+    parser.add_argument(
+        "--b-sys-hz",
+        type=float,
+        default=8.8e6,
+        help="Default 8.8e6 keeps the recorded run. Pass 1e7 for the 10 MHz rerun.",
+    )
+    parser.add_argument(
+        "--max-bw-share",
+        type=float,
+        default=PRIMARY_MAX_BW_SHARE,
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=RESULTS,
+        help="Directory for the three JSON files. Use a new directory at 10 MHz.",
+    )
     args = parser.parse_args(argv)
+    _RUN["b_sys_hz"] = float(args.b_sys_hz)
+    _RUN["max_bw_share"] = float(args.max_bw_share)
+    _RUN["out_dir"] = args.out_dir
     _assert_protected()
-    RESULTS.mkdir(parents=True, exist_ok=True)
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.only in {"all", "cohesive"}:
         run_cohesive_solver()
     if args.only in {"all", "construction"}:

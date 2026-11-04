@@ -29,6 +29,9 @@ class PSOSettings:
     c1: float = 1.49
     c2: float = 1.49
     v_max_frac: float = 0.2
+    # equal_share is the published inner loop. lp scores each particle with
+    # the same frozen-q bandwidth LP that rescores the exported layout.
+    fitness: str = "equal_share"
 
 
 def _repair_xy(
@@ -81,6 +84,54 @@ def _fitness_equal_share(
     return float(ev.sum_rate_bit_per_s) - penalty
 
 
+def _fitness_lp(scenario: Scenario, xy: np.ndarray, rng: np.random.Generator) -> float:
+    """Same association and penalty as equal-share, with the frozen-q bandwidth LP."""
+    from uavdt.models import Allocation
+    from uavdt.resources import cpu_stable_processing, nearest_association
+    from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
+    from uavdt.sca.settings import SCASettings
+
+    cfg = scenario.cfg
+    uav = make_uav_xyz_m(_repair_xy(xy, cfg, rng), cfg.uav_height_m)
+    association = nearest_association(scenario.iot_xyz_m, uav)
+    processing = cpu_stable_processing(scenario, association)
+    solved = solve_bandwidth_at_fixed_q(
+        scenario, uav, association, processing, SCASettings(solver=None)
+    )
+    if solved.infeasible:
+        from uavdt.resources import equal_share_bandwidth_hz
+
+        bandwidth = equal_share_bandwidth_hz(association, cfg)
+    else:
+        bandwidth = solved.bandwidth_hz
+    ev = evaluate(scenario, uav, Allocation(association, processing, bandwidth))
+    if ev.feasible:
+        return float(ev.sum_rate_bit_per_s)
+    c = ev.constraints
+    penalty = (
+        1e6
+        * (
+            c.qos_violations
+            + c.aodt_violations
+            + c.sep_violations
+            + c.cpu_unstable_count
+            + (0 if c.bandwidth_budget_ok else 1)
+        )
+    )
+    return float(ev.sum_rate_bit_per_s) - penalty
+
+
+def _score_particle(
+    scenario: Scenario, xy: np.ndarray, rng: np.random.Generator, fitness: str
+) -> float:
+    mode = str(fitness)
+    if mode == "equal_share":
+        return _fitness_equal_share(scenario, xy, rng)
+    if mode == "lp":
+        return _fitness_lp(scenario, xy, rng)
+    raise ValueError(f"PSO fitness must be 'equal_share' or 'lp', got {fitness!r}")
+
+
 def place_pso(
     scenario: Scenario,
     seed: int,
@@ -88,6 +139,10 @@ def place_pso(
 ) -> np.ndarray:
     """Swarm search over UAV (x, y); altitude H is fixed."""
     settings = settings or PSOSettings()
+    if str(settings.fitness) not in {"equal_share", "lp"}:
+        raise ValueError(
+            f"PSO fitness must be 'equal_share' or 'lp', got {settings.fitness!r}"
+        )
     cfg = scenario.cfg
     j = cfg.num_uav
     rng = np.random.default_rng(seed)
@@ -103,7 +158,7 @@ def place_pso(
     best_pos = pos.copy()
     best_fit = np.full(settings.n_particles, -np.inf)
     for p in range(settings.n_particles):
-        best_fit[p] = _fitness_equal_share(scenario, pos[p], rng)
+        best_fit[p] = _score_particle(scenario, pos[p], rng, settings.fitness)
         best_pos[p] = pos[p]
     g = int(np.argmax(best_fit))
     gbest = best_pos[g].copy()
@@ -121,7 +176,7 @@ def place_pso(
         pos = pos + vel
         for p in range(settings.n_particles):
             pos[p] = _repair_xy(pos[p], cfg, rng)
-            fit = _fitness_equal_share(scenario, pos[p], rng)
+            fit = _score_particle(scenario, pos[p], rng, settings.fitness)
             if fit > best_fit[p]:
                 best_fit[p] = fit
                 best_pos[p] = pos[p]

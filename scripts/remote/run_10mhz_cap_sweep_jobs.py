@@ -37,6 +37,7 @@ normalize_experiments = _cap25.normalize_experiments
 require_banks = _cap25.require_banks
 expected_point_keys = _cap25.expected_point_keys
 point_key = _cap25.point_key
+without_legacy_points = _cap25.without_legacy_points
 rel_to_repo = _cap25.rel_to_repo
 resolve = _cap25.resolve
 append_record = _cap25.append_record
@@ -158,7 +159,7 @@ def output_complete(
             stats = (pt.get("by_method") or {}).get(method)
             if not isinstance(stats, dict) or int(stats.get("n") or -1) != int(n_runs):
                 return False
-        return seen == expected_point_keys(area)
+        return without_legacy_points(seen) == expected_point_keys(area)
     if kind == "n100":
         if int(payload.get("n_scenarios") or -1) != int(n_scenarios):
             return False

@@ -21,8 +21,9 @@ IOT_AXIS_NUM_PROCESSES = 5
 # PAPER: Fig. 8 λ from 1 to 3.5 tasks/s, I=10, J=3.
 LAMBDA_PER_S = (1.0, 1.5, 2.0, 2.5, 3.0, 3.5)
 
-# PAPER: Fig. 9 T_k from 0.8 s, relaxed to 3 s, I=10, J=3.
-AODT_THRESHOLD_S = (0.8, 1.2, 1.6, 2.0, 2.4, 2.8, 3.2)
+# Fig. 9 in the paper starts at 0.8 s. This reproduction starts at 1.2 s:
+# 0.8 s is 0% feasible for every method and is not a reported sweep point.
+AODT_THRESHOLD_S = (1.2, 1.6, 2.0, 2.4, 2.8, 3.2)
 
 # PAPER: Fig. 10 UAV CPU, text quotes 250 MHz at the high end.
 # Table II main value is 2e8 cycles/s. Treated as Hz = cycles/s.
