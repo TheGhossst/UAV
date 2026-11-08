@@ -1,8 +1,13 @@
-"""Fig. 11: uniform-fast / uniform-slow / heterogeneous λ within a group.
+"""Fig. 11 arrival patterns, scored with an equal bandwidth split.
 
 PAPER: I=10, J varies, two groups of five. Uniform fast (λ1=2, λ2=3),
 uniform slow (λ1=0.8, λ2=1), heterogeneous (0.8 ≤ λ ≤ 3 within each
-group). Used to inspect the AoDT expression, not as a Mbps target.
+group).
+
+Fig. 11 plots sum rate. This module's evaluate() split does not depend
+on λ, so the three patterns share one sum rate. The sum-rate comparison
+is fig11_rates.py: the bandwidth LP, and optionally one SCA trajectory,
+solved separately for each pattern at a shared k-means layout.
 """
 
 from __future__ import annotations
@@ -151,9 +156,10 @@ def run_fig11(
             },
         },
         "note": (
-            "Fig. 11 is an AoDT-expression check, not a Mbps target. "
-            "Same IoT coordinates across λ patterns for a given seed. "
-            "Eq. (17) remains the Problem (P) score. Simulator is extra."
+            "Equal-split evaluate(). Lambda does not enter the rate, so "
+            "the three patterns share a sum rate. Eq. (17) ages and the "
+            "event simulator are the AoDT check. Sum-rate order under the "
+            "Eq. (17) floors is fig11_rates.py."
         ),
         "points": points,
     }

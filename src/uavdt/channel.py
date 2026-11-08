@@ -42,7 +42,11 @@ def path_loss_los_nlos_db(
     dist_m: np.ndarray,
     cfg: SimConfig = DEFAULT,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Eqs. (1)–(2)."""
+    """Eqs. (1)–(2). η is added in dB (1 and 21).
+
+    Table II marks those values "(linear scale)". That other reading is
+    10*log10(η), which is 0 dB and 13.2 dB. Not used here.
+    """
     jfs = free_space_offset_db(cfg)
     logd = 20.0 * np.log10(np.maximum(dist_m, 1e-15))
     l_los = jfs + logd + cfg.eta_los

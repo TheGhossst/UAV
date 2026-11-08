@@ -1,6 +1,6 @@
 # Experimental results
 
-**10 MHz, 25% per-link cap, 100 scenarios.** Headline numbers are from `results/run_10mhz_cap25/`. The cap family (no cap, then 10% through 25%) is `results/run_10mhz_cap_sweep/`, 160/160 jobs complete. The 25% TD3 sweep (both fields, n100 bank and full campaign) is `results/run_10mhz_td3/cap25/`. TD3 banks at the other caps, PSO, the subset controls, the dynamic-anchor rerun, frozen-assignment SCA, Fig. 11, and the noise checks are in those same trees. `results/run_10mhz_open/` adds the dynamic-anchor campaigns at the other caps, PSO with an LP particle fitness, the degree reading of Eq. (4), and CMA-ES. The earlier ledger (8.8 MHz, 20 kHz audit) is in [`results_old.md`](results_old.md).
+**10 MHz, 25% per-link cap, 100 scenarios.** Headline numbers are from `results/run_10mhz_cap25/`. The cap family (no cap, then 10% through 25%) is `results/run_10mhz_cap_sweep/`, 160/160 jobs complete. The 25% TD3 sweep (both fields, n100 bank and full campaign) is `results/run_10mhz_td3/cap25/`. TD3 banks at the other caps, PSO, the subset controls, the dynamic-anchor rerun, frozen-assignment SCA, Fig. 11, and the noise checks are in those same trees. `results/run_10mhz_open/` adds the dynamic-anchor campaigns at the other caps, PSO with an LP particle fitness, the degree reading of Eq. (4), CMA-ES, and the **`sca_multistart_dyn`** §VII rerun (`multistart_dyn_100m/`, 27 points × 100 seeds, complete). The earlier ledger (8.8 MHz, 20 kHz audit) is in [`results_old.md`](results_old.md).
 
 
 | | |
@@ -41,6 +41,8 @@ The cap sweep uses the same frozen banks, so each cap is paired on the same 100 
 Freezing SCA's own assignment, at the 25% default point, costs **0.004 Mbps** at 100 m (1/100 practical) and **0.024 Mbps** at 500 m (19/100 practical). Algorithm 2 TD3 on these banks stays between k-means and SCA at every cap on the 500 m field. At 100 m and a 10% cap, equal-share PSO leads SCA on the signed-rank test (**+0.057 ± 0.096**, 50 seeds each way, 28/100 practical, p = 1.0×10⁻⁵). On that same cell k-means is ahead of TD3 on 74/100 seeds. At 500 m and 10% the PSO mean is **+0.082** over SCA and the signed-rank test is not (p = 0.76). Residual TD3, a ±10 m residual on an SCA start, finishes **0.001 Mbps** under SCA at 100 m and **0.022 Mbps** under it at 500 m. Eq. (17) still scores heterogeneous arrivals as older than uniform-slow on 20/20 seeds at 10 MHz, on both fields; the event simulator scores them the other way.
 
 The open follow-up keeps those bank results and extends them. Dynamic-anchor campaigns at every cap other than 25% reproduce the bank at J = 3. On seeds where both methods are feasible, anchor has 0 losses at every sweep point. At 500 m the mean gap is above 0.05 Mbps on 22 or 23 of the 23 unique points, and the largest point is T_k = 1.2 s (**+0.35 to +0.45 Mbps**). At 100 m that bar is cleared on 17/23 unique points at a 10% cap and on no unique point at the other caps. Scoring each PSO particle with the frozen-q LP leaves the 10% bank identical to equal share and raises the 25% bank by **+0.056 Mbps** at 100 m and **+0.235 Mbps** at 500 m. The signed-rank result against SCA is still the 100 m, 10% win; the other caps stay within about 0.08 Mbps of SCA, and no LP seed is a practical win over the dynamic zenith polish. Reading Eq. (4) in degrees on the 25% banks moves the 100 m default point from about 10 Mbps to about 65 Mbps and keeps the same method order. The 500 m anchor−SCA gap grows from **+0.266** to **+1.076 ± 1.494** (74/100 practical). CMA-ES on seeds 1–20 adds one practical seed over frozen SCA at 100 m and none at 500 m.
+
+**Dynamic multi-start** (`method=sca_multistart_dyn`: Algorithm 1 with dynamic \(a,b\), keep-best over 2 random + 2 k-means inits plus the frozen k-means start) is logged under `results/run_10mhz_open/multistart_dyn_100m/`. On the frozen n100 bank it is **10.185 Mbps**, **+0.013 ± 0.020** over headline SCA (58/100, 8 practical, p = 8.7×10⁻¹⁹) and **+0.001 ± 0.004** over frozen multi-start (51/100, 0 practical). The §VII campaign (`campaign_eval.json`, **27** points, **100** seeds each, AoDT from 1.2 s — no `T_k = 0.8`) is **100% feasible** everywhere. Paired against the existing `run_10mhz_cap25/100m` SCA and frozen multi-start campaigns on the same seeds, dynamic multi-start has **0 losses** versus SCA on all 27 points; versus frozen multi-start the mean shift is **+0.000 to +0.005 Mbps** per axis cell with **187** paired losses total (mostly tie-band reversals; no cell above 0.05 Mbps practical versus frozen multi-start). The largest SCA gaps are at **J = 2** (**+0.026 ± 0.047**, 16/100 practical) and **T_k = 1.2 s** (**+0.020 ± 0.028**, 12/100 practical). Readout: `python scripts/analyze/analyze_multistart_dyn_100m.py` → `analysis.json` / `analysis.txt`.
 
 ---
 
@@ -631,10 +633,43 @@ The median rises from side/H near 2 through the headline geometry at side/H = 5,
 
 ---
 
+## Dynamic multi-start campaign (`sca_multistart_dyn`, 100 m only)
+
+Artifacts: `results/run_10mhz_open/multistart_dyn_100m/{campaign_eval.json, default/n100_eval.json, analysis.json, analysis.txt}`. Runner: `scripts/experiments/run_multistart_dyn_100m.py`. Only `sca_multistart_dyn` is stored in the campaign file; paired deltas in the analysis reuse `results/run_10mhz_cap25/100m/campaign_sca.json` and `campaign_sca_multistart.json` on the same seeds.
+
+### Default bank (I = 10, J = 3)
+
+
+| Method | Mean Mbps | vs SCA (paired) | vs frozen multi-start |
+| --- | --- | --- | --- |
+| SCA (same bank) | 10.172 | — | — |
+| frozen multi-start | 10.184 | +0.011 ± 0.019 (58/100) | — |
+| **sca_multistart_dyn** | **10.185** | **+0.013 ± 0.020**, 58/100, 8 practical | **+0.001 ± 0.004**, 51/100, 0 practical |
+
+
+### §VII sweep — mean sum rate (Mbps)
+
+
+| Axis | Values | Range (dyn_ms) | dyn_ms − SCA (cap25 ref) | dyn_ms − frozen_ms (cap25 ref) |
+| --- | --- | --- | --- | --- |
+| J | 1–5 | 9.971 → 10.207 | **0** SCA losses; +0.005 to +0.026 Mbps | +0.000 (J = 1) to +0.004 Mbps; 21 losses on J axis |
+| I | 10–30 | 10.145 → 10.186 | 0 losses | +0.002 Mbps typical; 36 losses |
+| λ | 1.0–3.5 /s | 10.186 → 10.186 | 0 losses | +0.001 to +0.002 Mbps |
+| T_k | 1.2–3.2 s | 10.138 → 10.187 | 0 losses; up to +0.020 at 1.2 s | +0.001 to +0.005 Mbps |
+| f_j | 0.5–2.5×10⁸ | 10.182 → 10.185 | 0 losses | +0.001 to +0.002 Mbps |
+
+
+Wilcoxon one-sided p < 0.05 for dyn_ms − frozen_ms on **26/27** points (J = 1 is p = 0.087; identical mean to frozen multi-start). Every AoDT, λ, CPU, and I point is significant versus frozen multi-start at p < 10⁻⁶.
+
+---
+
 ## Files
 
 | Path | Contents |
 | --- | --- |
+| `results/run_10mhz_open/multistart_dyn_100m/campaign_eval.json` | §VII axes, `sca_multistart_dyn` only, 27 points, 100 seeds |
+| `results/run_10mhz_open/multistart_dyn_100m/default/n100_eval.json` | Frozen n100 bank, SCA + frozen + dyn multi-start |
+| `results/run_10mhz_open/multistart_dyn_100m/analysis.{json,txt}` | Paired readout vs cap25 reference campaigns |
 | `server_results/results/run_10mhz_cap25/100m/campaign_all.csv` | 100 m sweep means |
 | `server_results/results/run_10mhz_cap25/500m/campaign_all.csv` | 500 m sweep means |
 | `server_results/results/run_10mhz_cap25/{100m,500m}/campaign_<method>.json` | Per-seed campaign used for the paired tests |

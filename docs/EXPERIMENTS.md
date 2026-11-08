@@ -23,6 +23,7 @@ Paper: Khalaf, Itani, Sharafeddine, IEEE TNSM vol. 23, 2026, §VII.
 | SCA solver (`uavdt.sca`, MATLAB CVX files above) | Headline `sca` = dynamic assignment (CVXPY); `frozen_sca` = fixed \(a,b\). MATLAB path remains frozen-only. Opt-in `dynamic_assignment` on `SCASettings`. |
 | SCA-joint (`uavdt.sca_joint`, method=`sca_joint`) | Methodology probe only. Does **not** replace frozen SCA. Writes separately named result files. Default rematch is best-SE; `--process-cohesive-candidate` is an opt-in hypothesis test. Frozen SCA ignores that flag. |
 | Multi-start SCA (`uavdt.sca_multistart`, method=`sca_multistart`) | Opt-in keep-best extra inits of frozen SCA (Experiment A: 2 random + 2 k-means **plus** the frozen k-means start). Never worse than one-shot SCA **by construction** while `include_frozen` is True (default). Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA. Writes separately named files (`results/sca_multistart_n20.json`, `_n20_500m.json`, `n100/eval_multistart.json`, `n100_500m_cap25/eval_multistart.json`). |
+| Dynamic multi-start SCA (`method=sca_multistart_dyn`) | Same keep-best inits as `sca_multistart`, but each trial runs headline **dynamic** Algorithm 1 (`dynamic_assignment=True`). Opt-in; does **not** edit `uavdt.sca`. Headline §VII rerun at 10 MHz / 25% / 100 m: `results/run_10mhz_open/multistart_dyn_100m/` (`campaign_eval.json`, `default/n100_eval.json`). Analysis: `scripts/analyze/analyze_multistart_dyn_100m.py`. Ledger: [`results_new.md`](results_new.md) § Dynamic multi-start. |
 | Zenith-anchor SCA (`uavdt.sca_anchor`, method=`sca_anchor`) | Opt-in: enumerate (or beam-search) zenith J-subsets of IoTs, score each with the frozen-q bandwidth LP, polish top-K with unmodified `solve_sca`, keep-best with frozen k-means SCA. Never worse than one-shot SCA **by construction** while `include_frozen` is True. Does **not** edit `uavdt.sca`. Does **not** replace frozen SCA as the default campaign method. Remaining-before-headline probes (I-axis 500 m, 15% 500 m, \(T_k=0.8\)) are measured — [`novelty.md`](novelty.md), [`results_old.md`](results_old.md) §2.15. Writes separately named files (`results/sca_anchor_n20.json`, `_n20_500m.json`, `_n20_500m_cap15.json`, `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`, `n100_500m_cap15/eval_anchor.json`, `campaign_sca_anchor_uavs.json`, `_500m.json`, `campaign_sca_anchor_iots_500m.json`, `sca_anchor_tk08.json`). |
 | P-median SCA (`uavdt.placement.kmedoids`, method=`sca_medoid`) | Opt-in covering control: p-median / k-medoids on IoT xy, **same** leftover-dump LP + Algorithm 1 polish as zenith-subset. Does **not** edit `uavdt.sca`. Writes `min_spectrum_n20_*.json` (Mbps + Hertz) via `scripts/campaigns/run_min_spectrum.py`. |
 | Continuous-candidate SCA (method=`sca_continuous`) | Opt-in control: ~120 uniform UAV layouts, **same** leftover-dump LP + top-3 polish + keep-best as zenith-subset, but **not** parked on IoTs. Tests “many candidates + LP screening” vs park-on-IoTs. Does **not** edit `uavdt.sca`. Writes `sca_continuous_n20_500m.json`, `n100_500m_cap25/eval_continuous.json`. |
@@ -105,6 +106,9 @@ python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --total-steps 7000
 # Proposed interface to (P): residual on SCA, inner LP, feasible-rate reward.
 python -m uavdt td3 --seed 1 --bandwidth-preset 8.8mhz --max-bw-share 0.25 --td3-preset residual-on-sca
 python scripts/experiments/residual_on_sca/run_multistart.py
+python scripts/experiments/run_multistart_dyn_100m.py
+python scripts/experiments/run_multistart_dyn_100m.py --campaign-only
+python scripts/analyze/analyze_multistart_dyn_100m.py
 python scripts/campaigns/run_sca_multistart_eval.py
 python scripts/campaigns/run_sca_multistart_cases.py
 python scripts/analyze/analyze_sca_multistart_cases.py
@@ -195,6 +199,12 @@ primary campaign.
   `scripts/campaigns/run_sca_multistart_eval.py`, `scripts/campaigns/run_sca_multistart_cases.py`).
   Keep-best extra inits. Does not overwrite Experiment A, n100/eval.json, or
   the headline campaigns.
+- Dynamic multi-start (`results/run_10mhz_open/multistart_dyn_100m/`:
+  `campaign_eval.json`, `default/n100_eval.json`, `analysis.json`;
+  `scripts/experiments/run_multistart_dyn_100m.py`,
+  `scripts/analyze/analyze_multistart_dyn_100m.py`). §VII axes, 100 seeds/point,
+  `sca_multistart_dyn` only; paired readout vs `run_10mhz_cap25/100m`
+  `campaign_sca` + `campaign_sca_multistart`.
 - Zenith-anchor SCA method (`results/sca_anchor_n20.json`,
   `sca_anchor_n20_500m.json`, `sca_anchor_n20_500m_cap15.json`,
   `n100/eval_anchor.json`, `n100_500m_cap25/eval_anchor.json`,

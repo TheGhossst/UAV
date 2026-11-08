@@ -28,9 +28,9 @@
 | UAV CPU capacity            | `f_j`      | `2 × 10^8`  | cycles/s        | Table II        | Processing capacity of UAV `j`.                                                        |
 | Speed of light              | `c`        | `3 × 10^8`  | m/s             | Table II        | Used in the free-space path-loss term.                                                 |
 | AoDT threshold              | `T_k`      | `2.8`       | s               | Table II        | Maximum allowed average AoDT.                                                          |
-| LoS additional attenuation  | `eta_LoS`  | `1`         | table scale     | Table II        | Additional LoS attenuation term.                                                       |
-| NLoS additional attenuation | `eta_NLoS` | `21`        | table scale     | Table II        | Additional NLoS attenuation term.                                                      |
-| Noise parameter             | `sigma`    | `0.01`      | W               | Table II        | Table labels this parameter `sigma`; Eq. (6) uses `sigma^2`.                           |
+| LoS additional attenuation  | `eta_LoS`  | `1`         | dB in Eqs. (1)–(2) | Table II   | Table says `1 (linear scale)` (0 dB). Headline adds 1 dB, as the path-loss equation does. |
+| NLoS additional attenuation | `eta_NLoS` | `21`        | dB in Eqs. (1)–(2) | Table II   | Table says `21 (linear scale)` (13.2 dB). Headline adds 21 dB. Zenith score 10.2 vs 27.9 Mbps. |
+| Noise parameter             | `sigma`    | `0.01`      | W               | Table II        | Table calls \(\sigma\) the noise power. Headline uses Eq. (6): noise \(=\sigma^2=10^{-4}\) W. |
 | IoT transmit power          | `p_i`      | `0.2`       | W               | Table II        | IoT transmit power.                                                                    |
 | Environment parameter       | `a`        | `9.61`      | —               | Table II        | Parameter in LoS probability.                                                          |
 | Environment parameter       | `b`        | `0.16`      | —               | Table II        | Parameter in LoS probability.                                                          |
@@ -136,10 +136,7 @@ The paper explicitly models stationary UAVs at `(x_j, y_j, H)`.
 The paper gives this expression as Eq. (4).
 fileciteturn7file1L355-L371
 
-**Angle-unit note:** the displayed equation does not explicitly state
-the angle unit. The Table II values `a=9.61` and `b=0.16` need to be
-implemented with the intended convention and then validated against the
-paper’s results. Do not silently change the equation.
+**Angle-unit note:** Eq. (4) writes \(\arcsin\) and does not name a unit. The headline passes that angle in radians. Degrees is the other reading (\(a=9.61\), \(b=0.16\)). Zenith score: 10.2 Mbps in radians, 65.2 Mbps in degrees. See `docs/observations.md`, “Channel reading”.
 
 ### 4.6 Average path loss
 

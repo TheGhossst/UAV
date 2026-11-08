@@ -28,8 +28,14 @@ LAMBDA_I_PER_S = 2.0
 UAV_CPU_CYCLES_PER_S = 2.0e8
 C_LIGHT_M_PER_S = 3.0e8
 AODT_THRESHOLD_S = 2.8
+# Table II writes "1 (linear scale)" and "21 (linear scale)".
+# Eqs. (1)–(2) add the numbers to a dB sum, so the headline uses 1 dB
+# and 21 dB. 10*log10 of the table values is 0 dB and 13.2 dB.
+# Zenith sensitivity: docs/observations.md, "Channel reading".
 ETA_LOS = 1.0
 ETA_NLOS = 21.0
+# Table II labels σ "Noise power" at 0.01 W. Eq. (6) divides by σ²
+# and calls σ² the noise power. Headline noise is sigma**2.
 SIGMA = 0.01
 P_I_W = 0.2
 ENV_A = 9.61
@@ -139,7 +145,11 @@ class SimConfig:
 
     @property
     def noise_power_w(self) -> float:
-        """Gaussian white-noise power in Eq. (6): sigma**2."""
+        """Noise in Eq. (6): sigma**2.
+
+        Table II calls sigma itself the noise power. This property
+        follows the equation, not that label.
+        """
         return self.sigma ** 2
 
     @property

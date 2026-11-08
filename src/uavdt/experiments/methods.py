@@ -42,6 +42,7 @@ KNOWN_METHODS = METHODS + (
     "frozen_sca",
     "sca_joint",
     "sca_multistart",
+    "sca_multistart_dyn",
     "sca_anchor",
     "sca_anchor_frozen",
     "sca_medoid",
@@ -179,16 +180,21 @@ def _run_sca_multistart(
     seed: int,
     sca_settings: SCASettings | None,
     multistart_settings: MultiStartSettings | None,
+    *,
+    method: str = "sca_multistart",
 ) -> MethodRun:
     from uavdt.sca_multistart import solve_sca_multistart
 
+    ms = multistart_settings or MultiStartSettings()
+    if method == "sca_multistart_dyn":
+        ms = replace(ms, dynamic_assignment=True)
     t0 = perf_counter()
     try:
         result = solve_sca_multistart(
             scenario,
             seed,
             settings=sca_settings,
-            multistart=multistart_settings,
+            multistart=ms,
         )
     except RuntimeError as exc:
         if "CPU stability" not in str(exc) and "every start failed" not in str(exc):
@@ -197,13 +203,13 @@ def _run_sca_multistart(
         alloc = _alloc_at_positions(scenario, uav)
         ev = evaluate(scenario, uav, alloc)
         return MethodRun(
-            method="sca_multistart",
+            method=method,
             seed=seed,
             uav_xyz_m=uav,
             allocation=alloc,
             true_eval=ev,
             diagnostics={
-                "method": "sca_multistart",
+                "method": method,
                 "stop_reason": "init_cpu_unstable",
                 "accepted_steps": 0,
                 "n_iterations": 0,
@@ -215,9 +221,9 @@ def _run_sca_multistart(
     elapsed = perf_counter() - t0
     diag = dict(result.diagnostics)
     diag.setdefault("wall_clock_s", elapsed)
-    diag["method"] = "sca_multistart"
+    diag["method"] = method
     return MethodRun(
-        method="sca_multistart",
+        method=method,
         seed=seed,
         uav_xyz_m=result.uav_xyz_m,
         allocation=result.allocation,
@@ -332,9 +338,9 @@ def run_method(
     if name in {"sca", "frozen_sca", "sca_joint"}:
         return _run_sca_family(scenario, name, seed, sca_settings)
 
-    if name == "sca_multistart":
+    if name in {"sca_multistart", "sca_multistart_dyn"}:
         return _run_sca_multistart(
-            scenario, seed, sca_settings, multistart_settings
+            scenario, seed, sca_settings, multistart_settings, method=name
         )
 
     if name in {"sca_anchor", "sca_anchor_frozen"}:

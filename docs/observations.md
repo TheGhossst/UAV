@@ -37,8 +37,9 @@ These are deliberate departures from Khalaf et al., or quantities the paper does
 | O2 | Per-link cap `max_bw_share` | **25%** (2.5 MHz/link) headline; sweep over none, 10, 12, 15, 18, 20, 22, 25% | Not in Problem (P) | `config.py`, `sca/cvx_problem.py` |
 | O3 | Field | 100 × 100 m **and** 500 × 500 m | 500 × 500 m | `results/run_10mhz_cap25/` |
 | O4 | Task size `S_i`, CPU cycles `L` | S = 12,000 bytes (96,000 bit), L = 3.75×10⁶ cycles | Not specified | `config.py` (`EXTERNAL_TASK_SIZE_BYTES`) |
-| O5 | Angle unit in Eq. (4) | Radians, as Eq. (4) is written | Ambiguous | `channel.py` (`los_angle_unit="rad"`) |
-| O6 | Noise | Fixed σ² = 10⁻⁴ W (`sigma = 0.01`), so SNR = p·g/σ² does not depend on B | Eq. (6) as written | `channel.py::snr` |
+| O5 | Angle unit in Eq. (4) | **Radians**, as \(\arcsin\) is written. \(P_{\mathrm{LoS}}\) stays near 0.03 | Table II gives \(a=9.61\), \(b=0.16\) and no unit | `channel.py` (`los_angle_unit="rad"`) |
+| O5b | Excess loss \(\eta\) | **1 dB and 21 dB**, added as in Eqs. (1)–(2) | Table II says `1 (linear scale)` and `21 (linear scale)`, which is 0 dB and 13.2 dB | `config.py` (`ETA_LOS`, `ETA_NLOS`) |
+| O6 | Noise | **\(\sigma^2 = 10^{-4}\) W** (`sigma = 0.01`). SNR \(= p\cdot g/\sigma^2\) does not depend on \(B\) | Table II calls \(\sigma = 0.01\) W the noise power. Eq. (6) divides by \(\sigma^2\) and calls \(\sigma^2\) the noise power | `channel.py::snr` |
 | O7 | Association and processing | **Not one policy.** See below. | Algorithm 1 is ambiguous | `experiments/methods.py`, `sca_multistart.py` |
 
 **O7. Assignment policy depends on the method name. [MEASURED, code + artifacts]**
@@ -72,6 +73,21 @@ Cap-sweep SCA is dynamic on all 16 cap×field banks. The sweep file named `n100_
 The frozen file changes association and processing on **0/100** seeds. Mean wall-clock is 0.88 s versus 1.07 s at 100 m, and 1.03 s versus 0.96 s at 500 m. The zenith−SCA gap at 500 m (+0.266) is about ten times the assignment gap on that field.
 
 **O1 to O3 are why the absolute Mbps numbers here cannot be compared with Figs. 6–10 of the original paper.** State this once, early, and present the work as a model-consistent comparison of methods, not a numeric replication.
+
+**Channel reading, stated once. [MEASURED, zenith link, 2026-11-07]**
+
+The headline follows the equations: elevation in radians, \(\eta_{\mathrm{LoS}}=1\) and \(\eta_{\mathrm{NLoS}}=21\) added in dB, and noise power \(\sigma^2=10^{-4}\) W. The Mbps are the value of Eq. (6) under that reading. They are not a deployable rate. Table II’s carrier is 1 MHz, so \(\lambda=300\) m. The headline pool is 10 MHz, and the links are about 100 m, inside one wavelength. A 10 MHz pool does not fit on a 1 MHz carrier, and the \(20\log d\) formula is a far-field formula.
+
+The other readings of the same table, one change at a time. Zenith means one UAV directly above one IoT (\(d=H=100\) m) with the whole 10 MHz on that link.
+
+| Reading | Change from the headline | Zenith SNR | Score on that link |
+| --- | --- | ---: | ---: |
+| Headline | radians, 1 dB and 21 dB, \(\sigma^2\) | 1.03 (+0.1 dB) | **10.2 Mbps** |
+| Linear-scale \(\eta\) | 0 dB and 13.2 dB | 5.91 (+7.7 dB) | **27.9 Mbps** (×2.73) |
+| Table noise label | noise \(=\sigma=0.01\) W | 0.010 (−19.9 dB) | **0.15 Mbps** |
+| Degrees | elevation in degrees | 90.5 (+19.6 dB) | **65.2 Mbps** |
+
+The ×2.73 factor is the zenith link. The same \(\eta\) change is about ×4 at 200 m and about ×5.3 at 510 m, because those links are weaker. Taking both table glosses at once (0 dB / 13.2 dB and noise \(=\sigma\)) leaves **0.83 Mbps** at zenith. Do not rerun the campaigns for these rows. The headline banks stay on the first row.
 
 ---
 

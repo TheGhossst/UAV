@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from uavdt.aodt import fcfs_mm1_aaio_s, instantaneous_age_s, lcfs_s_aaio_s
 from uavdt.aodt_sim import simulate_process_queue
@@ -160,6 +161,38 @@ def test_fig11_eq17_slowest_limited_on_one_seed():
     assert abs(rows["heterogeneous"] - rows["uniform_slow"]) < abs(
         rows["heterogeneous"] - rows["uniform_fast"]
     )
+
+
+def test_fig11_bandwidth_lp_puts_heterogeneous_under_slow():
+    """Eq. (17) floors: older pattern, larger floor, lower sum rate.
+
+    Seed 1, J=3, 100 m, 10 MHz, no per-link share. The equal split is
+    the same rate for all three patterns.
+    """
+    pytest.importorskip("cvxpy")
+    from uavdt.experiments.fig11_rates import queue_terms_s, score_pattern_at_layout
+    from uavdt.experiments.grids import config_for_counts
+    from uavdt.placement.kmeans import place_kmeans
+
+    cfg = config_for_counts(10, 3, SimConfig(b_sys_hz=10_000_000.0, max_bw_share=None))
+    uav = place_kmeans(generate_scenario(1, cfg), 1)
+    rows = {
+        pattern: score_pattern_at_layout(1, cfg, pattern, uav)
+        for pattern in ("uniform_fast", "uniform_slow", "heterogeneous")
+    }
+    q_slow = max(queue_terms_s(cfg, "uniform_slow"))
+    q_het = max(queue_terms_s(cfg, "heterogeneous"))
+    assert q_het > q_slow
+    assert rows["uniform_fast"].equal_mbps == pytest.approx(rows["uniform_slow"].equal_mbps)
+    assert rows["uniform_slow"].equal_mbps == pytest.approx(rows["heterogeneous"].equal_mbps)
+    assert rows["heterogeneous"].floor_hz > rows["uniform_slow"].floor_hz
+    assert rows["uniform_slow"].floor_hz > rows["uniform_fast"].floor_hz
+    fast, slow, het = (rows["uniform_fast"].lp_mbps, rows["uniform_slow"].lp_mbps, rows["heterogeneous"].lp_mbps)
+    assert fast is not None and slow is not None and het is not None
+    assert fast > slow > het
+    for cell in rows.values():
+        assert cell.lp_feasible
+        assert cell.lp_max_aodt_s == pytest.approx(2.8, abs=1e-6)
 
 
 def test_fig11_smoke_one_seed():

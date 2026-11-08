@@ -35,6 +35,8 @@ class MultiStartSettings:
     n_random: int = 2
     n_kmeans: int = 2
     include_frozen: bool = True
+    # False = frozen association/processing (Experiment A default). True = headline SCA policy.
+    dynamic_assignment: bool = False
 
 
 def extra_starts(
@@ -77,12 +79,16 @@ def _run_one(
     seed: int,
     sca_settings: SCASettings,
     *,
+    dynamic_assignment: bool = False,
     uav: np.ndarray | None = None,
     allocation: Allocation | None = None,
 ) -> tuple[SCAResult | None, float, str | None]:
     t0 = perf_counter()
     try:
-        settings = replace(sca_settings or SCASettings(), dynamic_assignment=False)
+        settings = replace(
+            sca_settings or SCASettings(),
+            dynamic_assignment=bool(dynamic_assignment),
+        )
         result = solve_sca(
             scenario,
             seed,
@@ -144,11 +150,14 @@ def solve_sca_multistart(
     """
     sca_settings = settings or SCASettings()
     ms = multistart or MultiStartSettings()
+    dyn = bool(ms.dynamic_assignment)
     rows: list[dict] = []
     results: list[SCAResult | None] = []
 
     if ms.include_frozen:
-        frozen, wall_s, fail = _run_one(scenario, seed, sca_settings)
+        frozen, wall_s, fail = _run_one(
+            scenario, seed, sca_settings, dynamic_assignment=dyn
+        )
         rows.append(_start_row("frozen_kmeans", seed, frozen, wall_s, fail))
         results.append(frozen)
 
@@ -161,7 +170,12 @@ def solve_sca_multistart(
             results.append(None)
             continue
         extra, wall_s, fail = _run_one(
-            scenario, seed, sca_settings, uav=uav, allocation=alloc
+            scenario,
+            seed,
+            sca_settings,
+            dynamic_assignment=dyn,
+            uav=uav,
+            allocation=alloc,
         )
         rows.append(_start_row(kind, init_seed, extra, wall_s, fail))
         results.append(extra)
@@ -193,6 +207,7 @@ def solve_sca_multistart(
     diag.update(
         {
             "method": "sca_multistart",
+            "dynamic_assignment": dyn,
             "n_starts": len(rows),
             "n_ok": sum(1 for r in rows if not r.get("failed")),
             "winner_kind": win_row["kind"],
