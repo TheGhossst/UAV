@@ -102,6 +102,30 @@ def bandwidth_floors_hz(
     return floors
 
 
+def per_link_cap_hz(
+    scenario: Scenario,
+    association: np.ndarray,
+    floors_hz: np.ndarray,
+) -> np.ndarray:
+    """Upper bound on each B_ij.
+
+    Fixed share uses one cap on every associated link. With
+    ``dynamic_cap_alpha``, the cap is ``max(floor, alpha * B_sys / I)``
+    so it shrinks as the number of devices grows and never sits under
+    the bandwidth that link needs for its rate floor.
+    """
+    cfg = scenario.cfg
+    cap = np.full(association.shape, float(cfg.link_bandwidth_cap_hz), dtype=float)
+    if cfg.dynamic_cap_alpha is None:
+        return cap
+    share = float(cfg.dynamic_cap_alpha) * float(cfg.b_sys_hz) / max(int(cfg.num_iot), 1)
+    cap[:, :] = share
+    finite = np.isfinite(floors_hz)
+    cap[finite] = np.maximum(share, floors_hz[finite])
+    cap = np.minimum(cap, float(cfg.b_sys_hz))
+    return cap
+
+
 def rate_floors_bit_per_s(
     scenario: Scenario,
     association: np.ndarray,
@@ -183,9 +207,13 @@ def solve_joint_convex_step(
     )
     rhat = cp.multiply(se, bw) + cp.multiply(bandwidth_hz, pos)
     a_f = a.astype(float)
+    floors_hz = np.zeros_like(se)
+    se_ok = a & (se > 1e-15) & np.isfinite(floors)
+    floors_hz[se_ok] = floors[se_ok] / se[se_ok]
+    cap = per_link_cap_hz(scenario, association, floors_hz)
     cons = [
         bw[~a] == 0,
-        bw[a] <= cfg.link_bandwidth_cap_hz,
+        bw[a] <= cap[a],
         cp.sum(bw) <= cfg.b_sys_hz,
         x >= 0,
         x <= cfg.area_x_m,
@@ -242,7 +270,7 @@ def solve_joint_convex_step(
     y_val = np.clip(np.asarray(y.value, dtype=float).ravel(), 0.0, cfg.area_y_m)
     bw_val = np.maximum(np.asarray(bw.value, dtype=float), 0.0)
     bw_val[~a] = 0.0
-    bw_val = np.minimum(bw_val, cfg.link_bandwidth_cap_hz)
+    bw_val = np.minimum(bw_val, cap)
     return JointSolveResult(
         status=status,
         solver_name=solver_name,
@@ -288,9 +316,10 @@ def solve_bandwidth_cvxpy(
     i_n, j_n = association.shape
     bw = cp.Variable((i_n, j_n), nonneg=True)
     a_f = a.astype(float)
+    cap = per_link_cap_hz(scenario, association, floors)
     cons = [
         bw[~a] == 0,
-        bw[a] <= cfg.link_bandwidth_cap_hz,
+        bw[a] <= cap[a],
         cp.sum(bw) <= cfg.b_sys_hz,
         bw >= floors,
     ]
@@ -325,7 +354,7 @@ def solve_bandwidth_cvxpy(
         )
     bw_val = np.maximum(np.asarray(bw.value, dtype=float), 0.0)
     bw_val[~a] = 0.0
-    bw_val = np.minimum(bw_val, cfg.link_bandwidth_cap_hz)
+    bw_val = np.minimum(bw_val, cap)
     if bw_val.sum() > cfg.b_sys_hz + 1e-6:
         bw_val *= cfg.b_sys_hz / bw_val.sum()
     return BandwidthSolveResult(

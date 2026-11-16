@@ -296,6 +296,7 @@ def evaluate_bank(
         "bank_path": None if bank_path is None else str(bank_path),
         "b_sys_hz": cfg.b_sys_hz,
         "max_bw_share": cfg.max_bw_share,
+        "dynamic_cap_alpha": cfg.dynamic_cap_alpha,
         "area_m": [cfg.area_x_m, cfg.area_y_m],
         "num_iot": cfg.num_iot,
         "num_uav": cfg.num_uav,

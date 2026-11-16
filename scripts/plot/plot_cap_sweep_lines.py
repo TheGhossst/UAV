@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 
 from inside_legend import place_inside_legend
 
-FIGSIZE = (3.5, 2.7)
+# Same column size as scripts/plot/plot_results_new_lines.py (IEEE journal column).
+FIGSIZE = (3.5, 2.55)
 
 plt.rcParams.update(
     {
@@ -60,7 +61,7 @@ SWEEPS = (
     ("iots", "Number of IoT devices", False),
     ("lambda", "Task arrival rate (tasks/s)", False),
     ("aodt", "AoDT threshold (s)", True),
-    ("cpu", r"UAV CPU ($\times 10^{8}$ cycles/s)", False),
+    ("cpu", r"CPU cycles ($\times 10^{8}$/s)", False),
 )
 
 
@@ -93,6 +94,8 @@ def _series(rows: list[dict], axis: str, method: str) -> tuple[list[float], list
 
 
 def _style_ax(ax: plt.Axes) -> None:
+    ax.grid(True, axis="y", linestyle=":", color="0.75", linewidth=0.6, zorder=0)
+    ax.set_axisbelow(True)
     ax.tick_params(
         labelsize=7,
         direction="in",

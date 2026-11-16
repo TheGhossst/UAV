@@ -124,6 +124,7 @@ def _campaign_header(cfg: SimConfig, settings: CampaignSettings) -> dict:
         ),
         "b_sys_hz": cfg.b_sys_hz,
         "max_bw_share": cfg.max_bw_share,
+        "dynamic_cap_alpha": cfg.dynamic_cap_alpha,
         "area_m": [cfg.area_x_m, cfg.area_y_m],
     }
 
@@ -132,6 +133,7 @@ def _checkpoint_matches(old: dict, cfg: SimConfig, settings: CampaignSettings) -
     return (
         float(old.get("b_sys_hz", -1)) == float(cfg.b_sys_hz)
         and old.get("max_bw_share") == cfg.max_bw_share
+        and old.get("dynamic_cap_alpha") == cfg.dynamic_cap_alpha
         and int(old.get("n_runs", -1)) == int(settings.n_runs)
         and int(old.get("seed_start", -1)) == int(settings.seed_start)
         and list(old.get("methods", [])) == list(settings.methods)

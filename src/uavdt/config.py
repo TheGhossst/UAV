@@ -120,6 +120,9 @@ class SimConfig:
     # SENSITIVITY_MAX_BW_SHARE (0.15) is kept for tighter-cap experiments.
     # Neither is in Problem (P) or Table II.
     max_bw_share: float | None = None
+    # Opt-in. Per associated link, B_ij <= max(rate floor, alpha * B_sys / I).
+    # None keeps the fixed max_bw_share cap. Not a headline setting.
+    dynamic_cap_alpha: float | None = None
     # Eq. (12) UAV→BS download Z_l. Paper neglects this (processed payload
     # is small); default 0 keeps Problem (P) / Eq. (17) unchanged.
     download_time_s: float = 0.0
@@ -140,6 +143,8 @@ class SimConfig:
             raise ValueError("los_angle_unit must be 'rad' or 'deg'")
         if self.max_bw_share is not None and not (0.0 < self.max_bw_share <= 1.0):
             raise ValueError("max_bw_share must be in (0, 1] or None")
+        if self.dynamic_cap_alpha is not None and not (self.dynamic_cap_alpha > 0.0):
+            raise ValueError("dynamic_cap_alpha must be positive or None")
         if self.download_time_s < 0.0:
             raise ValueError("download_time_s must be >= 0")
 

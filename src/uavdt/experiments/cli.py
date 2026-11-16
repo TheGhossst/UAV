@@ -59,12 +59,19 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
         aodt_threshold_s=float(args.aodt_threshold),
         los_angle_unit=args.los_angle_unit,
         max_bw_share=_max_bw_share_from_args(args),
+        dynamic_cap_alpha=(
+            None
+            if getattr(args, "dynamic_cap_alpha", None) is None
+            else float(args.dynamic_cap_alpha)
+        ),
         download_time_s=float(args.download_time),
     )
 
 
 def _max_bw_share_from_args(args: argparse.Namespace) -> float | None:
     if getattr(args, "no_per_link_cap", False):
+        return None
+    if getattr(args, "dynamic_cap_alpha", None) is not None:
         return None
     return args.max_bw_share
 
@@ -117,6 +124,15 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         "--no-per-link-cap",
         action="store_true",
         help="No per-link B_ij cap (paper (26)-(27) only). Overrides --max-bw-share.",
+    )
+    p.add_argument(
+        "--dynamic-cap-alpha",
+        type=float,
+        default=None,
+        help=(
+            "EXTERNAL PARAMETER: per-link cap is max(rate floor, alpha * B_sys / I). "
+            "Replaces --max-bw-share. alpha=1 is an equal share."
+        ),
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")
     p.add_argument(
@@ -895,6 +911,8 @@ def cmd_n100(args: argparse.Namespace) -> int:
 
     if args.bandwidth_preset is None:
         args.bandwidth_preset = PRIMARY_B_SYS_PRESET
+    if getattr(args, "dynamic_cap_alpha", None) is not None:
+        args.no_per_link_cap = True
     if not getattr(args, "no_per_link_cap", False) and args.max_bw_share is None:
         args.max_bw_share = PRIMARY_MAX_BW_SHARE
     cfg = config_for_counts(int(args.num_iot), int(args.num_uav), _cfg_from_args(args))

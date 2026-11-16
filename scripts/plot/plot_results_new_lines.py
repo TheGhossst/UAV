@@ -1,10 +1,7 @@
-"""Journal-column line graphs for the 10 MHz, 25% cap sweeps in docs/results_new.md.
+"""Journal-column line graphs for the 10 MHz dynamic-cap sweeps.
 
-Reads ``results/run_10mhz_cap25/{100m,500m}/campaign_all.csv``. The difference
-panel is sum rate minus SCA along the UAV sweep. p-median is the J=3 control
-in ``results/run_10mhz_controls/cap25/``; it is not a sweep.
-
-The AoDT axis starts at 1.2 s. Points below that are not plotted.
+Reads ``results/run_10mhz_dynamic_cap/100m/campaign_all.csv``.
+The per-link bound is max(floor, B_sys/I). The AoDT axis starts at 1.2 s.
 """
 
 from __future__ import annotations
@@ -51,7 +48,7 @@ SWEEPS = (
     ("uavs", "Number of UAVs", "Sum rate vs UAV count", False),
     ("lambda", "Task arrival rate (tasks/s)", "Sum rate vs task arrival rate", False),
     ("aodt", "AoDT threshold (s)", "Sum rate vs AoDT threshold", True),
-    ("cpu", r"UAV CPU ($\times 10^{8}$ cycles/s)", "Sum rate vs UAV CPU", False),
+    ("cpu", r"CPU cycles ($\times 10^{8}$/s)", "Sum rate vs CPU cycles", False),
 )
 
 DELTA_SERIES = (
@@ -61,7 +58,10 @@ DELTA_SERIES = (
 
 
 def _read_campaign(field: str) -> list[dict]:
-    path = ROOT / "results" / "run_10mhz_cap25" / field / "campaign_all.csv"
+    if field == "100m":
+        path = ROOT / "results" / "run_10mhz_dynamic_cap" / field / "campaign_all.csv"
+    else:
+        path = ROOT / "results" / "run_10mhz_cap25" / field / "campaign_all.csv"
     with path.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
 
@@ -110,7 +110,7 @@ def _ylim_from_smallest(values: list[float]) -> tuple[float, float]:
     if span <= 0.0:
         span = max(abs(lo) * 0.02, 0.01)
     # A few percent keeps markers inside the closed frame.
-    return lo - 0.07 * span, hi + 0.10 * span
+    return lo - 0.04 * span, hi + 0.12 * span
 
 
 def _style_ax(ax: plt.Axes) -> None:
@@ -189,7 +189,7 @@ def _plot_sweep(field: str, rows: list[dict], axis: str, xlabel: str, title: str
         ax.set_xticks(xs_ref)
         _frame_xlim(ax, xs_ref)
     ax.set_xlabel(xlabel, labelpad=2)
-    ax.set_ylabel("Sum rate (Mbps)", labelpad=2)
+    ax.set_ylabel("Sum Rate (Mbps)", labelpad=2)
     _style_ax(ax)
     _legend(fig, ax)
     _save(fig, OUT / field / f"{axis}_sum_rate")
@@ -253,12 +253,11 @@ def _plot_delta(field: str, rows: list[dict], medoid_mbps: float) -> None:
 
 
 def main() -> None:
-    for field in FIELDS:
-        rows = _read_campaign(field)
-        for axis, xlabel, title, _aodt in SWEEPS:
-            _plot_sweep(field, rows, axis, xlabel, title)
-        _plot_delta(field, rows, _read_medoid_j3(field))
-        print(f"wrote {OUT / field}")
+    field = "100m"
+    rows = _read_campaign(field)
+    for axis, xlabel, title, _aodt in SWEEPS:
+        _plot_sweep(field, rows, axis, xlabel, title)
+    print(f"wrote {OUT / field}")
 
 
 if __name__ == "__main__":
