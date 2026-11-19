@@ -1,7 +1,7 @@
-"""Journal-column line graphs for the 10 MHz dynamic-cap sweeps.
+"""Journal-column line graphs for the 10 MHz, 25% bound sweeps.
 
-Reads ``results/run_10mhz_dynamic_cap/100m/campaign_all.csv``.
-The per-link bound is max(floor, B_sys/I). The AoDT axis starts at 1.2 s.
+Reads ``results/run_10mhz_cap25/100m/campaign_all.csv``.
+The AoDT axis starts at 1.2 s.
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ DELTA_SERIES = (
 
 def _read_campaign(field: str) -> list[dict]:
     if field == "100m":
-        path = ROOT / "results" / "run_10mhz_dynamic_cap" / field / "campaign_all.csv"
+        path = ROOT / "results" / "run_10mhz_cap25" / field / "campaign_all.csv"
     else:
         path = ROOT / "results" / "run_10mhz_cap25" / field / "campaign_all.csv"
     with path.open(newline="", encoding="utf-8") as handle:
@@ -88,14 +88,19 @@ def _x_value(axis: str, raw: float) -> float:
     return raw
 
 
-def _series(rows: list[dict], axis: str, method: str) -> tuple[list[float], list[float]]:
+def _series(
+    rows: list[dict],
+    axis: str,
+    method: str,
+    ycol: str = "mean_Mbps",
+) -> tuple[list[float], list[float]]:
     pts = []
     for row in rows:
         if row["axis"] != axis or row["method"] != method:
             continue
         if axis == "aodt" and float(row["feasible_fraction"]) <= 0.0:
             continue
-        pts.append((_x_value(axis, float(row["x"])), float(row["mean_Mbps"])))
+        pts.append((_x_value(axis, float(row["x"])), float(row[ycol])))
     pts.sort(key=lambda item: item[0])
     if not pts:
         raise ValueError(f"no points for {axis} / {method}")
@@ -162,13 +167,22 @@ def _save(fig: plt.Figure, stem: Path) -> None:
     plt.close(fig)
 
 
-def _plot_sweep(field: str, rows: list[dict], axis: str, xlabel: str, title: str) -> None:
+def _plot_sweep(
+    field: str,
+    rows: list[dict],
+    axis: str,
+    xlabel: str,
+    title: str,
+    ycol: str = "mean_Mbps",
+    ylabel: str = "Sum Rate (Mbps)",
+    suffix: str = "sum_rate",
+) -> None:
     del title  # captions live outside the figure
     fig, ax = plt.subplots(figsize=FIGSIZE, layout="constrained")
     ys_all: list[float] = []
     xs_ref: list[float] | None = None
     for method, label, color, marker, linestyle, lw, ms in SERIES:
-        xs, ys = _series(rows, axis, method)
+        xs, ys = _series(rows, axis, method, ycol)
         xs_ref = xs
         ys_all.extend(ys)
         ax.plot(
@@ -189,10 +203,10 @@ def _plot_sweep(field: str, rows: list[dict], axis: str, xlabel: str, title: str
         ax.set_xticks(xs_ref)
         _frame_xlim(ax, xs_ref)
     ax.set_xlabel(xlabel, labelpad=2)
-    ax.set_ylabel("Sum Rate (Mbps)", labelpad=2)
+    ax.set_ylabel(ylabel, labelpad=2)
     _style_ax(ax)
     _legend(fig, ax)
-    _save(fig, OUT / field / f"{axis}_sum_rate")
+    _save(fig, OUT / field / f"{axis}_{suffix}")
 
 
 def _plot_delta(field: str, rows: list[dict], medoid_mbps: float) -> None:

@@ -1,7 +1,7 @@
-"""16:10 line graphs for the end-semester deck. 100 m, 10 MHz, dynamic cap.
+"""16:10 line graphs for the end-semester deck. 100 m, 10 MHz, 25% bound.
 
-Reads ``results/run_10mhz_dynamic_cap/100m/campaign_all.csv``.
-The per-link bound is max(floor, B_sys/I). The AoDT axis starts at 1.2 s.
+Reads ``results/run_10mhz_cap25/100m/campaign_all.csv``.
+The AoDT axis starts at 1.2 s.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from inside_legend import place_inside_legend
 
 ROOT = Path(__file__).resolve().parents[2]
-CSV = ROOT / "results" / "run_10mhz_dynamic_cap" / "100m" / "campaign_all.csv"
+CSV = ROOT / "results" / "run_10mhz_cap25" / "100m" / "campaign_all.csv"
 OUT = ROOT / "latex" / "final_ppt" / "images"
 
 SERIES = (
@@ -48,7 +48,12 @@ def _x(axis: str, raw: float) -> float:
     return raw
 
 
-def _series(rows: list[dict], axis: str, method: str) -> tuple[list[float], list[float]]:
+def _series(
+    rows: list[dict],
+    axis: str,
+    method: str,
+    ycol: str = "mean_Mbps",
+) -> tuple[list[float], list[float]]:
     pts = []
     for row in rows:
         if row["axis"] != axis or row["method"] != method:
@@ -56,7 +61,7 @@ def _series(rows: list[dict], axis: str, method: str) -> tuple[list[float], list
         x = _x(axis, float(row["x"]))
         if axis == "aodt" and x < 1.2 - 1e-9:
             continue
-        pts.append((x, float(row["mean_Mbps"])))
+        pts.append((x, float(row[ycol])))
     pts.sort()
     if not pts:
         raise ValueError(f"no points for {axis} / {method}")
@@ -64,7 +69,14 @@ def _series(rows: list[dict], axis: str, method: str) -> tuple[list[float], list
     return list(xs), list(ys)
 
 
-def _plot(rows: list[dict], axis: str, xlabel: str, stem: str) -> None:
+def _plot(
+    rows: list[dict],
+    axis: str,
+    xlabel: str,
+    stem: str,
+    ycol: str = "mean_Mbps",
+    ylabel: str = "Sum Rate (Mbps)",
+) -> None:
     plt.rcParams.update(
         {
             "font.family": "serif",
@@ -79,7 +91,7 @@ def _plot(rows: list[dict], axis: str, xlabel: str, stem: str) -> None:
     ys_all: list[float] = []
     xs_ref: list[float] | None = None
     for method, label, color, marker in SERIES:
-        xs, ys = _series(rows, axis, method)
+        xs, ys = _series(rows, axis, method, ycol)
         xs_ref = xs
         ys_all.extend(ys)
         ax.plot(
@@ -108,7 +120,7 @@ def _plot(rows: list[dict], axis: str, xlabel: str, stem: str) -> None:
             xspan = 1.0
         ax.set_xlim(xs_ref[0] - 0.06 * xspan, xs_ref[-1] + 0.06 * xspan)
     ax.set_xlabel(xlabel)
-    ax.set_ylabel("Sum Rate (Mbps)")
+    ax.set_ylabel(ylabel)
     ax.grid(True, axis="y", linestyle=":", color="0.75", linewidth=0.8)
     ax.set_axisbelow(True)
     ax.tick_params(direction="in", top=True, right=True, length=4)
@@ -140,6 +152,7 @@ def main() -> None:
     rows = _read()
     for axis, xlabel, stem in SWEEPS:
         _plot(rows, axis, xlabel, stem)
+    _plot(rows, "uavs", "Number of Relays", "uavs_relays_100m")
 
 
 if __name__ == "__main__":
