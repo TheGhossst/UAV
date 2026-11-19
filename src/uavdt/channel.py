@@ -136,8 +136,20 @@ def link_metrics(
     l_los, l_nlos = path_loss_los_nlos_db(dist, cfg)
     l_avg = p_los * l_los + (1.0 - p_los) * l_nlos
     p_rx = received_power_w(l_avg, cfg)
-    snr_lin = snr(p_rx, cfg)
-    rates = uplink_rate_bit_per_s(bandwidth_hz, snr_lin)
+    snr_const = snr(p_rx, cfg)
+    if cfg.bandwidth_proportional_noise:
+        from uavdt.analysis.bw_proportional import (
+            equal_share_reference_hz,
+            proportional_rate_bit_per_s,
+            proportional_snr,
+        )
+
+        b_eq = equal_share_reference_hz(cfg)
+        snr_lin = proportional_snr(bandwidth_hz, snr_const, b_eq)
+        rates = proportional_rate_bit_per_s(bandwidth_hz, snr_const, b_eq)
+    else:
+        snr_lin = snr_const
+        rates = uplink_rate_bit_per_s(bandwidth_hz, snr_lin)
     return {
         "distance_m": dist,
         "elevation_rad": elev,

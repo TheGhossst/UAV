@@ -123,6 +123,9 @@ class SimConfig:
     # Opt-in. Per associated link, B_ij <= max(rate floor, alpha * B_sys / I).
     # None keeps the fixed max_bw_share cap. Not a headline setting.
     dynamic_cap_alpha: float | None = None
+    # Opt-in. SNR = p g / (N0 B) with N0 = sigma^2 / (B_sys / I), so an
+    # equal share reproduces Eq. (6). False keeps sigma^2 independent of B.
+    bandwidth_proportional_noise: bool = False
     # Eq. (12) UAV→BS download Z_l. Paper neglects this (processed payload
     # is small); default 0 keeps Problem (P) / Eq. (17) unchanged.
     download_time_s: float = 0.0

@@ -369,6 +369,35 @@ def solve_bandwidth_cvxpy(
     )
 
 
+def _solve_bandwidth_proportional(
+    scenario: Scenario,
+    uav_xyz_m: np.ndarray,
+    association: np.ndarray,
+    processing: np.ndarray,
+    settings: SCASettings,
+) -> BandwidthSolveResult:
+    from uavdt.analysis.bw_proportional import solve_bandwidth_proportional
+
+    se = spectral_efficiency(scenario.iot_xyz_m, uav_xyz_m, scenario.cfg)
+    solved = solve_bandwidth_proportional(
+        scenario,
+        uav_xyz_m,
+        association,
+        processing,
+        solver=None if settings.solver in {None, "cvxpy", "python"} else settings.solver,
+    )
+    return BandwidthSolveResult(
+        status=solved.status,
+        solver_name=solved.solver_name,
+        bandwidth_hz=solved.bandwidth_hz,
+        se=se,
+        objective=float(solved.objective_bit_per_s),
+        solve_time_s=solved.solve_time_s,
+        infeasible=bool(solved.infeasible),
+        message=solved.message,
+    )
+
+
 def solve_bandwidth_at_fixed_q(
     scenario: Scenario,
     uav_xyz_m: np.ndarray,
@@ -376,11 +405,19 @@ def solve_bandwidth_at_fixed_q(
     processing: np.ndarray,
     settings: SCASettings | None = None,
 ) -> BandwidthSolveResult:
-    """Maximize sum a_ij SE_ij(q) B_ij at frozen q.
+    """Maximize sum rate at frozen q.
+
+    Constant noise: sum a_ij SE_ij(q) B_ij, an LP. Bandwidth-proportional
+    noise: the concave program r = B log2(1 + pg / (N0 B)). MATLAB stays
+    on the constant-noise path.
 
     If settings.solver is matlab/MOSEK, use MATLAB CVX+MOSEK when available.
     """
     settings = settings or SCASettings()
+    if scenario.cfg.bandwidth_proportional_noise:
+        return _solve_bandwidth_proportional(
+            scenario, uav_xyz_m, association, processing, settings
+        )
     want_matlab = settings.solver in {None, "matlab", "MATLAB", "mosek", "MOSEK"}
     # Default None stays on CVXPY so unit tests do not launch MATLAB.
     if settings.solver in {"matlab", "MATLAB", "mosek", "MOSEK"}:

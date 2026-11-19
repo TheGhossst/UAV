@@ -64,6 +64,9 @@ def _cfg_from_args(args: argparse.Namespace) -> SimConfig:
             if getattr(args, "dynamic_cap_alpha", None) is None
             else float(args.dynamic_cap_alpha)
         ),
+        bandwidth_proportional_noise=bool(
+            getattr(args, "bandwidth_proportional_noise", False)
+        ),
         download_time_s=float(args.download_time),
     )
 
@@ -132,6 +135,14 @@ def _add_shared(p: argparse.ArgumentParser) -> None:
         help=(
             "EXTERNAL PARAMETER: per-link cap is max(rate floor, alpha * B_sys / I). "
             "Replaces --max-bw-share. alpha=1 is an equal share."
+        ),
+    )
+    p.add_argument(
+        "--bandwidth-proportional-noise",
+        action="store_true",
+        help=(
+            "SNR = p g / (N0 B), N0 = sigma^2 / (B_sys / I). "
+            "Equal share matches Eq. (6). Off keeps noise power sigma^2."
         ),
     )
     p.add_argument("--los-angle-unit", choices=("rad", "deg"), default="rad")

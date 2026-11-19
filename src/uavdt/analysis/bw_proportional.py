@@ -183,12 +183,15 @@ def allocate_proportional(
     b_eq_hz: float,
     b_sys_hz: float,
     cap_hz: float,
+    cap_hz_each: np.ndarray | None = None,
     solver: str | None = None,
 ) -> ProportionalSolveResult:
     """Maximize sum_i B_i log2(1 + snr_i B_eq / B_i) on n links.
 
     ``snr_const`` is the frozen p g / sigma^2 of each link. Bandwidth is
     a vector (one entry per link), not an (I, J) matrix.
+    ``cap_hz_each`` replaces the shared ``cap_hz`` with one upper bound
+    per link. ``cap_hz`` is still the fallback and the pre-check budget.
     """
     import cvxpy as cp
 
@@ -197,7 +200,12 @@ def allocate_proportional(
     n = int(snr.size)
     b_eq = float(b_eq_hz)
     b_sys = float(b_sys_hz)
-    cap = float(cap_hz)
+    if cap_hz_each is None:
+        caps = np.full(n, float(cap_hz), dtype=float)
+    else:
+        caps = np.asarray(cap_hz_each, dtype=float).ravel()
+        if caps.shape != (n,):
+            raise ValueError("cap_hz_each must have one entry per link")
     empty = np.zeros(n, dtype=float)
     t0 = perf_counter()
 
@@ -218,7 +226,7 @@ def allocate_proportional(
 
     if n == 0:
         return _bad("no_links", "no associated links")
-    if b_eq <= 0.0 or b_sys <= 0.0 or cap <= 0.0:
+    if b_eq <= 0.0 or b_sys <= 0.0 or float(np.min(caps)) <= 0.0:
         return _bad("bad_budget", "bandwidth parameters must be positive")
     if floors.shape != snr.shape:
         raise ValueError("rate floors must match snr_const")
@@ -226,7 +234,10 @@ def allocate_proportional(
         return _bad("rate_floor_invalid", "rate floor is negative or non-finite")
 
     mins = np.array(
-        [_min_bandwidth_hz(float(snr[i]), float(floors[i]), b_eq, cap) for i in range(n)]
+        [
+            _min_bandwidth_hz(float(snr[i]), float(floors[i]), b_eq, float(caps[i]))
+            for i in range(n)
+        ]
     )
     if np.any(~np.isfinite(mins)) or float(mins.sum()) > b_sys + 1.0:
         return _bad(
@@ -248,7 +259,7 @@ def allocate_proportional(
     snr_c = np.maximum(snr, 0.0)
     ent = cp.rel_entr(u, u + snr_c)
     ln2 = float(np.log(2.0))
-    u_cap = cap / b_eq
+    u_cap = caps / b_eq
     u_budget = b_sys / b_eq
     # Stay off the rel_entr boundary. 1e-8 * B_eq is a fraction of a Hertz
     # at MHz budgets and is below any QoS floor that the pre-check accepted.
@@ -275,7 +286,7 @@ def allocate_proportional(
         status = str(problem.status)
         if status in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE) and u.value is not None:
             bw = np.maximum(np.asarray(u.value, dtype=float).ravel(), 0.0) * b_eq
-            bw = np.minimum(bw, cap)
+            bw = np.minimum(bw, caps)
             if float(bw.sum()) > b_sys + 1e-3:
                 bw *= b_sys / float(bw.sum())
             rates = proportional_rate_bit_per_s(bw, snr, b_eq)
@@ -362,12 +373,25 @@ def solve_bandwidth_proportional(
     pairs = list(zip(rows.tolist(), cols.tolist()))
     snr_links = np.array([float(snr[i, j]) for i, j in pairs])
     floor_links = np.array([float(floors[i, j]) for i, j in pairs])
+    cap_each = None
+    cap_hz = float(cfg.link_bandwidth_cap_hz)
+    if cfg.dynamic_cap_alpha is not None:
+        share = float(cfg.dynamic_cap_alpha) * float(cfg.b_sys_hz) / max(int(cfg.num_iot), 1)
+        cap_each = np.empty(len(pairs), dtype=float)
+        for k, (snr_i, floor_i) in enumerate(zip(snr_links, floor_links)):
+            need = _min_bandwidth_hz(float(snr_i), float(floor_i), b_eq, float(cfg.b_sys_hz))
+            if not np.isfinite(need):
+                cap_each[k] = share
+            else:
+                cap_each[k] = min(float(cfg.b_sys_hz), max(share, float(need)))
+        cap_hz = float(np.max(cap_each)) if cap_each.size else share
     solved = allocate_proportional(
         snr_links,
         floor_links,
         b_eq_hz=b_eq,
         b_sys_hz=float(cfg.b_sys_hz),
-        cap_hz=float(cfg.link_bandwidth_cap_hz),
+        cap_hz=cap_hz,
+        cap_hz_each=cap_each,
         solver=solver,
     )
     bw = np.zeros_like(snr)

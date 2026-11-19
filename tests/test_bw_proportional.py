@@ -90,6 +90,36 @@ def test_headline_geometry_beats_equal_share():
     assert solved.objective_bit_per_s + 1.0 >= equal_rate
 
 
+def test_dynamic_cap_and_evaluate_use_proportional_noise():
+    from dataclasses import replace
+
+    from uavdt.channel import link_metrics
+    from uavdt.evaluator import evaluate
+    from uavdt.models import Allocation
+    from uavdt.sca.cvx_problem import solve_bandwidth_at_fixed_q
+    from uavdt.sca.settings import SCASettings
+
+    cfg = replace(
+        headline_sim_config(max_bw_share=None),
+        dynamic_cap_alpha=1.0,
+        bandwidth_proportional_noise=True,
+    )
+    sc = generate_scenario(3, cfg)
+    uav = make_uav_xyz_m(sc.iot_xyz_m[: cfg.num_uav, :2], cfg.uav_height_m)
+    a = nearest_association(sc.iot_xyz_m, uav)
+    b = cpu_stable_processing(sc, a)
+    solved = solve_bandwidth_at_fixed_q(sc, uav, a, b, SCASettings(solver=None))
+    assert not solved.infeasible
+    share = cfg.b_sys_hz / cfg.num_iot
+    used = solved.bandwidth_hz[a > 0.5]
+    assert used.size == cfg.num_iot
+    assert float(used.max()) <= share + 1.0
+    ev = evaluate(sc, uav, Allocation(a, b, solved.bandwidth_hz))
+    metrics = link_metrics(sc.iot_xyz_m, uav, solved.bandwidth_hz, cfg)
+    assert ev.sum_rate_bit_per_s == pytest.approx(float(metrics["rates_bit_per_s"].sum()))
+    assert ev.sum_rate_bit_per_s == pytest.approx(solved.objective)
+
+
 def test_larger_b_eq_raises_the_optimal_rate():
     cfg = headline_sim_config()
     sc = generate_scenario(4, cfg)
